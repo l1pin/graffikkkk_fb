@@ -395,7 +395,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
         console.log('🚀 Starting analysis for article:', article);
 
         // Проверяем период
-        let periodChosen = false, periodStartDate, periodEndDate;
+        let periodChosen = false;
         console.log('🔍 Received period params - Start:', periodStart, 'End:', periodEnd);
         console.log('🔍 Period types - Start:', typeof periodStart, 'End:', typeof periodEnd);
         
@@ -405,24 +405,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
         
         if (hasStartDate || hasEndDate) {
             periodChosen = true;
-            
-            if (hasStartDate) {
-                periodStartDate = new Date(periodStart);
-                console.log('📅 Start date set to:', periodStart);
-            } else {
-                console.log('📅 No start date - using all from beginning');
-            }
-            
-            if (hasEndDate) {
-                periodEndDate = new Date(periodEnd);
-                console.log('📅 End date set to:', periodEnd);
-            } else {
-                // Если конечная дата не указана - используем сегодня
-                periodEndDate = new Date();
-                console.log('📅 No end date - using today:', Utilities.formatDate(periodEndDate, 'Europe/Kiev', 'yyyy-MM-dd'));
-            }
-            
-            console.log('📅 Final period:', hasStartDate ? periodStart : 'from beginning', 'to', hasEndDate ? periodEnd : 'today');
+            console.log('📅 Period filter will be applied');
         } else {
             console.log('⚠️ No dates selected - showing all data');
         }
@@ -540,24 +523,21 @@ function buildChartForArticle(article, periodStart, periodEnd) {
         // ПОСТРОЕНИЕ ЕДИНОГО SQL ЗАПРОСА
         let dateFilter = '';
         if (periodChosen) {
-            const hasStartDate = periodStart && periodStart.trim() !== '';
-            const hasEndDate = periodEnd && periodEnd.trim() !== '';
-            
             if (hasStartDate && hasEndDate) {
                 // Оба даты указаны
-                const startDateStr = Utilities.formatDate(periodStartDate, 'Europe/Kiev', 'yyyy-MM-dd');
-                const endDateStr = Utilities.formatDate(periodEndDate, 'Europe/Kiev', 'yyyy-MM-dd');
+                const startDateStr = Utilities.formatDate(new Date(periodStart), 'Europe/Kiev', 'yyyy-MM-dd');
+                const endDateStr = Utilities.formatDate(new Date(periodEnd), 'Europe/Kiev', 'yyyy-MM-dd');
                 dateFilter = ` AND \`adv_date\` >= '${startDateStr}' AND \`adv_date\` <= '${endDateStr}'`;
                 console.log('🔍 Date filter (both dates):', dateFilter);
             } else if (hasStartDate && !hasEndDate) {
                 // Только начальная дата, до сегодня
-                const startDateStr = Utilities.formatDate(periodStartDate, 'Europe/Kiev', 'yyyy-MM-dd');
-                const endDateStr = Utilities.formatDate(periodEndDate, 'Europe/Kiev', 'yyyy-MM-dd');
-                dateFilter = ` AND \`adv_date\` >= '${startDateStr}' AND \`adv_date\` <= '${endDateStr}'`;
+                const startDateStr = Utilities.formatDate(new Date(periodStart), 'Europe/Kiev', 'yyyy-MM-dd');
+                const todayStr = Utilities.formatDate(new Date(), 'Europe/Kiev', 'yyyy-MM-dd');
+                dateFilter = ` AND \`adv_date\` >= '${startDateStr}' AND \`adv_date\` <= '${todayStr}'`;
                 console.log('🔍 Date filter (start to today):', dateFilter);
             } else if (!hasStartDate && hasEndDate) {
                 // Только конечная дата, с самого начала
-                const endDateStr = Utilities.formatDate(periodEndDate, 'Europe/Kiev', 'yyyy-MM-dd');
+                const endDateStr = Utilities.formatDate(new Date(periodEnd), 'Europe/Kiev', 'yyyy-MM-dd');
                 dateFilter = ` AND \`adv_date\` <= '${endDateStr}'`;
                 console.log('🔍 Date filter (beginning to end):', dateFilter);
             }
@@ -605,7 +585,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
         console.log('🔍 Article:', article);
         console.log('🔍 Date filter applied:', periodChosen ? 'YES' : 'NO');
         if (periodChosen) {
-            console.log('🔍 Filter dates:', Utilities.formatDate(periodStartDate, 'Europe/Kiev', 'yyyy-MM-dd'), 'to', Utilities.formatDate(periodEndDate, 'Europe/Kiev', 'yyyy-MM-dd'));
+            console.log('🔍 Filter params - Start:', periodStart, 'End:', periodEnd);
         }
         let allData;
 
@@ -880,24 +860,35 @@ function buildChartForArticle(article, periodStart, periodEnd) {
         }
 
         if (periodChosen) {
-            minDate = periodStartDate;
-            maxDate = periodEndDate;
+            if (hasStartDate) {
+                minDate = new Date(periodStart);
+            }
+            if (hasEndDate) {
+                maxDate = new Date(periodEnd);
+            }
         }
 
         // Массив дат - только активные даты
         let firstActiveDate = null, lastActiveDate = null;
 
-        let curDate = new Date(minDate);
-        while (curDate <= maxDate) {
-            const dateKey = Utilities.formatDate(curDate, 'Europe/Kiev', 'yyyy-MM-dd');
-            const rec = resultMap[dateKey] || { leads: 0, spend: 0 };
-
+        // Находим первую и последнюю активную дату из данных
+        Object.keys(resultMap).forEach(dateKey => {
+            const rec = resultMap[dateKey];
             if (rec.spend > 0) {
-                if (!firstActiveDate) firstActiveDate = new Date(curDate);
-                lastActiveDate = new Date(curDate);
+                const dateObj = new Date(dateKey);
+                if (!firstActiveDate || dateObj < firstActiveDate) firstActiveDate = dateObj;
+                if (!lastActiveDate || dateObj > lastActiveDate) lastActiveDate = dateObj;
             }
+        });
 
-            curDate.setDate(curDate.getDate() + 1);
+        // Если период выбран, ограничиваем датами периода
+        if (periodChosen) {
+            if (hasStartDate && minDate && (!firstActiveDate || minDate > firstActiveDate)) {
+                firstActiveDate = minDate;
+            }
+            if (hasEndDate && maxDate && (!lastActiveDate || maxDate < lastActiveDate)) {
+                lastActiveDate = maxDate;
+            }
         }
 
         const allDates = [];
@@ -915,8 +906,12 @@ function buildChartForArticle(article, periodStart, periodEnd) {
 
             let segmentMinDate = null, segmentMaxDate = null;
 
-            let checkDate = new Date(minDate);
-            while (checkDate <= maxDate) {
+            // Используем только даты из данных сегмента
+            const segmentDateKeys = Object.keys(resultMapBySegment[segmentName] || {});
+            let checkDate = segmentDateKeys.length > 0 ? new Date(Math.min(...segmentDateKeys.map(d => new Date(d)))) : new Date();
+            const endDate = segmentDateKeys.length > 0 ? new Date(Math.max(...segmentDateKeys.map(d => new Date(d)))) : new Date();
+            
+            while (checkDate <= endDate) {
                 const dateKey = Utilities.formatDate(checkDate, 'Europe/Kiev', 'yyyy-MM-dd');
                 const rec = resultMapBySegment[segmentName] ? resultMapBySegment[segmentName][dateKey] || { leads: 0, spend: 0 } : { leads: 0, spend: 0 };
 
