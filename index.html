@@ -83,25 +83,27 @@
 
         /* Main Content */
         .main-content {
-            flex: 1;
-            margin-left: 280px;
-            padding: 24px 32px;
-            width: calc(100% - 280px);
-            overflow-x: hidden;
-        }
+    flex: 1;
+    margin-left: 280px;
+    padding: 24px 32px;
+    width: calc(100% - 280px);
+    overflow-x: hidden;
+    min-height: 100vh;
+}
 
         /* Common Card Style */
         .card {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-            border: 1px solid #e2e8f0;
-            width: 100%;
-            max-width: 100%;
-            overflow-x: hidden;
-        }
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e2e8f0;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    min-height: fit-content;
+}
 
         /* Header */
         .header {
@@ -690,20 +692,21 @@
 
         /* Buyer Content Area */
         .buyer-content-area {
-            background: #f8fafc;
-            border-radius: 12px;
-            margin-bottom: 32px;
-            overflow: hidden;
-            max-height: 10000px;
-            opacity: 1;
-        }
+    background: #f8fafc;
+    border-radius: 12px;
+    margin-bottom: 32px;
+    overflow: visible;
+    max-height: none;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
 
         .buyer-content-area.collapsed {
-            max-height: 0;
-            opacity: 0;
-            margin-bottom: 0;
-            padding: 0;
-        }
+    display: none;
+    opacity: 0;
+    margin-bottom: 0;
+    padding: 0;
+}
 
         /* Buyer Sections */
         .buyer-metrics-section,
@@ -784,14 +787,16 @@
         }
 
         .nested-group-content-enhanced {
-            max-height: 5000px;
-            opacity: 1;
-        }
+    max-height: none;
+    opacity: 1;
+    overflow: visible;
+    transition: opacity 0.3s ease;
+}
 
         .nested-group-content-enhanced.collapsed {
-            max-height: 0;
-            opacity: 0;
-        }
+    display: none;
+    opacity: 0;
+}
 
         .nested-group-metrics,
         .nested-group-chart,
@@ -1270,6 +1275,153 @@
             background: #fffbeb;
         }
 
+        /* Фикс для динамического контента */
+        .buyer-group-section,
+        .nested-group-enhanced {
+            min-height: fit-content;
+            height: auto;
+        }
+
+        .table-container {
+            min-height: fit-content;
+            height: auto;
+        }
+
+        .nested-group-chart-container,
+        .buyer-chart-container {
+            min-height: 350px;
+            height: auto;
+        }
+
+        /* Navigation Tree Styles */
+        .nav-navigation {
+            position: relative;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .nav-arrow {
+            transition: transform 0.3s ease;
+            font-size: 12px;
+        }
+
+        .nav-navigation.expanded .nav-arrow {
+            transform: rotate(90deg);
+        }
+
+        .navigation-tree {
+            max-height: 60vh;
+            overflow-y: auto;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            margin: 8px 16px 16px 16px;
+            padding: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .navigation-tree.collapsed {
+            max-height: 0;
+            padding: 0;
+            margin: 0 16px;
+            overflow: hidden;
+        }
+
+        .nav-placeholder {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 12px;
+            text-align: center;
+            padding: 20px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-tree-item {
+            display: block;
+            padding: 6px 8px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .nav-tree-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .nav-tree-item.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            font-weight: 600;
+        }
+
+        .nav-tree-item.level-0 {
+            font-weight: 600;
+            color: #60a5fa;
+            padding-left: 8px;
+        }
+
+        .nav-tree-item.level-1 {
+            padding-left: 24px;
+            color: #a78bfa;
+        }
+
+        .nav-tree-item.level-2 {
+            padding-left: 40px;
+            color: #34d399;
+        }
+
+        .nav-tree-item.level-3 {
+            padding-left: 56px;
+            color: #fbbf24;
+        }
+
+        .nav-tree-toggle {
+            position: absolute;
+            left: 2px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            cursor: pointer;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-tree-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-tree-children {
+            display: block;
+        }
+
+        .nav-tree-children.collapsed {
+            display: none;
+        }
+
+        .nav-icon {
+            margin-right: 6px;
+            font-size: 10px;
+            opacity: 0.8;
+        }
+
+        .nav-tree-item.level-0 .nav-icon { color: #60a5fa; }
+        .nav-tree-item.level-1 .nav-icon { color: #a78bfa; }
+        .nav-tree-item.level-2 .nav-icon { color: #34d399; }
+        .nav-tree-item.level-3 .nav-icon { color: #fbbf24; }
+
         /* Responsive */
         @media (max-width: 1024px) {
             .sidebar {
@@ -1340,6 +1492,17 @@
                 <i class="fas fa-chart-bar"></i>
                 Аналитика
             </a>
+            <div class="nav-item nav-navigation" onclick="toggleNavigation()">
+                <i class="fas fa-sitemap"></i>
+                Навигация
+                <i class="fas fa-chevron-right nav-arrow" id="navArrow"></i>
+            </div>
+            <div class="navigation-tree collapsed" id="navigationTree">
+                <div class="nav-placeholder">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Загрузите данные для отображения навигации</span>
+                </div>
+            </div>
         </nav>
     </div>
 
@@ -1556,7 +1719,6 @@
         window.toggleGroup = toggleGroup;
         window.toggleBuyerGroup = toggleBuyerGroup;
         window.toggleNestedGroup = toggleNestedGroup;
-        window.toggleHierarchy = toggleHierarchy;
 
         function buildChart() {
             const article = document.getElementById("articleInput").value.trim();
@@ -1969,10 +2131,245 @@
             displayCalendarMetrics(data.calendarData || {});
             displayBuyerGroups(data.article, data.buyerGroupsData || {});
 
+            // Строим навигационное дерево
+            buildNavigationTree(data.buyerGroupsData || {});
+
             showResults();
 
             // Инициализируем tooltip после отображения
             setupTooltipHandlers();
+        }
+
+        // Navigation functions
+        function toggleNavigation() {
+            const tree = document.getElementById('navigationTree');
+            const arrow = document.getElementById('navArrow');
+            const navItem = document.querySelector('.nav-navigation');
+            
+            if (tree.classList.contains('collapsed')) {
+                tree.classList.remove('collapsed');
+                navItem.classList.add('expanded');
+            } else {
+                tree.classList.add('collapsed');
+                navItem.classList.remove('expanded');
+            }
+        }
+
+        function buildNavigationTree(buyerGroupsData) {
+            const container = document.getElementById('navigationTree');
+            
+            if (!buyerGroupsData || Object.keys(buyerGroupsData).length === 0) {
+                container.innerHTML = `
+                    <div class="nav-placeholder">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Нет данных для навигации</span>
+                    </div>
+                `;
+                return;
+            }
+
+            // Функция для очистки имен (как в основном коде)
+            function cleanName(name, index, prefix) {
+                let cleanedName = String(name || `${prefix}_${index}`)
+                    .replace(/[^a-zA-Z0-9]/g, "_")
+                    .replace(/_+/g, "_")
+                    .replace(/^_|_$/g, "");
+
+                if (!cleanedName) {
+                    cleanedName = `${prefix}_${index}`;
+                }
+
+                return cleanedName;
+            }
+
+            let html = '';
+            
+            Object.keys(buyerGroupsData).forEach((buyerName, buyerIndex) => {
+                const buyerData = buyerGroupsData[buyerName];
+                const cleanBuyerName = cleanName(buyerName, buyerIndex, 'buyer');
+                const buyerId = `enhanced_buyer_${cleanBuyerName}`;
+                
+                console.log('🔍 NAV: Creating buyer link:', buyerName, '→', buyerId);
+                
+                html += `
+                    <div class="nav-tree-item level-0" onclick="navigateToElement('${buyerId}')">
+                        <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('buyer_${buyerIndex}')">▸</span>
+                        <i class="fas fa-user-tie nav-icon"></i>
+                        ${escapeHtml(buyerName)}
+                    </div>
+                    <div class="nav-tree-children collapsed" id="buyer_${buyerIndex}_children">
+                `;
+                
+                Object.keys(buyerData.campaigns || {}).forEach((campaignName, campaignIndex) => {
+                    const campaignData = buyerData.campaigns[campaignName];
+                    const cleanCampaignName = cleanName(campaignName, campaignIndex, 'campaign');
+                    const campaignId = `enhanced_campaign_${cleanBuyerName}_${cleanCampaignName}_${campaignIndex}`;
+                    
+                    console.log('🔍 NAV: Creating campaign link:', campaignName, '→', campaignId);
+                    
+                    html += `
+                        <div class="nav-tree-item level-1" onclick="navigateToElement('${campaignId}')">
+                            <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('campaign_${buyerIndex}_${campaignIndex}')">▸</span>
+                            <i class="fas fa-tv nav-icon"></i>
+                            ${escapeHtml(campaignName)}
+                        </div>
+                        <div class="nav-tree-children collapsed" id="campaign_${buyerIndex}_${campaignIndex}_children">
+                    `;
+                    
+                    Object.keys(campaignData.groups || {}).forEach((groupName, groupIndex) => {
+                        const groupData = campaignData.groups[groupName];
+                        const cleanGroupName = cleanName(groupName, groupIndex, 'group');
+                        const groupId = `enhanced_group_${cleanBuyerName}_${cleanCampaignName}_${cleanGroupName}_${groupIndex}`;
+                        
+                        console.log('🔍 NAV: Creating group link:', groupName, '→', groupId);
+                        
+                        html += `
+                            <div class="nav-tree-item level-2" onclick="navigateToElement('${groupId}')">
+                                <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('group_${buyerIndex}_${campaignIndex}_${groupIndex}')">▸</span>
+                                <i class="fas fa-folder nav-icon"></i>
+                                ${escapeHtml(groupName)}
+                            </div>
+                            <div class="nav-tree-children collapsed" id="group_${buyerIndex}_${campaignIndex}_${groupIndex}_children">
+                        `;
+                        
+                        Object.keys(groupData.ads || {}).forEach((adName, adIndex) => {
+                            const cleanAdName = cleanName(adName, adIndex, 'ad');
+                            const adId = `enhanced_ad_${cleanBuyerName}_${cleanCampaignName}_${cleanGroupName}_${cleanAdName}_${adIndex}`;
+                            
+                            console.log('🔍 NAV: Creating ad link:', adName, '→', adId);
+                            
+                            html += `
+                                <div class="nav-tree-item level-3" onclick="navigateToElement('${adId}')">
+                                    <i class="fas fa-rectangle-ad nav-icon"></i>
+                                    ${escapeHtml(adName)}
+                                </div>
+                            `;
+                        });
+                        
+                        html += '</div>';
+                    });
+                    
+                    html += '</div>';
+                });
+                
+                html += '</div>';
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function toggleNavTree(itemId) {
+            const children = document.getElementById(itemId + '_children');
+            const toggle = event.currentTarget;
+            
+            if (children.classList.contains('collapsed')) {
+                children.classList.remove('collapsed');
+                toggle.textContent = '▾';
+            } else {
+                children.classList.add('collapsed');
+                toggle.textContent = '▸';
+            }
+        }
+
+        function navigateToElement(elementId) {
+            console.log('🚀 SMART NAVIGATION for:', elementId);
+            
+            // Найдем целевой элемент сразу
+            const targetElement = findTargetElement(elementId);
+            if (!targetElement) {
+                console.log('❌ Target element not found:', elementId);
+                return;
+            }
+
+            // Раскрываем всю цепочку до этого элемента
+            expandToTarget(targetElement, elementId);
+
+            // Прокручиваем к элементу
+            setTimeout(() => {
+                console.log('📍 SCROLLING to target');
+                targetElement.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center',
+                    inline: 'nearest'
+                });
+                
+                setTimeout(() => {
+                    highlightElement(targetElement);
+                }, 300);
+            }, 800);
+        }
+
+        function findTargetElement(elementId) {
+            // Ищем header элемент по onclick атрибуту
+            if (elementId.includes('enhanced_buyer_')) {
+                return document.querySelector(`div.buyer-header-enhanced[onclick*="toggleBuyerGroup('${elementId}')"]`);
+            } else {
+                return document.querySelector(`div.nested-group-header-enhanced[onclick*="toggleNestedGroup('${elementId}')"]`);
+            }
+        }
+
+        function expandToTarget(targetElement, elementId) {
+            console.log('🔓 EXPANDING PATH to:', elementId);
+            
+            // Находим всех родителей, которые нужно раскрыть
+            let currentElement = targetElement;
+            const elementsToExpand = [];
+            
+            while (currentElement) {
+                // Ищем родительский content элемент
+                const parentContent = currentElement.closest('.buyer-content-area, .nested-group-content-enhanced');
+                if (parentContent && parentContent.classList.contains('collapsed')) {
+                    // Находим соответствующий header
+                    const parentHeader = parentContent.previousElementSibling;
+                    if (parentHeader) {
+                        elementsToExpand.unshift({
+                            header: parentHeader,
+                            content: parentContent,
+                            type: parentContent.classList.contains('buyer-content-area') ? 'buyer' : 'nested'
+                        });
+                    }
+                }
+                
+                // Переходим к следующему родителю
+                currentElement = parentContent ? parentContent.parentElement : null;
+                
+                // Защита от бесконечного цикла
+                if (elementsToExpand.length > 10) break;
+            }
+
+            console.log('🔓 Found', elementsToExpand.length, 'elements to expand');
+
+            // Раскрываем элементы последовательно
+            elementsToExpand.forEach((item, index) => {
+                setTimeout(() => {
+                    console.log('⚡ Expanding level', index, item.type);
+                    item.header.click();
+                }, index * 200);
+            });
+
+            // Если целевой элемент тоже свернут - раскрываем его
+            const targetContent = document.getElementById(elementId + '_content');
+            if (targetContent && targetContent.classList.contains('collapsed')) {
+                setTimeout(() => {
+                    console.log('⚡ Expanding target itself');
+                    targetElement.click();
+                }, elementsToExpand.length * 200 + 100);
+            }
+        }
+
+        function highlightElement(element) {
+            console.log('✨ HIGHLIGHTING ELEMENT');
+            // Добавляем подсветку
+            element.style.boxShadow = '0 0 20px rgba(96, 165, 250, 0.8)';
+            element.style.transition = 'box-shadow 0.3s ease';
+            element.style.border = '2px solid #60a5fa';
+            element.style.borderRadius = '12px';
+            
+            // Убираем подсветку через 3 секунды
+            setTimeout(() => {
+                element.style.boxShadow = '';
+                element.style.border = '';
+            }, 3000);
         }
 
         function displayStatusBanner(article, metrics) {
@@ -2574,7 +2971,7 @@
                     }
 
                     const buyerId = `enhanced_buyer_${cleanBuyerName}`;
-                    const groupsCount = Object.keys(buyerData.groups || {}).length;
+                    const groupsCount = Object.keys(buyerData.campaigns || {}).length;
                     const buyerChartId = `buyer_chart_${buyerId}`;
 
                     console.log(
@@ -2596,11 +2993,11 @@
                       ${escapeHtml(buyerName)}
                     </h2>
                     <p>Медиабайер • ${groupsCount} ${groupsCount === 1
-                            ? "группа"
-                            : groupsCount < 5
-                                ? "группы"
-                                : "групп"
-                        } объявлений</p>
+    ? "кампания"
+    : groupsCount < 5
+        ? "кампании"
+        : "кампаний"
+}</p>
                   </div>
                   <div class="buyer-toggle-section">
                     ${buyerData.buyerData
@@ -2664,54 +3061,41 @@
                 <div class="buyer-groups-section">
                   <h3 class="buyer-groups-title">
                     <i class="fas fa-folder-tree"></i>
-                    Группы объявлений (${groupsCount})
+                    Кампании (${Object.keys(buyerData.campaigns || {}).length})
                   </h3>
                   
-                  ${Object.keys(buyerData.groups || {})
-                            .map((groupName, groupIndex) => {
-                                const groupData = buyerData.groups[groupName];
-                                // Улучшенная очистка имени группы
-                                let cleanGroupName = String(
-                                    groupName || `group_${groupIndex}`
+                  ${Object.keys(buyerData.campaigns || {})
+                            .map((campaignName, campaignIndex) => {
+                                const campaignData = buyerData.campaigns[campaignName];
+                                let cleanCampaignName = String(
+                                    campaignName || `campaign_${campaignIndex}`
                                 )
                                     .replace(/[^a-zA-Z0-9]/g, "_")
                                     .replace(/_+/g, "_")
-                                    .replace(/^_|_$/g, ""); // Убираем подчеркивания в начале и конце
+                                    .replace(/^_|_$/g, "");
 
-                                // Если имя пустое, используем индекс
-                                if (!cleanGroupName) {
-                                    cleanGroupName = `group_${groupIndex}`;
+                                if (!cleanCampaignName) {
+                                    cleanCampaignName = `campaign_${campaignIndex}`;
                                 }
 
-                                const nestedGroupId = `enhanced_group_${cleanBuyerName}_${cleanGroupName}_${groupIndex}`;
-
-                                console.log(
-                                    "🔍 Group name:",
-                                    groupName,
-                                    "-> Clean name:",
-                                    cleanGroupName,
-                                    "-> ID:",
-                                    nestedGroupId
-                                );
-                                const chartId = `chart_${nestedGroupId}`;
-                                const tableId = `table_${nestedGroupId}`;
+                                const campaignId = `enhanced_campaign_${cleanBuyerName}_${cleanCampaignName}_${campaignIndex}`;
+                                const campaignChartId = `chart_${campaignId}`;
+                                const campaignTableId = `table_${campaignId}`;
 
                                 return `
                       <div class="nested-group-enhanced">
-                        <div class="nested-group-header-enhanced" onclick="toggleNestedGroup('${nestedGroupId}')">
+                        <div class="nested-group-header-enhanced" onclick="toggleNestedGroup('${campaignId}')" style="background: #7c3aed;">
                           <div class="nested-group-info-grid">
                             <div class="nested-group-main-info">
                               <h3>
-                                <i class="fas fa-folder"></i>
-                                ${escapeHtml(groupName)}
+                                <i class="fas fa-tv"></i>
+                                ${escapeHtml(campaignName)}
                               </h3>
-                              <p>Группа объявлений • ${groupData.metrics.activeDays
-                                    } активных дней • CR ${groupData.metrics.cr}</p>
+                              <p>Кампания • ${Object.keys(campaignData.groups || {}).length} групп • ${campaignData.campaignData ? campaignData.campaignData.metrics.activeDays : 0} активных дней</p>
                             </div>
                             <div class="buyer-toggle-section">
                               <div class="buyer-stats-preview">
-                                ${groupData.metrics.videos} видео • ${groupData.metrics.sites
-                                    } лендингов
+                                ${campaignData.campaignData ? `CR ${campaignData.campaignData.metrics.cr}` : 'Нет данных'}
                               </div>
                               <button class="buyer-toggle-btn collapsed" type="button">
                                 <i class="fas fa-chevron-right"></i>
@@ -2720,38 +3104,208 @@
                           </div>
                         </div>
                         
-                        <div class="nested-group-content-enhanced collapsed" id="${nestedGroupId}_content">
-                          
+                        <div class="nested-group-content-enhanced collapsed" id="${campaignId}_content">
+                          ${campaignData.campaignData ? `
                           <div class="nested-group-metrics">
                             <h4 class="nested-group-metrics-title">
                               <i class="fas fa-chart-bar"></i>
-                              Метрики группы
+                              Метрики кампании
                             </h4>
                             <div class="nested-group-metrics-grid">
-                              ${generateEnhancedGroupMetrics(groupData.metrics)}
+                              ${generateEnhancedGroupMetrics(campaignData.campaignData.metrics)}
                             </div>
                           </div>
                           
                           <div class="nested-group-chart">
                             <h4 class="nested-group-chart-title">
                               <i class="fas fa-chart-area"></i>
-                              График динамики
+                              График динамики кампании
                             </h4>
                             <div class="nested-group-chart-container">
-                              <canvas id="${chartId}"></canvas>
+                              <canvas id="${campaignChartId}"></canvas>
                             </div>
                           </div>
                           
                           <div class="nested-group-table">
                             <h4 class="nested-group-table-title">
                               <i class="fas fa-table"></i>
-                              Детальные данные
+                              Детальные данные кампании
                             </h4>
                             <div class="table-container">
-                              <table class="data-table" id="${tableId}"></table>
+                              <table class="data-table" id="${campaignTableId}"></table>
                             </div>
                           </div>
+                          ` : ''}
                           
+                          <div class="nested-group-metrics">
+                            <h4 class="nested-group-metrics-title">
+                              <i class="fas fa-folder-tree"></i>
+                              Группы объявлений (${Object.keys(campaignData.groups || {}).length})
+                            </h4>
+                            
+                            ${Object.keys(campaignData.groups || {})
+                                .map((groupName, groupIndex) => {
+                                    const groupData = campaignData.groups[groupName];
+                                    let cleanGroupName = String(
+                                        groupName || `group_${groupIndex}`
+                                    )
+                                        .replace(/[^a-zA-Z0-9]/g, "_")
+                                        .replace(/_+/g, "_")
+                                        .replace(/^_|_$/g, "");
+
+                                    if (!cleanGroupName) {
+                                        cleanGroupName = `group_${groupIndex}`;
+                                    }
+
+                                    const groupId = `enhanced_group_${cleanBuyerName}_${cleanCampaignName}_${cleanGroupName}_${groupIndex}`;
+                                    const groupChartId = `chart_${groupId}`;
+                                    const groupTableId = `table_${groupId}`;
+
+                                    return `
+                            <div class="nested-group-enhanced" style="margin-left: 24px; margin-top: 16px;">
+                              <div class="nested-group-header-enhanced" onclick="toggleNestedGroup('${groupId}')" style="background: #059669;">
+                                <div class="nested-group-info-grid">
+                                  <div class="nested-group-main-info">
+                                    <h3>
+                                      <i class="fas fa-folder"></i>
+                                      ${escapeHtml(groupName)}
+                                    </h3>
+                                    <p>Группа объявлений • ${Object.keys(groupData.ads || {}).length} объявлений • ${groupData.groupData ? groupData.groupData.metrics.activeDays : 0} активных дней</p>
+                                  </div>
+                                  <div class="buyer-toggle-section">
+                                    <div class="buyer-stats-preview">
+                                      ${groupData.groupData ? `CR ${groupData.groupData.metrics.cr}` : 'Нет данных'}
+                                    </div>
+                                    <button class="buyer-toggle-btn collapsed" type="button">
+                                      <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div class="nested-group-content-enhanced collapsed" id="${groupId}_content">
+                                ${groupData.groupData ? `
+                                <div class="nested-group-metrics">
+                                  <h4 class="nested-group-metrics-title">
+                                    <i class="fas fa-chart-bar"></i>
+                                    Метрики группы
+                                  </h4>
+                                  <div class="nested-group-metrics-grid">
+                                    ${generateEnhancedGroupMetrics(groupData.groupData.metrics)}
+                                  </div>
+                                </div>
+                                
+                                <div class="nested-group-chart">
+                                  <h4 class="nested-group-chart-title">
+                                    <i class="fas fa-chart-area"></i>
+                                    График динамики группы
+                                  </h4>
+                                  <div class="nested-group-chart-container">
+                                    <canvas id="${groupChartId}"></canvas>
+                                  </div>
+                                </div>
+                                
+                                <div class="nested-group-table">
+                                  <h4 class="nested-group-table-title">
+                                    <i class="fas fa-table"></i>
+                                    Детальные данные группы
+                                  </h4>
+                                  <div class="table-container">
+                                    <table class="data-table" id="${groupTableId}"></table>
+                                  </div>
+                                </div>
+                                ` : ''}
+                                
+                                <div class="nested-group-metrics">
+                                  <h4 class="nested-group-metrics-title">
+                                    <i class="fas fa-rectangle-ad"></i>
+                                    Объявления (${Object.keys(groupData.ads || {}).length})
+                                  </h4>
+                                  
+                                  ${Object.keys(groupData.ads || {})
+                                      .map((adName, adIndex) => {
+                                          const adData = groupData.ads[adName];
+                                          let cleanAdName = String(
+                                              adName || `ad_${adIndex}`
+                                          )
+                                              .replace(/[^a-zA-Z0-9]/g, "_")
+                                              .replace(/_+/g, "_")
+                                              .replace(/^_|_$/g, "");
+
+                                          if (!cleanAdName) {
+                                              cleanAdName = `ad_${adIndex}`;
+                                          }
+
+                                          const adId = `enhanced_ad_${cleanBuyerName}_${cleanCampaignName}_${cleanGroupName}_${cleanAdName}_${adIndex}`;
+                                          const adChartId = `chart_${adId}`;
+                                          const adTableId = `table_${adId}`;
+
+                                          return `
+                                  <div class="nested-group-enhanced" style="margin-left: 48px; margin-top: 12px;">
+                                    <div class="nested-group-header-enhanced" onclick="toggleNestedGroup('${adId}')" style="background: #f59e0b;">
+                                      <div class="nested-group-info-grid">
+                                        <div class="nested-group-main-info">
+                                          <h3>
+                                            <i class="fas fa-rectangle-ad"></i>
+                                            ${escapeHtml(adName)}
+                                          </h3>
+                                          <p>Объявление • ${adData ? adData.metrics.activeDays : 0} активных дней</p>
+                                        </div>
+                                        <div class="buyer-toggle-section">
+                                          <div class="buyer-stats-preview">
+                                            ${adData ? `CR ${adData.metrics.cr}` : 'Нет данных'}
+                                          </div>
+                                          <button class="buyer-toggle-btn collapsed" type="button">
+                                            <i class="fas fa-chevron-right"></i>
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    
+                                    <div class="nested-group-content-enhanced collapsed" id="${adId}_content">
+                                      ${adData ? `
+                                      <div class="nested-group-metrics">
+                                        <h4 class="nested-group-metrics-title">
+                                          <i class="fas fa-chart-bar"></i>
+                                          Метрики объявления
+                                        </h4>
+                                        <div class="nested-group-metrics-grid">
+                                          ${generateEnhancedGroupMetrics(adData.metrics)}
+                                        </div>
+                                      </div>
+                                      
+                                      <div class="nested-group-chart">
+                                        <h4 class="nested-group-chart-title">
+                                          <i class="fas fa-chart-area"></i>
+                                          График динамики объявления
+                                        </h4>
+                                        <div class="nested-group-chart-container">
+                                          <canvas id="${adChartId}"></canvas>
+                                        </div>
+                                      </div>
+                                      
+                                      <div class="nested-group-table">
+                                        <h4 class="nested-group-table-title">
+                                          <i class="fas fa-table"></i>
+                                          Детальные данные объявления
+                                        </h4>
+                                        <div class="table-container">
+                                          <table class="data-table" id="${adTableId}"></table>
+                                        </div>
+                                      </div>
+                                      ` : '<p style="padding: 20px; color: #64748b;">Нет данных для объявления</p>'}
+                                    </div>
+                                  </div>
+                                `;
+                                      })
+                                      .join("")}
+                                </div>
+                              </div>
+                            </div>
+                          `;
+                                })
+                                .join("")}
+                          </div>
                         </div>
                       </div>
                     `;
@@ -2822,54 +3376,108 @@
                             }
                         })(buyerName, buyerData, buyerChartId, buyerTableId);
 
-                        // Создаем функции с замыканиями для групп
-                        Object.keys(buyerData.groups || {}).forEach(
-                            (groupName, groupIndex) => {
-                                const groupData = buyerData.groups[groupName];
+                        // Создаем функции с замыканиями для кампаний, групп и объявлений
+                        Object.keys(buyerData.campaigns || {}).forEach(
+                            (campaignName, campaignIndex) => {
+                                const campaignData = buyerData.campaigns[campaignName];
 
-                                // Такая же логика очистки как в HTML
-                                let cleanGroupName = String(
-                                    groupName || `group_${groupIndex}`
+                                let cleanCampaignName = String(
+                                    campaignName || `campaign_${campaignIndex}`
                                 )
                                     .replace(/[^a-zA-Z0-9]/g, "_")
                                     .replace(/_+/g, "_")
                                     .replace(/^_|_$/g, "");
 
-                                if (!cleanGroupName) {
-                                    cleanGroupName = `group_${groupIndex}`;
+                                if (!cleanCampaignName) {
+                                    cleanCampaignName = `campaign_${campaignIndex}`;
                                 }
 
-                                const nestedGroupId = `enhanced_group_${cleanBuyerName}_${cleanGroupName}_${groupIndex}`;
-                                const chartId = `chart_${nestedGroupId}`;
-                                const tableId = `table_${nestedGroupId}`;
+                                const campaignId = `enhanced_campaign_${cleanBuyerName}_${cleanCampaignName}_${campaignIndex}`;
+                                const campaignChartId = `chart_${campaignId}`;
+                                const campaignTableId = `table_${campaignId}`;
 
-                                console.log(
-                                    "📊 Создаем элементы для группы:",
-                                    groupName,
-                                    "байера:",
-                                    buyerName,
-                                    "ChartID:",
-                                    chartId,
-                                    "TableID:",
-                                    tableId
+                                // Создаем график и таблицу для кампании
+                                if (campaignData.campaignData) {
+                                    (function (cName, cData, cChartId, cTableId, bName) {
+                                        displaySegmentTable(cTableId, cData.data, "campaign");
+                                        displaySegmentChart(
+                                            cChartId,
+                                            article,
+                                            `${bName} → ${cName}`,
+                                            cData.data
+                                        );
+                                    })(campaignName, campaignData.campaignData, campaignChartId, campaignTableId, buyerName);
+                                }
+
+                                // Создаем функции для групп
+                                Object.keys(campaignData.groups || {}).forEach(
+                                    (groupName, groupIndex) => {
+                                        const groupData = campaignData.groups[groupName];
+
+                                        let cleanGroupName = String(
+                                            groupName || `group_${groupIndex}`
+                                        )
+                                            .replace(/[^a-zA-Z0-9]/g, "_")
+                                            .replace(/_+/g, "_")
+                                            .replace(/^_|_$/g, "");
+
+                                        if (!cleanGroupName) {
+                                            cleanGroupName = `group_${groupIndex}`;
+                                        }
+
+                                        const groupId = `enhanced_group_${cleanBuyerName}_${cleanCampaignName}_${cleanGroupName}_${groupIndex}`;
+                                        const groupChartId = `chart_${groupId}`;
+                                        const groupTableId = `table_${groupId}`;
+
+                                        // Создаем график и таблицу для группы
+                                        if (groupData.groupData) {
+                                            (function (gName, gData, gChartId, gTableId, bName, cName) {
+                                                displaySegmentTable(gTableId, gData.data, "group");
+                                                displaySegmentChart(
+                                                    gChartId,
+                                                    article,
+                                                    `${bName} → ${cName} → ${gName}`,
+                                                    gData.data
+                                                );
+                                            })(groupName, groupData.groupData, groupChartId, groupTableId, buyerName, campaignName);
+                                        }
+
+                                        // Создаем функции для объявлений
+                                        Object.keys(groupData.ads || {}).forEach(
+                                            (adName, adIndex) => {
+                                                const adData = groupData.ads[adName];
+
+                                                let cleanAdName = String(
+                                                    adName || `ad_${adIndex}`
+                                                )
+                                                    .replace(/[^a-zA-Z0-9]/g, "_")
+                                                    .replace(/_+/g, "_")
+                                                    .replace(/^_|_$/g, "");
+
+                                                if (!cleanAdName) {
+                                                    cleanAdName = `ad_${adIndex}`;
+                                                }
+
+                                                const adId = `enhanced_ad_${cleanBuyerName}_${cleanCampaignName}_${cleanGroupName}_${cleanAdName}_${adIndex}`;
+                                                const adChartId = `chart_${adId}`;
+                                                const adTableId = `table_${adId}`;
+
+                                                // Создаем график и таблицу для объявления
+                                                if (adData) {
+                                                    (function (aName, aData, aChartId, aTableId, bName, cName, gName) {
+                                                        displaySegmentTable(aTableId, aData.data, "ad");
+                                                        displaySegmentChart(
+                                                            aChartId,
+                                                            article,
+                                                            `${bName} → ${cName} → ${gName} → ${aName}`,
+                                                            aData.data
+                                                        );
+                                                    })(adName, adData, adChartId, adTableId, buyerName, campaignName, groupName);
+                                                }
+                                            }
+                                        );
+                                    }
                                 );
-
-                                // Создаем функцию с замыканием для группы
-                                (function (gName, gData, gChartId, gTableId, bName) {
-                                    console.log(
-                                        "📊 Создаем график и таблицу для группы:",
-                                        gName,
-                                        "байера:",
-                                        bName
-                                    );
-                                    displaySegmentTable(gTableId, gData.data, "group");
-                                    displaySegmentChart(
-                                        gChartId,
-                                        article,
-                                        `${bName} → ${gName}`,
-                                        gData.data
-                                    );
-                                })(groupName, groupData, chartId, tableId, buyerName);
                             }
                         );
                     });
@@ -2890,7 +3498,7 @@
         }
 
         function generateEnhancedBuyerMetrics(metrics, buyerName, buyerGroupsData) {
-            const groupsCount = Object.keys(buyerGroupsData.groups || {}).length;
+    const groupsCount = Object.keys(buyerGroupsData.campaigns || {}).length;
 
             // Собираем данные для tooltips
             const groupNames = Object.keys(buyerGroupsData.groups || {}).join('\n') || 'Нет данных';
@@ -2936,17 +3544,17 @@
           <div class="metric-subtitle">средний CR</div>
         </div>
         
-        <div class="metric-card-enhanced tooltip-container" data-tooltip="buyer-groups-${cleanBuyerName}">
+        <div class="metric-card-enhanced tooltip-container" data-tooltip="buyer-campaigns-${cleanBuyerName}">
           <div class="metric-header">
-            <div class="metric-label">Всего групп</div>
-            <div class="metric-icon"><i class="fas fa-layer-group"></i></div>
+            <div class="metric-label">Всего кампаний</div>
+            <div class="metric-icon"><i class="fas fa-tv"></i></div>
           </div>
-          <div class="metric-value">${groupsCount}</div>
-          <div class="metric-subtitle">групп объявлений</div>
-          <div class="tooltip" id="tooltip-buyer-groups-${cleanBuyerName}">
-            <button class="tooltip-close" onclick="hideTooltip('tooltip-buyer-groups-${cleanBuyerName}')">&times;</button>
-            <div class="tooltip-title">📁 Группы объявлений байера ${escapeHtml(buyerName)}:</div>
-            ${formatTooltipContent(groupNames)}
+          <div class="metric-value">${Object.keys(buyerGroupsData.campaigns || {}).length}</div>
+          <div class="metric-subtitle">кампаний</div>
+          <div class="tooltip" id="tooltip-buyer-campaigns-${cleanBuyerName}">
+            <button class="tooltip-close" onclick="hideTooltip('tooltip-buyer-campaigns-${cleanBuyerName}')">&times;</button>
+            <div class="tooltip-title">📺 Кампании байера ${escapeHtml(buyerName)}:</div>
+            ${formatTooltipContent(Object.keys(buyerGroupsData.campaigns || {}).join('\n') || 'Нет данных')}
           </div>
         </div>
         
@@ -3084,6 +3692,46 @@
                         "URL-адрес веб-сайта",
                         "Бюджет группы объявлений",
                     ]
+                    : segmentType === "campaign"
+                    ? [
+                        "Дата",
+                        "Рейтинг",
+                        "CPL (день)",
+                        "Лиды (день)",
+                        "Расход (день)",
+                        "Конверт в день",
+                        "Max CPL (ROI +20%)",
+                        "CPL с учётом сбросов",
+                        "Частота (Frequency)",
+                        "CTR (целевая страница)",
+                        "CPM",
+                        "Клики (переход)",
+                        "CPC (целевая страница)",
+                        "Среднее время воспроизведения видео",
+                        "Название рекламы",
+                        "URL-адрес веб-сайта",
+                        "Бюджет группы объявлений",
+                    ]
+                    : segmentType === "group"
+                    ? [
+                        "Дата",
+                        "Рейтинг",
+                        "CPL (день)",
+                        "Лиды (день)",
+                        "Расход (день)",
+                        "Конверт в день",
+                        "Max CPL (ROI +20%)",
+                        "CPL с учётом сбросов",
+                        "Частота (Frequency)",
+                        "CTR (целевая страница)",
+                        "CPM",
+                        "Клики (переход)",
+                        "CPC (целевая страница)",
+                        "Среднее время воспроизведения видео",
+                        "Название рекламы",
+                        "URL-адрес веб-сайта",
+                        "Бюджет группы объявлений",
+                    ]
                     : [
                         "Дата",
                         "Рейтинг",
@@ -3196,7 +3844,7 @@
                                 );
                                 break;
                         }
-                    } else {
+                    } else if (segmentType === "campaign" || segmentType === "group" || segmentType === "ad") {
                         switch (index) {
                             case 0:
                                 value = data.dates[i];
@@ -3292,7 +3940,7 @@
 
                     if (
                         (segmentType === "buyer" && index === 16) ||
-                        (segmentType === "group" && index === 15)
+                        ((segmentType === "campaign" || segmentType === "group" || segmentType === "ad") && index === 15)
                     ) {
                         html += `<td class="${className} url-cell" style="${cellStyle}${additionalStyle}">${value}</td>`;
                     } else {
