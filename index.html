@@ -991,6 +991,257 @@
         text-align: center !important;
       }
 
+      /* Calendar Metrics Styles */
+      .calendar-container {
+        overflow-x: auto;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+      }
+
+      .calendar-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        min-width: 1200px;
+      }
+
+      .calendar-table th {
+        background: #f8fafc;
+        color: #374151;
+        font-weight: 600;
+        padding: 12px 8px;
+        text-align: center;
+        border-bottom: 2px solid #e2e8f0;
+        position: sticky;
+        top: 0;
+        white-space: nowrap;
+        vertical-align: middle;
+        min-width: 120px;
+        font-size: 12px;
+      }
+
+      .calendar-table th:first-child {
+        position: sticky;
+        left: 0;
+        background: #f8fafc;
+        z-index: 10;
+        min-width: 280px;
+        text-align: left;
+        box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .calendar-table td {
+        padding: 0;
+        border: 1px solid #f1f5f9;
+        text-align: center;
+        vertical-align: middle;
+        min-width: 120px;
+      }
+
+      .calendar-table td:first-child {
+        position: sticky;
+        left: 0;
+        background: white;
+        z-index: 5;
+        min-width: 280px;
+        text-align: left;
+        padding: 10px 16px;
+        box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .calendar-table tbody tr:hover {
+        background: #f8fafc;
+      }
+
+      .calendar-table tbody tr:hover td:first-child {
+        background: #f8fafc;
+      }
+
+      .calendar-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 50px;
+      }
+
+      .calendar-toggle {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        background: #f1f5f9;
+        border: 1px solid #d1d5db;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 700;
+        color: #64748b;
+        transition: all 0.2s ease;
+        user-select: none;
+      }
+
+      .calendar-toggle:hover {
+        background: #e2e8f0;
+        color: #374151;
+      }
+
+      .calendar-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .calendar-name {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 14px;
+        line-height: 1.4;
+        margin-bottom: 2px;
+        word-wrap: break-word;
+      }
+
+      .calendar-alias {
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .calendar-cell {
+        margin: 4px;
+        padding: 8px 6px;
+        border-radius: 8px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        min-height: 60px;
+        justify-content: center;
+        transition: all 0.2s ease;
+      }
+
+      .calendar-cell:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .calendar-cpl {
+        font-weight: 700;
+        font-size: 16px;
+        color: #1e293b;
+        line-height: 1;
+      }
+
+      .calendar-mini {
+        font-size: 10px;
+        color: #64748b;
+        display: flex;
+        gap: 6px;
+        font-weight: 500;
+      }
+
+      .calendar-muted {
+        opacity: 0.5;
+      }
+
+      .calendar-muted .calendar-cpl {
+        color: #9ca3af;
+      }
+
+      .calendar-muted .calendar-mini {
+        color: #d1d5db;
+      }
+
+      /* Level styling */
+      .lvl0 .calendar-name {
+        font-size: 15px;
+        font-weight: 700;
+        color: #0f172a;
+      }
+
+      .lvl1 .calendar-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1e293b;
+      }
+
+      .lvl2 .calendar-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #334155;
+      }
+
+      .lvl3 .calendar-name {
+        font-size: 13px;
+        font-weight: 500;
+        color: #475569;
+      }
+
+      .lvl1 .calendar-row { padding-left: 24px; }
+      .lvl2 .calendar-row { padding-left: 48px; }
+      .lvl3 .calendar-row { padding-left: 72px; }
+
+      /* Status colors */
+      .calendar-good {
+        background: #dcfce7 !important;
+        border-color: #22c55e !important;
+      }
+
+      .calendar-good .calendar-cpl {
+        color: #166534;
+      }
+
+      .calendar-good .calendar-mini {
+        color: #15803d;
+      }
+
+      .calendar-warning {
+        background: #fef3c7 !important;
+        border-color: #f59e0b !important;
+      }
+
+      .calendar-warning .calendar-cpl {
+        color: #d97706;
+      }
+
+      .calendar-warning .calendar-mini {
+        color: #b45309;
+      }
+
+      .calendar-danger {
+        background: #fecaca !important;
+        border-color: #ef4444 !important;
+      }
+
+      .calendar-danger .calendar-cpl {
+        color: #dc2626;
+      }
+
+      .calendar-danger .calendar-mini {
+        color: #b91c1c;
+      }
+
+      .calendar-child {
+        display: none;
+      }
+
+      .calendar-child.visible {
+        display: table-row;
+      }
+
+      /* Level borders */
+      .lvl0 { border-left: 3px solid #3b82f6; }
+      .lvl1 { border-left: 3px solid #10b981; }
+      .lvl2 { border-left: 3px solid #8b5cf6; }
+      .lvl3 { border-left: 3px solid #f59e0b; }
+
+      .lvl0 td:first-child { background: #eff6ff; }
+      .lvl1 td:first-child { background: #ecfdf5; }
+      .lvl2 td:first-child { background: #f3e8ff; }
+      .lvl3 td:first-child { background: #fffbeb; }
+
       /* Responsive */
       @media (max-width: 1024px) {
         .sidebar {
@@ -1151,6 +1402,15 @@
           </div>
         </div>
 
+        <!-- Calendar Metrics -->
+        <div class="calendar-metrics-section card">
+          <div class="calendar-metrics-title">
+            <i class="fas fa-calendar-alt"></i>
+            Календарь метрик
+          </div>
+          <div id="calendarMetricsContainer"></div>
+        </div>
+
         <!-- Buyer-Group Hierarchy -->
         <div id="buyerGroupsContainer"></div>
       </div>
@@ -1273,6 +1533,7 @@
       window.toggleGroup = toggleGroup;
       window.toggleBuyerGroup = toggleBuyerGroup;
       window.toggleNestedGroup = toggleNestedGroup;
+      window.toggleHierarchy = toggleHierarchy;
 
       function buildChart() {
         const article = document.getElementById("articleInput").value.trim();
@@ -1427,6 +1688,254 @@
         document.getElementById("results").style.display = "block";
       }
 
+      function displayCalendarMetrics(calendarData) {
+        const container = document.getElementById('calendarMetricsContainer');
+        
+        if (!calendarData || Object.keys(calendarData).length === 0) {
+          container.innerHTML = '<div style="text-align: center; color: #64748b; padding: 40px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;"><i class="fas fa-calendar-times" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><p style="font-size: 16px; font-weight: 500; margin: 0;">Нет данных для календаря метрик</p></div>';
+          return;
+        }
+
+        // Собираем все даты
+        const allDates = [];
+        Object.values(calendarData).forEach(trackerData => {
+          trackerData.dates.forEach(date => {
+            if (!allDates.includes(date)) allDates.push(date);
+          });
+        });
+        allDates.sort((a, b) => {
+          const [dayA, monthA] = a.split('.').map(Number);
+          const [dayB, monthB] = b.split('.').map(Number);
+          return monthA - monthB || dayA - dayB;
+        });
+
+        function getCPLStatus(leads, spend) {
+          if (spend === 0 && leads === 0) return 'calendar-muted';
+          if (spend > 0 && leads === 0) return 'calendar-danger';
+          const cpl = leads > 0 ? spend / leads : 0;
+          if (cpl <= 2.0) return 'calendar-good';
+          if (cpl <= 3.0) return 'calendar-warning';
+          return 'calendar-danger';
+        }
+
+        function formatCPL(leads, spend) {
+          if (spend === 0 && leads === 0) return '—';
+          if (spend > 0 && leads === 0) return '—';
+          const cpl = leads > 0 ? spend / leads : 0;
+          return cpl > 0 ? cpl.toFixed(2) : '—';
+        }
+
+        function formatValue(value) {
+          return value > 0 ? value.toFixed(2) : '—';
+        }
+
+        let html = `
+          <div class="calendar-container">
+            <table class="calendar-table">
+              <thead>
+                <tr>
+                  <th>Кампания / Группа / Объявление</th>
+                  ${allDates.map(date => `<th>${date}</th>`).join('')}
+                </tr>
+              </thead>
+              <tbody>`;
+        
+        let rowIndex = 0;
+        Object.keys(calendarData).forEach((trackerName) => {
+          const trackerData = calendarData[trackerName];
+          const trackerId = `tracker_${rowIndex++}`;
+          
+          html += `
+            <tr class="lvl0" data-id="${trackerId}">
+              <td>
+                <div class="calendar-row">
+                  <div class="calendar-toggle" data-target="${trackerId}">▾</div>
+                  <div class="calendar-info">
+                    <div class="calendar-name">📊 ${escapeHtml(trackerName)}</div>
+                    <div class="calendar-alias">кампания трекер</div>
+                  </div>
+                </div>
+              </td>
+              ${allDates.map(date => {
+                const dateIndex = trackerData.dates.indexOf(date);
+                let totalLeads = 0, totalSpend = 0;
+                
+                if (dateIndex >= 0) {
+                  Object.values(trackerData.campaigns || {}).forEach(campaignData => {
+                    totalLeads += campaignData.leads[dateIndex] || 0;
+                    totalSpend += campaignData.spend[dateIndex] || 0;
+                  });
+                }
+                
+                return `
+                  <td>
+                    <div class="calendar-cell ${getCPLStatus(totalLeads, totalSpend)}">
+                      <div class="calendar-cpl">${formatCPL(totalLeads, totalSpend)}</div>
+                      <div class="calendar-mini">
+                        <span>л: ${totalLeads}</span>
+                        <span>р: ${formatValue(totalSpend)}</span>
+                      </div>
+                    </div>
+                  </td>
+                `;
+              }).join('')}
+            </tr>`;
+          
+          Object.keys(trackerData.campaigns || {}).forEach((campaignName) => {
+            const campaignData = trackerData.campaigns[campaignName];
+            const campaignId = `campaign_${rowIndex++}`;
+            
+            html += `
+              <tr class="lvl1 calendar-child child-of-${trackerId}" data-id="${campaignId}">
+                <td>
+                  <div class="calendar-row">
+                    <div class="calendar-toggle" data-target="${campaignId}">▾</div>
+                    <div class="calendar-info">
+                      <div class="calendar-name">📱 ${escapeHtml(campaignName)}</div>
+                      <div class="calendar-alias">кампания</div>
+                    </div>
+                  </div>
+                </td>
+                ${allDates.map(date => {
+                  const dateIndex = trackerData.dates.indexOf(date);
+                  const cpl = dateIndex >= 0 ? (campaignData.cpl[dateIndex] || 0) : 0;
+                  const leads = dateIndex >= 0 ? (campaignData.leads[dateIndex] || 0) : 0;
+                  const spend = dateIndex >= 0 ? (campaignData.spend[dateIndex] || 0) : 0;
+                  
+                  return `
+                    <td>
+                      <div class="calendar-cell ${getCPLStatus(leads, spend)}">
+                        <div class="calendar-cpl">${formatCPL(leads, spend)}</div>
+                        <div class="calendar-mini">
+                          <span>л: ${leads}</span>
+                          <span>р: ${formatValue(spend)}</span>
+                        </div>
+                      </div>
+                    </td>
+                  `;
+                }).join('')}
+              </tr>`;
+            
+            Object.keys(campaignData.groups || {}).forEach((groupName) => {
+              const groupData = campaignData.groups[groupName];
+              const groupId = `group_${rowIndex++}`;
+              
+              html += `
+                <tr class="lvl2 calendar-child child-of-${campaignId}" data-id="${groupId}">
+                  <td>
+                    <div class="calendar-row">
+                      <div class="calendar-toggle" data-target="${groupId}">▾</div>
+                      <div class="calendar-info">
+                        <div class="calendar-name">📁 ${escapeHtml(groupName)}</div>
+                        <div class="calendar-alias">группа объявлений</div>
+                      </div>
+                    </div>
+                  </td>
+                  ${allDates.map(date => {
+                    const dateIndex = trackerData.dates.indexOf(date);
+                    const cpl = dateIndex >= 0 ? (groupData.cpl[dateIndex] || 0) : 0;
+                    const leads = dateIndex >= 0 ? (groupData.leads[dateIndex] || 0) : 0;
+                    const spend = dateIndex >= 0 ? (groupData.spend[dateIndex] || 0) : 0;
+                    
+                    return `
+                      <td>
+                        <div class="calendar-cell ${getCPLStatus(leads, spend)}">
+                          <div class="calendar-cpl">${formatCPL(leads, spend)}</div>
+                          <div class="calendar-mini">
+                            <span>л: ${leads}</span>
+                            <span>р: ${formatValue(spend)}</span>
+                          </div>
+                        </div>
+                      </td>
+                    `;
+                  }).join('')}
+                </tr>`;
+              
+              Object.keys(groupData.ads || {}).forEach((adName) => {
+                const adData = groupData.ads[adName];
+                
+                html += `
+                  <tr class="lvl3 calendar-child child-of-${groupId}">
+                    <td>
+                      <div class="calendar-row">
+                        <div style="width:22px;height:22px;"></div>
+                        <div class="calendar-info">
+                          <div class="calendar-name">📄 ${escapeHtml(adName)}</div>
+                          <div class="calendar-alias">объявление</div>
+                        </div>
+                      </div>
+                    </td>
+                    ${allDates.map(date => {
+                      const dateIndex = trackerData.dates.indexOf(date);
+                      const cpl = dateIndex >= 0 ? (adData.cpl[dateIndex] || 0) : 0;
+                      const leads = dateIndex >= 0 ? (adData.leads[dateIndex] || 0) : 0;
+                      const spend = dateIndex >= 0 ? (adData.spend[dateIndex] || 0) : 0;
+                      
+                      return `
+                        <td>
+                          <div class="calendar-cell ${getCPLStatus(leads, spend)}">
+                            <div class="calendar-cpl">${formatCPL(leads, spend)}</div>
+                            <div class="calendar-mini">
+                              <span>л: ${leads}</span>
+                              <span>р: ${formatValue(spend)}</span>
+                            </div>
+                          </div>
+                        </td>
+                      `;
+                    }).join('')}
+                  </tr>`;
+              });
+            });
+          });
+        });
+        
+        html += `</tbody></table></div>`;
+        container.innerHTML = html;
+        
+        setTimeout(() => {
+          setupCalendarToggles();
+        }, 50);
+      }
+
+      function setupCalendarToggles() {
+        const toggles = document.querySelectorAll('.calendar-toggle');
+        
+        function setRowVisibility(parentId, visible) {
+          document.querySelectorAll(`.child-of-${parentId}`).forEach(row => {
+            if (visible) {
+              row.classList.add('visible');
+            } else {
+              row.classList.remove('visible');
+              const nestedId = row.dataset.id;
+              if (nestedId) {
+                // Каскадное сворачивание всех подуровней
+                setRowVisibility(nestedId, false);
+                const nestedToggle = document.querySelector(`.calendar-toggle[data-target="${nestedId}"]`);
+                if (nestedToggle) nestedToggle.textContent = '▸';
+              }
+            }
+          });
+        }
+        
+        toggles.forEach(toggle => {
+          toggle.addEventListener('click', () => {
+            const targetId = toggle.dataset.target;
+            const firstChild = document.querySelector(`.child-of-${targetId}`);
+            const willOpen = firstChild && !firstChild.classList.contains('visible');
+            
+            setRowVisibility(targetId, willOpen);
+            toggle.textContent = willOpen ? '▾' : '▸';
+          });
+        });
+        
+        // По умолчанию сворачиваем глубокие уровни
+        document.querySelectorAll('.lvl1 .calendar-toggle, .lvl2 .calendar-toggle').forEach(toggle => {
+          const targetId = toggle.dataset.target;
+          setRowVisibility(targetId, false);
+          toggle.textContent = '▸';
+        });
+      }
+
       function displayResults(data) {
         console.log("📊 Отображаем результаты:", data);
 
@@ -1434,6 +1943,7 @@
         displayGeneralMetrics(data.generalMetrics);
         displayGeneralChart(data.article, data.generalData);
         displayGeneralTable(data.generalData);
+        displayCalendarMetrics(data.calendarData || {});
         displayBuyerGroups(data.article, data.buyerGroupsData || {});
 
         showResults();
