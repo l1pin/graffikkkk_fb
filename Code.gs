@@ -905,16 +905,16 @@ function buildChartForArticle(article, periodStart, periodEnd) {
         const fbDataMapByGroup = {};
 
         // НОВАЯ СТРУКТУРА: Байер → Кампания
-const resultMapByBuyerCampaign = {};
-const fbDataMapByBuyerCampaign = {};
+        const resultMapByBuyerCampaign = {};
+        const fbDataMapByBuyerCampaign = {};
 
-// НОВАЯ СТРУКТУРА: Байер → Кампания → Группа
-const resultMapByBuyerCampaignGroup = {};
-const fbDataMapByBuyerCampaignGroup = {};
+        // НОВАЯ СТРУКТУРА: Байер → Кампания → Группа
+        const resultMapByBuyerCampaignGroup = {};
+        const fbDataMapByBuyerCampaignGroup = {};
 
-// НОВАЯ СТРУКТУРА: Байер → Группа → Объявление
-const resultMapByBuyerGroupAd = {};
-const fbDataMapByBuyerGroupAd = {};
+        // НОВАЯ СТРУКТУРА: Байер → Группа → Объявление
+        const resultMapByBuyerGroupAd = {};
+        const fbDataMapByBuyerGroupAd = {};
 
         // Вспомогательные структуры
         const groupsByDate = {};
@@ -2189,12 +2189,12 @@ const fbDataMapByBuyerGroupAd = {};
             "buyers"
         );
         console.log("🎯 Final structure overview:");
-Object.keys(buyerGroupsData).forEach((buyer) => {
-    console.log(
-        `  👤 ${buyer}: ${Object.keys(buyerGroupsData[buyer].campaigns || {}).length
-        } campaigns`
-    );
-});
+        Object.keys(buyerGroupsData).forEach((buyer) => {
+            console.log(
+                `  👤 ${buyer}: ${Object.keys(buyerGroupsData[buyer].campaigns || {}).length
+                } campaigns`
+            );
+        });
 
         // Общие метрики
         const crValue =
