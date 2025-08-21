@@ -273,7 +273,7 @@ function openAnalyticsWebApp() {
   try {
     // URL вашего веб-приложения (замените на ваш реальный URL после развертывания)
     const webAppUrl =
-      "https://script.google.com/macros/s/AKfycbw2lcX0LRLienhSdYxp5d6cFQvaJ958Zlmi8qTyspP9RVPtwV17L9JEs3haYRjKPWNX/exec";
+      "https://script.google.com/macros/s/AKfycbyjaBc4RGvTw7iddNanPpHQIqXHHo-sCa3JuNoMx6S1iBU4nC0MjdRUSXg8hzoWFdz_/exec";
 
     // Создаем HTML для открытия в новой вкладке
     const html = `
@@ -2089,10 +2089,160 @@ function buildChartForArticle(article, periodStart, periodEnd) {
     console.log("📊 Total unique videos found:", globalVideos.size);
     console.log("👥 Buyers with groups:", Object.keys(buyerGroupsData));
 
+    // Создаем структуру календаря метрик
+    console.log("📅 Создаем структуру календаря метрик...");
+    const calendarData = {};
+    
+    allRows.forEach((row) => {
+      const trackerName = String(row.campaign_name_tracker || "").trim();
+      const campaignName = String(row.campaign_name || "").trim();
+      const groupName = String(row.adv_group_name || "").trim();
+      const adName = String(row.adv_name || "").trim();
+      const dateObj = new Date(row.adv_date);
+      
+      if (isNaN(dateObj.getTime()) || !trackerName.includes(article)) return;
+      
+      const dateStr = Utilities.formatDate(dateObj, "Europe/Kiev", "dd.MM");
+      const leads = Number(row.valid) || 0;
+      const spend = Number(row.cost) || 0;
+      const cpl = leads > 0 ? spend / leads : 0;
+      
+      // Создаем структуру трекера
+      if (!calendarData[trackerName]) {
+        calendarData[trackerName] = {
+          dates: [],
+          campaigns: {}
+        };
+      }
+      
+      // Добавляем дату если её нет
+      if (!calendarData[trackerName].dates.includes(dateStr)) {
+        calendarData[trackerName].dates.push(dateStr);
+      }
+      
+      // Создаем структуру кампании
+      if (campaignName && !calendarData[trackerName].campaigns[campaignName]) {
+        calendarData[trackerName].campaigns[campaignName] = {
+          dates: [],
+          cpl: [],
+          leads: [],
+          spend: [],
+          groups: {}
+        };
+      }
+      
+      // Создаем структуру группы
+      if (campaignName && groupName && !calendarData[trackerName].campaigns[campaignName].groups[groupName]) {
+        calendarData[trackerName].campaigns[campaignName].groups[groupName] = {
+          dates: [],
+          cpl: [],
+          leads: [],
+          spend: [],
+          ads: {}
+        };
+      }
+      
+      // Создаем структуру объявления
+      if (campaignName && groupName && adName && !calendarData[trackerName].campaigns[campaignName].groups[groupName].ads[adName]) {
+        calendarData[trackerName].campaigns[campaignName].groups[groupName].ads[adName] = {
+          dates: [],
+          cpl: [],
+          leads: [],
+          spend: []
+        };
+      }
+    });
+    
+    // Заполняем данные по датам
+    Object.keys(calendarData).forEach(trackerName => {
+      const trackerData = calendarData[trackerName];
+      trackerData.dates.sort((a, b) => {
+        const [dayA, monthA] = a.split('.').map(Number);
+        const [dayB, monthB] = b.split('.').map(Number);
+        return monthA - monthB || dayA - dayB;
+      });
+      
+      Object.keys(trackerData.campaigns).forEach(campaignName => {
+        const campaignData = trackerData.campaigns[campaignName];
+        
+        // Инициализируем массивы для всех дат
+        trackerData.dates.forEach(date => {
+          campaignData.dates.push(date);
+          campaignData.cpl.push(0);
+          campaignData.leads.push(0);
+          campaignData.spend.push(0);
+        });
+        
+        Object.keys(campaignData.groups).forEach(groupName => {
+          const groupData = campaignData.groups[groupName];
+          
+          trackerData.dates.forEach(date => {
+            groupData.dates.push(date);
+            groupData.cpl.push(0);
+            groupData.leads.push(0);
+            groupData.spend.push(0);
+          });
+          
+          Object.keys(groupData.ads).forEach(adName => {
+            const adData = groupData.ads[adName];
+            
+            trackerData.dates.forEach(date => {
+              adData.dates.push(date);
+              adData.cpl.push(0);
+              adData.leads.push(0);
+              adData.spend.push(0);
+            });
+          });
+        });
+      });
+    });
+    
+    // Заполняем фактические данные
+    allRows.forEach((row) => {
+      const trackerName = String(row.campaign_name_tracker || "").trim();
+      const campaignName = String(row.campaign_name || "").trim();
+      const groupName = String(row.adv_group_name || "").trim();
+      const adName = String(row.adv_name || "").trim();
+      const dateObj = new Date(row.adv_date);
+      
+      if (isNaN(dateObj.getTime()) || !trackerName.includes(article)) return;
+      
+      const dateStr = Utilities.formatDate(dateObj, "Europe/Kiev", "dd.MM");
+      const leads = Number(row.valid) || 0;
+      const spend = Number(row.cost) || 0;
+      const cpl = leads > 0 ? spend / leads : 0;
+      
+      if (calendarData[trackerName]) {
+        const dateIndex = calendarData[trackerName].dates.indexOf(dateStr);
+        
+        if (dateIndex >= 0 && campaignName && calendarData[trackerName].campaigns[campaignName]) {
+          const campaignData = calendarData[trackerName].campaigns[campaignName];
+          campaignData.cpl[dateIndex] += cpl;
+          campaignData.leads[dateIndex] += leads;
+          campaignData.spend[dateIndex] += spend;
+          
+          if (groupName && campaignData.groups[groupName]) {
+            const groupData = campaignData.groups[groupName];
+            groupData.cpl[dateIndex] += cpl;
+            groupData.leads[dateIndex] += leads;
+            groupData.spend[dateIndex] += spend;
+            
+            if (adName && groupData.ads[adName]) {
+              const adData = groupData.ads[adName];
+              adData.cpl[dateIndex] += cpl;
+              adData.leads[dateIndex] += leads;
+              adData.spend[dateIndex] += spend;
+            }
+          }
+        }
+      }
+    });
+
     const finalResult = {
       article: article,
       generalData: generalData,
-      buyerGroupsData: buyerGroupsData, // ИСПРАВЛЕННАЯ ДЕРЕВОВИДНАЯ СТРУКТУРА с полными метриками
+      buyerGroupsData: buyerGroupsData,
+      calendarData: calendarData,
       generalMetrics: {
         activeDays: activeDays,
         daysInNorm: daysInNorm,
