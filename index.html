@@ -83,27 +83,27 @@
 
         /* Main Content */
         .main-content {
-    flex: 1;
-    margin-left: 280px;
-    padding: 24px 32px;
-    width: calc(100% - 280px);
-    overflow-x: hidden;
-    min-height: 100vh;
-}
+            flex: 1;
+            margin-left: 280px;
+            padding: 24px 32px;
+            width: calc(100% - 280px);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
 
         /* Common Card Style */
         .card {
-    background: white;
-    border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 24px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    border: 1px solid #e2e8f0;
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-    min-height: fit-content;
-}
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e2e8f0;
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+            min-height: fit-content;
+        }
 
         /* Header */
         .header {
@@ -692,21 +692,21 @@
 
         /* Buyer Content Area */
         .buyer-content-area {
-    background: #f8fafc;
-    border-radius: 12px;
-    margin-bottom: 32px;
-    overflow: visible;
-    max-height: none;
-    opacity: 1;
-    transition: opacity 0.3s ease;
-}
+            background: #f8fafc;
+            border-radius: 12px;
+            margin-bottom: 32px;
+            overflow: visible;
+            max-height: none;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
 
         .buyer-content-area.collapsed {
-    display: none;
-    opacity: 0;
-    margin-bottom: 0;
-    padding: 0;
-}
+            display: none;
+            opacity: 0;
+            margin-bottom: 0;
+            padding: 0;
+        }
 
         /* Buyer Sections */
         .buyer-metrics-section,
@@ -787,16 +787,16 @@
         }
 
         .nested-group-content-enhanced {
-    max-height: none;
-    opacity: 1;
-    overflow: visible;
-    transition: opacity 0.3s ease;
-}
+            max-height: none;
+            opacity: 1;
+            overflow: visible;
+            transition: opacity 0.3s ease;
+        }
 
         .nested-group-content-enhanced.collapsed {
-    display: none;
-    opacity: 0;
-}
+            display: none;
+            opacity: 0;
+        }
 
         .nested-group-metrics,
         .nested-group-chart,
@@ -1417,10 +1417,21 @@
             opacity: 0.8;
         }
 
-        .nav-tree-item.level-0 .nav-icon { color: #60a5fa; }
-        .nav-tree-item.level-1 .nav-icon { color: #a78bfa; }
-        .nav-tree-item.level-2 .nav-icon { color: #34d399; }
-        .nav-tree-item.level-3 .nav-icon { color: #fbbf24; }
+        .nav-tree-item.level-0 .nav-icon {
+            color: #60a5fa;
+        }
+
+        .nav-tree-item.level-1 .nav-icon {
+            color: #a78bfa;
+        }
+
+        .nav-tree-item.level-2 .nav-icon {
+            color: #34d399;
+        }
+
+        .nav-tree-item.level-3 .nav-icon {
+            color: #fbbf24;
+        }
 
         /* Responsive */
         @media (max-width: 1024px) {
@@ -2145,7 +2156,7 @@
             const tree = document.getElementById('navigationTree');
             const arrow = document.getElementById('navArrow');
             const navItem = document.querySelector('.nav-navigation');
-            
+
             if (tree.classList.contains('collapsed')) {
                 tree.classList.remove('collapsed');
                 navItem.classList.add('expanded');
@@ -2157,7 +2168,7 @@
 
         function buildNavigationTree(buyerGroupsData) {
             const container = document.getElementById('navigationTree');
-            
+
             if (!buyerGroupsData || Object.keys(buyerGroupsData).length === 0) {
                 container.innerHTML = `
                     <div class="nav-placeholder">
@@ -2183,14 +2194,14 @@
             }
 
             let html = '';
-            
+
             Object.keys(buyerGroupsData).forEach((buyerName, buyerIndex) => {
                 const buyerData = buyerGroupsData[buyerName];
                 const cleanBuyerName = cleanName(buyerName, buyerIndex, 'buyer');
                 const buyerId = `enhanced_buyer_${cleanBuyerName}`;
-                
+
                 console.log('🔍 NAV: Creating buyer link:', buyerName, '→', buyerId);
-                
+
                 html += `
                     <div class="nav-tree-item level-0" onclick="navigateToElement('${buyerId}')">
                         <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('buyer_${buyerIndex}')">▸</span>
@@ -2199,14 +2210,14 @@
                     </div>
                     <div class="nav-tree-children collapsed" id="buyer_${buyerIndex}_children">
                 `;
-                
+
                 Object.keys(buyerData.campaigns || {}).forEach((campaignName, campaignIndex) => {
                     const campaignData = buyerData.campaigns[campaignName];
                     const cleanCampaignName = cleanName(campaignName, campaignIndex, 'campaign');
                     const campaignId = `enhanced_campaign_${cleanBuyerName}_${cleanCampaignName}_${campaignIndex}`;
-                    
+
                     console.log('🔍 NAV: Creating campaign link:', campaignName, '→', campaignId);
-                    
+
                     html += `
                         <div class="nav-tree-item level-1" onclick="navigateToElement('${campaignId}')">
                             <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('campaign_${buyerIndex}_${campaignIndex}')">▸</span>
@@ -2215,14 +2226,14 @@
                         </div>
                         <div class="nav-tree-children collapsed" id="campaign_${buyerIndex}_${campaignIndex}_children">
                     `;
-                    
+
                     Object.keys(campaignData.groups || {}).forEach((groupName, groupIndex) => {
                         const groupData = campaignData.groups[groupName];
                         const cleanGroupName = cleanName(groupName, groupIndex, 'group');
                         const groupId = `enhanced_group_${cleanBuyerName}_${cleanCampaignName}_${cleanGroupName}_${groupIndex}`;
-                        
+
                         console.log('🔍 NAV: Creating group link:', groupName, '→', groupId);
-                        
+
                         html += `
                             <div class="nav-tree-item level-2" onclick="navigateToElement('${groupId}')">
                                 <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('group_${buyerIndex}_${campaignIndex}_${groupIndex}')">▸</span>
@@ -2231,13 +2242,13 @@
                             </div>
                             <div class="nav-tree-children collapsed" id="group_${buyerIndex}_${campaignIndex}_${groupIndex}_children">
                         `;
-                        
+
                         Object.keys(groupData.ads || {}).forEach((adName, adIndex) => {
                             const cleanAdName = cleanName(adName, adIndex, 'ad');
                             const adId = `enhanced_ad_${cleanBuyerName}_${cleanCampaignName}_${cleanGroupName}_${cleanAdName}_${adIndex}`;
-                            
+
                             console.log('🔍 NAV: Creating ad link:', adName, '→', adId);
-                            
+
                             html += `
                                 <div class="nav-tree-item level-3" onclick="navigateToElement('${adId}')">
                                     <i class="fas fa-rectangle-ad nav-icon"></i>
@@ -2245,23 +2256,23 @@
                                 </div>
                             `;
                         });
-                        
+
                         html += '</div>';
                     });
-                    
+
                     html += '</div>';
                 });
-                
+
                 html += '</div>';
             });
-            
+
             container.innerHTML = html;
         }
 
         function toggleNavTree(itemId) {
             const children = document.getElementById(itemId + '_children');
             const toggle = event.currentTarget;
-            
+
             if (children.classList.contains('collapsed')) {
                 children.classList.remove('collapsed');
                 toggle.textContent = '▾';
@@ -2273,7 +2284,7 @@
 
         function navigateToElement(elementId) {
             console.log('🚀 SMART NAVIGATION for:', elementId);
-            
+
             // Найдем целевой элемент сразу
             const targetElement = findTargetElement(elementId);
             if (!targetElement) {
@@ -2287,12 +2298,12 @@
             // Прокручиваем к элементу
             setTimeout(() => {
                 console.log('📍 SCROLLING to target');
-                targetElement.scrollIntoView({ 
-                    behavior: 'smooth', 
+                targetElement.scrollIntoView({
+                    behavior: 'smooth',
                     block: 'center',
                     inline: 'nearest'
                 });
-                
+
                 setTimeout(() => {
                     highlightElement(targetElement);
                 }, 300);
@@ -2310,11 +2321,11 @@
 
         function expandToTarget(targetElement, elementId) {
             console.log('🔓 EXPANDING PATH to:', elementId);
-            
+
             // Находим всех родителей, которые нужно раскрыть
             let currentElement = targetElement;
             const elementsToExpand = [];
-            
+
             while (currentElement) {
                 // Ищем родительский content элемент
                 const parentContent = currentElement.closest('.buyer-content-area, .nested-group-content-enhanced');
@@ -2329,10 +2340,10 @@
                         });
                     }
                 }
-                
+
                 // Переходим к следующему родителю
                 currentElement = parentContent ? parentContent.parentElement : null;
-                
+
                 // Защита от бесконечного цикла
                 if (elementsToExpand.length > 10) break;
             }
@@ -2364,7 +2375,7 @@
             element.style.transition = 'box-shadow 0.3s ease';
             element.style.border = '2px solid #60a5fa';
             element.style.borderRadius = '12px';
-            
+
             // Убираем подсветку через 3 секунды
             setTimeout(() => {
                 element.style.boxShadow = '';
@@ -2993,11 +3004,11 @@
                       ${escapeHtml(buyerName)}
                     </h2>
                     <p>Медиабайер • ${groupsCount} ${groupsCount === 1
-    ? "кампания"
-    : groupsCount < 5
-        ? "кампании"
-        : "кампаний"
-}</p>
+                            ? "кампания"
+                            : groupsCount < 5
+                                ? "кампании"
+                                : "кампаний"
+                        }</p>
                   </div>
                   <div class="buyer-toggle-section">
                     ${buyerData.buyerData
@@ -3144,24 +3155,24 @@
                             </h4>
                             
                             ${Object.keys(campaignData.groups || {})
-                                .map((groupName, groupIndex) => {
-                                    const groupData = campaignData.groups[groupName];
-                                    let cleanGroupName = String(
-                                        groupName || `group_${groupIndex}`
-                                    )
-                                        .replace(/[^a-zA-Z0-9]/g, "_")
-                                        .replace(/_+/g, "_")
-                                        .replace(/^_|_$/g, "");
+                                        .map((groupName, groupIndex) => {
+                                            const groupData = campaignData.groups[groupName];
+                                            let cleanGroupName = String(
+                                                groupName || `group_${groupIndex}`
+                                            )
+                                                .replace(/[^a-zA-Z0-9]/g, "_")
+                                                .replace(/_+/g, "_")
+                                                .replace(/^_|_$/g, "");
 
-                                    if (!cleanGroupName) {
-                                        cleanGroupName = `group_${groupIndex}`;
-                                    }
+                                            if (!cleanGroupName) {
+                                                cleanGroupName = `group_${groupIndex}`;
+                                            }
 
-                                    const groupId = `enhanced_group_${cleanBuyerName}_${cleanCampaignName}_${cleanGroupName}_${groupIndex}`;
-                                    const groupChartId = `chart_${groupId}`;
-                                    const groupTableId = `table_${groupId}`;
+                                            const groupId = `enhanced_group_${cleanBuyerName}_${cleanCampaignName}_${cleanGroupName}_${groupIndex}`;
+                                            const groupChartId = `chart_${groupId}`;
+                                            const groupTableId = `table_${groupId}`;
 
-                                    return `
+                                            return `
                             <div class="nested-group-enhanced" style="margin-left: 24px; margin-top: 16px;">
                               <div class="nested-group-header-enhanced" onclick="toggleNestedGroup('${groupId}')" style="background: #059669;">
                                 <div class="nested-group-info-grid">
@@ -3223,24 +3234,24 @@
                                   </h4>
                                   
                                   ${Object.keys(groupData.ads || {})
-                                      .map((adName, adIndex) => {
-                                          const adData = groupData.ads[adName];
-                                          let cleanAdName = String(
-                                              adName || `ad_${adIndex}`
-                                          )
-                                              .replace(/[^a-zA-Z0-9]/g, "_")
-                                              .replace(/_+/g, "_")
-                                              .replace(/^_|_$/g, "");
+                                                    .map((adName, adIndex) => {
+                                                        const adData = groupData.ads[adName];
+                                                        let cleanAdName = String(
+                                                            adName || `ad_${adIndex}`
+                                                        )
+                                                            .replace(/[^a-zA-Z0-9]/g, "_")
+                                                            .replace(/_+/g, "_")
+                                                            .replace(/^_|_$/g, "");
 
-                                          if (!cleanAdName) {
-                                              cleanAdName = `ad_${adIndex}`;
-                                          }
+                                                        if (!cleanAdName) {
+                                                            cleanAdName = `ad_${adIndex}`;
+                                                        }
 
-                                          const adId = `enhanced_ad_${cleanBuyerName}_${cleanCampaignName}_${cleanGroupName}_${cleanAdName}_${adIndex}`;
-                                          const adChartId = `chart_${adId}`;
-                                          const adTableId = `table_${adId}`;
+                                                        const adId = `enhanced_ad_${cleanBuyerName}_${cleanCampaignName}_${cleanGroupName}_${cleanAdName}_${adIndex}`;
+                                                        const adChartId = `chart_${adId}`;
+                                                        const adTableId = `table_${adId}`;
 
-                                          return `
+                                                        return `
                                   <div class="nested-group-enhanced" style="margin-left: 48px; margin-top: 12px;">
                                     <div class="nested-group-header-enhanced" onclick="toggleNestedGroup('${adId}')" style="background: #f59e0b;">
                                       <div class="nested-group-info-grid">
@@ -3297,14 +3308,14 @@
                                     </div>
                                   </div>
                                 `;
-                                      })
-                                      .join("")}
+                                                    })
+                                                    .join("")}
                                 </div>
                               </div>
                             </div>
                           `;
-                                })
-                                .join("")}
+                                        })
+                                        .join("")}
                           </div>
                         </div>
                       </div>
@@ -3498,7 +3509,7 @@
         }
 
         function generateEnhancedBuyerMetrics(metrics, buyerName, buyerGroupsData) {
-    const groupsCount = Object.keys(buyerGroupsData.campaigns || {}).length;
+            const groupsCount = Object.keys(buyerGroupsData.campaigns || {}).length;
 
             // Собираем данные для tooltips
             const groupNames = Object.keys(buyerGroupsData.groups || {}).join('\n') || 'Нет данных';
@@ -3693,64 +3704,64 @@
                         "Бюджет группы объявлений",
                     ]
                     : segmentType === "campaign"
-                    ? [
-                        "Дата",
-                        "Рейтинг",
-                        "CPL (день)",
-                        "Лиды (день)",
-                        "Расход (день)",
-                        "Конверт в день",
-                        "Max CPL (ROI +20%)",
-                        "CPL с учётом сбросов",
-                        "Частота (Frequency)",
-                        "CTR (целевая страница)",
-                        "CPM",
-                        "Клики (переход)",
-                        "CPC (целевая страница)",
-                        "Среднее время воспроизведения видео",
-                        "Название рекламы",
-                        "URL-адрес веб-сайта",
-                        "Бюджет группы объявлений",
-                    ]
-                    : segmentType === "group"
-                    ? [
-                        "Дата",
-                        "Рейтинг",
-                        "CPL (день)",
-                        "Лиды (день)",
-                        "Расход (день)",
-                        "Конверт в день",
-                        "Max CPL (ROI +20%)",
-                        "CPL с учётом сбросов",
-                        "Частота (Frequency)",
-                        "CTR (целевая страница)",
-                        "CPM",
-                        "Клики (переход)",
-                        "CPC (целевая страница)",
-                        "Среднее время воспроизведения видео",
-                        "Название рекламы",
-                        "URL-адрес веб-сайта",
-                        "Бюджет группы объявлений",
-                    ]
-                    : [
-                        "Дата",
-                        "Рейтинг",
-                        "CPL (день)",
-                        "Лиды (день)",
-                        "Расход (день)",
-                        "Конверт в день",
-                        "Max CPL (ROI +20%)",
-                        "CPL с учётом сбросов",
-                        "Частота (Frequency)",
-                        "CTR (целевая страница)",
-                        "CPM",
-                        "Клики (переход)",
-                        "CPC (целевая страница)",
-                        "Среднее время воспроизведения видео",
-                        "Название рекламы",
-                        "URL-адрес веб-сайта",
-                        "Бюджет группы объявлений",
-                    ];
+                        ? [
+                            "Дата",
+                            "Рейтинг",
+                            "CPL (день)",
+                            "Лиды (день)",
+                            "Расход (день)",
+                            "Конверт в день",
+                            "Max CPL (ROI +20%)",
+                            "CPL с учётом сбросов",
+                            "Частота (Frequency)",
+                            "CTR (целевая страница)",
+                            "CPM",
+                            "Клики (переход)",
+                            "CPC (целевая страница)",
+                            "Среднее время воспроизведения видео",
+                            "Название рекламы",
+                            "URL-адрес веб-сайта",
+                            "Бюджет группы объявлений",
+                        ]
+                        : segmentType === "group"
+                            ? [
+                                "Дата",
+                                "Рейтинг",
+                                "CPL (день)",
+                                "Лиды (день)",
+                                "Расход (день)",
+                                "Конверт в день",
+                                "Max CPL (ROI +20%)",
+                                "CPL с учётом сбросов",
+                                "Частота (Frequency)",
+                                "CTR (целевая страница)",
+                                "CPM",
+                                "Клики (переход)",
+                                "CPC (целевая страница)",
+                                "Среднее время воспроизведения видео",
+                                "Название рекламы",
+                                "URL-адрес веб-сайта",
+                                "Бюджет группы объявлений",
+                            ]
+                            : [
+                                "Дата",
+                                "Рейтинг",
+                                "CPL (день)",
+                                "Лиды (день)",
+                                "Расход (день)",
+                                "Конверт в день",
+                                "Max CPL (ROI +20%)",
+                                "CPL с учётом сбросов",
+                                "Частота (Frequency)",
+                                "CTR (целевая страница)",
+                                "CPM",
+                                "Клики (переход)",
+                                "CPC (целевая страница)",
+                                "Среднее время воспроизведения видео",
+                                "Название рекламы",
+                                "URL-адрес веб-сайта",
+                                "Бюджет группы объявлений",
+                            ];
 
             let html = "<tbody>";
 
