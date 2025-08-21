@@ -904,9 +904,17 @@ function buildChartForArticle(article, periodStart, periodEnd) {
         const resultMapByGroup = {};
         const fbDataMapByGroup = {};
 
-        // НОВАЯ СТРУКТУРА: Байер → Группа объявлений
-        const resultMapByBuyerGroup = {};
-        const fbDataMapByBuyerGroup = {};
+        // НОВАЯ СТРУКТУРА: Байер → Кампания
+const resultMapByBuyerCampaign = {};
+const fbDataMapByBuyerCampaign = {};
+
+// НОВАЯ СТРУКТУРА: Байер → Кампания → Группа
+const resultMapByBuyerCampaignGroup = {};
+const fbDataMapByBuyerCampaignGroup = {};
+
+// НОВАЯ СТРУКТУРА: Байер → Группа → Объявление
+const resultMapByBuyerGroupAd = {};
+const fbDataMapByBuyerGroupAd = {};
 
         // Вспомогательные структуры
         const groupsByDate = {};
@@ -1016,23 +1024,51 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     groupsByDate[dateStr].push(groupName);
                 }
 
-                // НОВАЯ СТРУКТУРА: Байер → Группа объявлений
-                if (buyerInfo.buyer && groupName) {
-                    const buyerGroupKey = `${buyerInfo.buyer}:::${groupName}`;
-                    if (!resultMapByBuyerGroup[buyerGroupKey])
-                        resultMapByBuyerGroup[buyerGroupKey] = {};
-                    if (!resultMapByBuyerGroup[buyerGroupKey][dateStr])
-                        resultMapByBuyerGroup[buyerGroupKey][dateStr] = {
+                // Байер → Кампания
+                if (buyerInfo.buyer && campaignName) {
+                    const buyerCampaignKey = `${buyerInfo.buyer}:::${campaignName}`;
+                    if (!resultMapByBuyerCampaign[buyerCampaignKey])
+                        resultMapByBuyerCampaign[buyerCampaignKey] = {};
+                    if (!resultMapByBuyerCampaign[buyerCampaignKey][dateStr])
+                        resultMapByBuyerCampaign[buyerCampaignKey][dateStr] = {
                             leads: 0,
                             spend: 0,
                         };
-                    resultMapByBuyerGroup[buyerGroupKey][dateStr].leads += leads;
-                    resultMapByBuyerGroup[buyerGroupKey][dateStr].spend += spend;
+                    resultMapByBuyerCampaign[buyerCampaignKey][dateStr].leads += leads;
+                    resultMapByBuyerCampaign[buyerCampaignKey][dateStr].spend += spend;
+                }
+
+                // Байер → Кампания → Группа
+                if (buyerInfo.buyer && campaignName && groupName) {
+                    const buyerCampaignGroupKey = `${buyerInfo.buyer}:::${campaignName}:::${groupName}`;
+                    if (!resultMapByBuyerCampaignGroup[buyerCampaignGroupKey])
+                        resultMapByBuyerCampaignGroup[buyerCampaignGroupKey] = {};
+                    if (!resultMapByBuyerCampaignGroup[buyerCampaignGroupKey][dateStr])
+                        resultMapByBuyerCampaignGroup[buyerCampaignGroupKey][dateStr] = {
+                            leads: 0,
+                            spend: 0,
+                        };
+                    resultMapByBuyerCampaignGroup[buyerCampaignGroupKey][dateStr].leads += leads;
+                    resultMapByBuyerCampaignGroup[buyerCampaignGroupKey][dateStr].spend += spend;
 
                     // Отслеживаем группы для каждого байера
                     if (!buyerGroupsMap[buyerInfo.buyer])
                         buyerGroupsMap[buyerInfo.buyer] = new Set();
                     buyerGroupsMap[buyerInfo.buyer].add(groupName);
+                }
+
+                // Байер → Группа → Объявление
+                if (buyerInfo.buyer && groupName && advName) {
+                    const buyerGroupAdKey = `${buyerInfo.buyer}:::${groupName}:::${advName}`;
+                    if (!resultMapByBuyerGroupAd[buyerGroupAdKey])
+                        resultMapByBuyerGroupAd[buyerGroupAdKey] = {};
+                    if (!resultMapByBuyerGroupAd[buyerGroupAdKey][dateStr])
+                        resultMapByBuyerGroupAd[buyerGroupAdKey][dateStr] = {
+                            leads: 0,
+                            spend: 0,
+                        };
+                    resultMapByBuyerGroupAd[buyerGroupAdKey][dateStr].leads += leads;
+                    resultMapByBuyerGroupAd[buyerGroupAdKey][dateStr].spend += spend;
                 }
 
                 // Учитываем день для CR только если есть данные о кликах
@@ -1120,12 +1156,28 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     addFacebookMetrics(fbDataMapByGroup[groupName], dateStr);
                 }
 
-                // БАЙЕР → ГРУППА ОБЪЯВЛЕНИЙ
-                if (buyerInfo.buyer && groupName) {
-                    const buyerGroupKey = `${buyerInfo.buyer}:::${groupName}`;
-                    if (!fbDataMapByBuyerGroup[buyerGroupKey])
-                        fbDataMapByBuyerGroup[buyerGroupKey] = {};
-                    addFacebookMetrics(fbDataMapByBuyerGroup[buyerGroupKey], dateStr);
+                // БАЙЕР → КАМПАНИЯ
+                if (buyerInfo.buyer && campaignName) {
+                    const buyerCampaignKey = `${buyerInfo.buyer}:::${campaignName}`;
+                    if (!fbDataMapByBuyerCampaign[buyerCampaignKey])
+                        fbDataMapByBuyerCampaign[buyerCampaignKey] = {};
+                    addFacebookMetrics(fbDataMapByBuyerCampaign[buyerCampaignKey], dateStr);
+                }
+
+                // БАЙЕР → КАМПАНИЯ → ГРУППА
+                if (buyerInfo.buyer && campaignName && groupName) {
+                    const buyerCampaignGroupKey = `${buyerInfo.buyer}:::${campaignName}:::${groupName}`;
+                    if (!fbDataMapByBuyerCampaignGroup[buyerCampaignGroupKey])
+                        fbDataMapByBuyerCampaignGroup[buyerCampaignGroupKey] = {};
+                    addFacebookMetrics(fbDataMapByBuyerCampaignGroup[buyerCampaignGroupKey], dateStr);
+                }
+
+                // БАЙЕР → ГРУППА → ОБЪЯВЛЕНИЕ
+                if (buyerInfo.buyer && groupName && advName) {
+                    const buyerGroupAdKey = `${buyerInfo.buyer}:::${groupName}:::${advName}`;
+                    if (!fbDataMapByBuyerGroupAd[buyerGroupAdKey])
+                        fbDataMapByBuyerGroupAd[buyerGroupAdKey] = {};
+                    addFacebookMetrics(fbDataMapByBuyerGroupAd[buyerGroupAdKey], dateStr);
                 }
 
                 // Собираем уникальные видео и сайты с привязкой к байерам
@@ -2010,9 +2062,53 @@ function buildChartForArticle(article, periodStart, periodEnd) {
 
         Object.assign(generalData, newGeneralData);
 
-        // ИСПРАВЛЕННАЯ СТРУКТУРА: Подготовка данных по Байер → Группа
-        console.log("🌲 Processing buyer-group hierarchy data...");
+        // НОВАЯ СТРУКТУРА: Байер → Кампания → Группа → Объявление
+        console.log("🌲 Processing multi-level hierarchy data...");
         const buyerGroupsData = {};
+
+        // Собираем все кампании для каждого байера
+        const buyerCampaignsMap = {}; // { buyer: Set(campaigns) }
+        const campaignGroupsMap = {}; // { "buyer:::campaign": Set(groups) }
+        const groupAdsMap = {}; // { "buyer:::group": Set(ads) }
+
+        allRows.forEach((row) => {
+            const trackerName = String(row.campaign_name_tracker || "").trim();
+            const campaignName = String(row.campaign_name || "").trim();
+            const groupName = String(row.adv_group_name || "").trim();
+            const advName = String(row.adv_name || "").trim();
+            const groupId = String(row.adv_group_id || "").trim();
+
+            let buyerInfo = null;
+            if (trackerName && trackerName.includes(article)) {
+                buyerInfo = parseCampaignName(trackerName);
+            } else if (campaignName && campaignToBuyerMap[campaignName]) {
+                buyerInfo = campaignToBuyerMap[campaignName];
+            } else if (groupId && adGroupToBuyerMap[groupId]) {
+                buyerInfo = adGroupToBuyerMap[groupId];
+            }
+
+            if (!buyerInfo || buyerInfo.article !== article) return;
+
+            if (buyerInfo.buyer && campaignName) {
+                if (!buyerCampaignsMap[buyerInfo.buyer])
+                    buyerCampaignsMap[buyerInfo.buyer] = new Set();
+                buyerCampaignsMap[buyerInfo.buyer].add(campaignName);
+
+                const campaignKey = `${buyerInfo.buyer}:::${campaignName}`;
+                if (groupName) {
+                    if (!campaignGroupsMap[campaignKey])
+                        campaignGroupsMap[campaignKey] = new Set();
+                    campaignGroupsMap[campaignKey].add(groupName);
+
+                    const groupKey = `${buyerInfo.buyer}:::${groupName}`;
+                    if (advName) {
+                        if (!groupAdsMap[groupKey])
+                            groupAdsMap[groupKey] = new Set();
+                        groupAdsMap[groupKey].add(advName);
+                    }
+                }
+            }
+        });
 
         // Создаем иерархическую структуру
         Array.from(globalBuyers).forEach((buyerName) => {
@@ -2025,43 +2121,65 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     fbDataMapByBuyer,
                     "buyer"
                 ),
-                groups: {},
+                campaigns: {},
             };
 
-            // Для каждого байера находим его группы
-            if (buyerGroupsMap[buyerName]) {
-                console.log(
-                    `📁 Found ${buyerGroupsMap[buyerName].size} groups for buyer ${buyerName}:`,
-                    Array.from(buyerGroupsMap[buyerName])
-                );
+            // Для каждого байера находим его кампании
+            if (buyerCampaignsMap[buyerName]) {
+                Array.from(buyerCampaignsMap[buyerName]).forEach((campaignName) => {
+                    console.log(`📺 Processing campaign: ${campaignName} for buyer: ${buyerName}`);
 
-                Array.from(buyerGroupsMap[buyerName]).forEach((groupName) => {
-                    console.log(
-                        `📂 Processing group: ${groupName} for buyer: ${buyerName}`
+                    const buyerCampaignKey = `${buyerName}:::${campaignName}`;
+                    const campaignData = processSegment(
+                        buyerCampaignKey,
+                        resultMapByBuyerCampaign,
+                        fbDataMapByBuyerCampaign,
+                        "campaign"
                     );
 
-                    const buyerGroupKey = `${buyerName}:::${groupName}`;
+                    buyerGroupsData[buyerName].campaigns[campaignName] = {
+                        campaignData: campaignData,
+                        groups: {}
+                    };
 
-                    // Создаем данные для комбинации байер-группа
-                    const buyerGroupData = processSegment(
-                        buyerGroupKey,
-                        resultMapByBuyerGroup,
-                        fbDataMapByBuyerGroup,
-                        "buyer-group"
-                    );
-                    if (buyerGroupData) {
-                        buyerGroupsData[buyerName].groups[groupName] = buyerGroupData;
-                        console.log(
-                            `✅ Added group ${groupName} data for buyer ${buyerName} with ${buyerGroupData.metrics.activeDays} active days`
-                        );
-                    } else {
-                        console.log(
-                            `⚠️ No data found for group ${groupName} of buyer ${buyerName}`
-                        );
+                    // Для каждой кампании находим её группы
+                    if (campaignGroupsMap[buyerCampaignKey]) {
+                        Array.from(campaignGroupsMap[buyerCampaignKey]).forEach((groupName) => {
+                            console.log(`📁 Processing group: ${groupName} for campaign: ${campaignName}`);
+
+                            const buyerCampaignGroupKey = `${buyerName}:::${campaignName}:::${groupName}`;
+                            const groupData = processSegment(
+                                buyerCampaignGroupKey,
+                                resultMapByBuyerCampaignGroup,
+                                fbDataMapByBuyerCampaignGroup,
+                                "group"
+                            );
+
+                            buyerGroupsData[buyerName].campaigns[campaignName].groups[groupName] = {
+                                groupData: groupData,
+                                ads: {}
+                            };
+
+                            // Для каждой группы находим её объявления
+                            const groupKey = `${buyerName}:::${groupName}`;
+                            if (groupAdsMap[groupKey]) {
+                                Array.from(groupAdsMap[groupKey]).forEach((advName) => {
+                                    console.log(`📄 Processing ad: ${advName} for group: ${groupName}`);
+
+                                    const buyerGroupAdKey = `${buyerName}:::${groupName}:::${advName}`;
+                                    const adData = processSegment(
+                                        buyerGroupAdKey,
+                                        resultMapByBuyerGroupAd,
+                                        fbDataMapByBuyerGroupAd,
+                                        "ad"
+                                    );
+
+                                    buyerGroupsData[buyerName].campaigns[campaignName].groups[groupName].ads[advName] = adData;
+                                });
+                            }
+                        });
                     }
                 });
-            } else {
-                console.log(`⚠️ No groups found for buyer ${buyerName}`);
             }
         });
 
@@ -2071,12 +2189,12 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             "buyers"
         );
         console.log("🎯 Final structure overview:");
-        Object.keys(buyerGroupsData).forEach((buyer) => {
-            console.log(
-                `  👤 ${buyer}: ${Object.keys(buyerGroupsData[buyer].groups).length
-                } groups`
-            );
-        });
+Object.keys(buyerGroupsData).forEach((buyer) => {
+    console.log(
+        `  👤 ${buyer}: ${Object.keys(buyerGroupsData[buyer].campaigns || {}).length
+        } campaigns`
+    );
+});
 
         // Общие метрики
         const crValue =
