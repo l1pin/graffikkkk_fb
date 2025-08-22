@@ -2218,7 +2218,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
 
             if (isNaN(dateObj.getTime()) || !trackerName.includes(article)) return;
 
-            const dateStr = Utilities.formatDate(dateObj, "Europe/Kiev", "dd.MM");
+            const dateStr = Utilities.formatDate(dateObj, "Europe/Kiev", "dd.MM.yyyy");
             const leads = Number(row.valid) || 0;
             const spend = Number(row.cost) || 0;
             const cpl = leads > 0 ? spend / leads : 0;
@@ -2273,10 +2273,10 @@ function buildChartForArticle(article, periodStart, periodEnd) {
         Object.keys(calendarData).forEach(trackerName => {
             const trackerData = calendarData[trackerName];
             trackerData.dates.sort((a, b) => {
-                const [dayA, monthA] = a.split('.').map(Number);
-                const [dayB, monthB] = b.split('.').map(Number);
-                return monthA - monthB || dayA - dayB;
-            });
+            const [dayA, monthA, yearA] = a.split('.').map(Number);
+            const [dayB, monthB, yearB] = b.split('.').map(Number);
+            return yearA - yearB || monthA - monthB || dayA - dayB;
+        });
 
             Object.keys(trackerData.campaigns).forEach(campaignName => {
                 const campaignData = trackerData.campaigns[campaignName];
@@ -2323,7 +2323,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
 
             if (isNaN(dateObj.getTime()) || !trackerName.includes(article)) return;
 
-            const dateStr = Utilities.formatDate(dateObj, "Europe/Kiev", "dd.MM");
+            const dateStr = Utilities.formatDate(dateObj, "Europe/Kiev", "dd.MM.yyyy");
             const leads = Number(row.valid) || 0;
             const spend = Number(row.cost) || 0;
             const cpl = leads > 0 ? spend / leads : 0;
