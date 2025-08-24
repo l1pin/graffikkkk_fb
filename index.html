@@ -2316,12 +2316,16 @@
         function displayResults(data) {
             console.log("📊 Отображаем результаты:", data);
 
+            // Получаем выбранные пользователем даты
+            const periodStart = document.getElementById("periodStart").value;
+            const periodEnd = document.getElementById("periodEnd").value;
+
             displayStatusBanner(data.article, data.generalMetrics);
             displayGeneralMetrics(data.generalMetrics);
             displayCalendarMetrics(data.calendarData || {});
             displayGeneralChart(data.article, data.generalData);
-            displayGeneralTable(data.generalData);
-            displayBuyerGroups(data.article, data.buyerGroupsData || {});
+            displayGeneralTable(data.generalData, periodStart, periodEnd);
+            displayBuyerGroups(data.article, data.buyerGroupsData || {}, periodStart, periodEnd);
 
             // Строим навигационное дерево
             buildNavigationTree(data.buyerGroupsData || {});
@@ -2952,11 +2956,227 @@
             currentCharts.push(chart);
         }
 
-        function displayGeneralTable(data) {
+        // Функция для расчета агрегированных метрик
+        // Функция для расчета агрегированных метрик с учетом выбранного периода
+        function calculateAggregatedMetrics(data, startIndex = 0, endIndex = null, userStartDate = null, userEndDate = null) {
+            if (!data || !data.dates || data.dates.length === 0) {
+                return {
+                    avgCPL: "0,00",
+                    totalLeads: 0,
+                    totalSpend: "0,00",
+                    avgConversion: "0,00%",
+                    avgCTR: "0,00%",
+                    totalImpressions: 0,
+                    avgCPM: "0,00",
+                    totalClicks: 0,
+                    avgCPC: "0,00",
+                    avgWatchTime: "0,00"
+                };
+            }
+
+            // Если указаны пользовательские даты, фильтруем по ним
+            let actualStartIndex = startIndex;
+            let actualEndIndex = endIndex || data.dates.length - 1;
+
+            if (userStartDate && userEndDate) {
+                // Конвертируем пользовательские даты в нужный формат для сравнения
+                const userStart = new Date(userStartDate);
+                const userEnd = new Date(userEndDate);
+                
+                actualStartIndex = -1;
+                actualEndIndex = -1;
+
+                for (let i = 0; i < data.dates.length; i++) {
+                    // Конвертируем дату из формата "dd.MM.yyyy" в Date объект
+                    const [day, month, year] = data.dates[i].split('.');
+                    const currentDate = new Date(year, month - 1, day);
+                    
+                    if (currentDate >= userStart && actualStartIndex === -1) {
+                        actualStartIndex = i;
+                    }
+                    if (currentDate <= userEnd) {
+                        actualEndIndex = i;
+                    }
+                }
+
+                // Если не найдены даты в диапазоне, возвращаем пустые метрики
+                if (actualStartIndex === -1 || actualEndIndex === -1) {
+                    return {
+                        avgCPL: "0,00",
+                        totalLeads: 0,
+                        totalSpend: "0,00",
+                        avgConversion: "0,00%",
+                        avgCTR: "0,00%",
+                        totalImpressions: 0,
+                        avgCPM: "0,00",
+                        totalClicks: 0,
+                        avgCPC: "0,00",
+                        avgWatchTime: "0,00"
+                    };
+                }
+            }
+
+            let totalLeads = 0, totalSpend = 0, totalImpressions = 0, totalClicks = 0;
+            let cplValues = [], conversionValues = [], ctrValues = [], cpmValues = [], cpcValues = [], watchTimeValues = [];
+
+            for (let i = actualStartIndex; i <= actualEndIndex && i < data.dates.length; i++) {
+                // Лиды и расходы
+                const dayLeads = data.leadsDay ? (data.leadsDay[i] || 0) : 0;
+                const daySpend = data.spendDay ? (data.spendDay[i] || 0) : 0;
+                
+                totalLeads += dayLeads;
+                totalSpend += daySpend;
+
+                // CPL
+                if (dayLeads > 0 && daySpend > 0) {
+                    cplValues.push(daySpend / dayLeads);
+                }
+
+                // Конверсия
+                const conversionStr = data.conversionDay ? data.conversionDay[i] : "";
+                if (conversionStr && conversionStr !== "--" && conversionStr !== "0.00%") {
+                    const convValue = parseFloat(conversionStr.replace('%', '').replace(',', '.'));
+                    if (!isNaN(convValue)) conversionValues.push(convValue);
+                }
+
+                // CTR
+                const ctrStr = data.ctr ? data.ctr[i] : "";
+                if (ctrStr && ctrStr.trim() !== "") {
+                    const ctrLines = ctrStr.split('\n').filter(line => line.trim() !== "");
+                    ctrLines.forEach(line => {
+                        const ctrValue = parseFloat(line.replace(',', '.'));
+                        if (!isNaN(ctrValue)) ctrValues.push(ctrValue);
+                    });
+                }
+
+                // Показы
+                const impressionsStr = data.impressions ? data.impressions[i] : "";
+                if (impressionsStr && impressionsStr.trim() !== "") {
+                    const impLines = impressionsStr.split('\n').filter(line => line.trim() !== "");
+                    impLines.forEach(line => {
+                        const impValue = parseInt(line);
+                        if (!isNaN(impValue)) totalImpressions += impValue;
+                    });
+                }
+
+                // CPM
+                const cpmStr = data.cpm ? data.cpm[i] : "";
+                if (cpmStr && cpmStr.trim() !== "") {
+                    const cpmLines = cpmStr.split('\n').filter(line => line.trim() !== "");
+                    cpmLines.forEach(line => {
+                        const cpmValue = parseFloat(line.replace(',', '.'));
+                        if (!isNaN(cpmValue)) cpmValues.push(cpmValue);
+                    });
+                }
+
+                // Клики
+                const clicksStr = data.linkClicks ? data.linkClicks[i] : "";
+                if (clicksStr && clicksStr.trim() !== "") {
+                    const clickLines = clicksStr.split('\n').filter(line => line.trim() !== "");
+                    clickLines.forEach(line => {
+                        const clickValue = parseInt(line);
+                        if (!isNaN(clickValue)) totalClicks += clickValue;
+                    });
+                }
+
+                // CPC
+                const cpcStr = data.cpc ? data.cpc[i] : "";
+                if (cpcStr && cpcStr.trim() !== "") {
+                    const cpcLines = cpcStr.split('\n').filter(line => line.trim() !== "");
+                    cpcLines.forEach(line => {
+                        const cpcValue = parseFloat(line.replace(',', '.'));
+                        if (!isNaN(cpcValue)) cpcValues.push(cpcValue);
+                    });
+                }
+
+                // Время просмотра
+                const watchTimeStr = data.avgWatchTime ? data.avgWatchTime[i] : "";
+                if (watchTimeStr && watchTimeStr.trim() !== "") {
+                    const watchLines = watchTimeStr.split('\n').filter(line => line.trim() !== "");
+                    watchLines.forEach(line => {
+                        const watchValue = parseFloat(line.replace(',', '.'));
+                        if (!isNaN(watchValue)) watchTimeValues.push(watchValue);
+                    });
+                }
+            }
+
+            // Расчет средних значений
+            const avgCPL = cplValues.length > 0 ? (cplValues.reduce((a, b) => a + b, 0) / cplValues.length) : 0;
+            const avgConversion = conversionValues.length > 0 ? (conversionValues.reduce((a, b) => a + b, 0) / conversionValues.length) : 0;
+            const avgCTR = ctrValues.length > 0 ? (ctrValues.reduce((a, b) => a + b, 0) / ctrValues.length) : 0;
+            const avgCPM = cpmValues.length > 0 ? (cpmValues.reduce((a, b) => a + b, 0) / cpmValues.length) : 0;
+            const avgCPC = cpcValues.length > 0 ? (cpcValues.reduce((a, b) => a + b, 0) / cpcValues.length) : 0;
+            const avgWatchTime = watchTimeValues.length > 0 ? (watchTimeValues.reduce((a, b) => a + b, 0) / watchTimeValues.length) : 0;
+
+            return {
+                avgCPL: avgCPL.toFixed(2).replace('.', ','),
+                totalLeads: totalLeads,
+                totalSpend: totalSpend.toFixed(2).replace('.', ','),
+                avgConversion: avgConversion.toFixed(2).replace('.', ',') + '%',
+                avgCTR: avgCTR.toFixed(2).replace('.', ',') + '%',
+                totalImpressions: totalImpressions,
+                avgCPM: avgCPM.toFixed(2).replace('.', ','),
+                totalClicks: totalClicks,
+                avgCPC: avgCPC.toFixed(2).replace('.', ','),
+                avgWatchTime: avgWatchTime.toFixed(2).replace('.', ',')
+            };
+        }
+
+        // Функция для получения индексов последних 7 активных дней
+        function getLast7ActiveDaysIndices(data) {
+            const activeDays = [];
+            for (let i = data.dates.length - 1; i >= 0; i--) {
+                const dayLeads = data.leadsDay ? (data.leadsDay[i] || 0) : 0;
+                const daySpend = data.spendDay ? (data.spendDay[i] || 0) : 0;
+                if (dayLeads > 0 || daySpend > 0) {
+                    activeDays.push(i);
+                    if (activeDays.length >= 7) break;
+                }
+            }
+            return activeDays.reverse(); // Возвращаем в правильном порядке
+        }
+
+        function displayGeneralTable(data, userStartDate = null, userEndDate = null) {
             console.log("📋 Отображаем общую таблицу с данными:", data);
 
             const table = document.getElementById("generalTable");
+            // Добавляем показы в данные для расчетов
+            data.impressions = [];
+            for (let i = 0; i < data.dates.length; i++) {
+                const daySpendForImpressions = data.spendDay ? data.spendDay[i] : 0;
+                const cpmValues = data.cpm ? data.cpm[i] : "";
+                if (cpmValues && cpmValues.trim() !== "" && daySpendForImpressions > 0) {
+                    const cpmLines = cpmValues.split('\n').filter(line => line.trim() !== "");
+                    if (cpmLines.length > 0) {
+                        const impressionsArray = [];
+                        cpmLines.forEach(cpmLine => {
+                            const cpmValue = parseFloat(cpmLine.replace(',', '.'));
+                            if (!isNaN(cpmValue) && cpmValue > 0) {
+                                const impressions = Math.round((daySpendForImpressions / cpmValue) * 1000);
+                                impressionsArray.push(impressions.toString());
+                            } else {
+                                impressionsArray.push("");
+                            }
+                        });
+                        data.impressions.push(impressionsArray.join('\n'));
+                    } else {
+                        data.impressions.push("");
+                    }
+                } else {
+                    data.impressions.push("");
+                }
+            }
+
+            // Расчет агрегированных метрик
+            const last7DaysIndices = getLast7ActiveDaysIndices(data);
+            const periodMetrics = calculateAggregatedMetrics(data, 0, data.dates.length - 1, userStartDate, userEndDate);
+            const last7DaysMetrics = last7DaysIndices.length > 0 ? 
+                calculateAggregatedMetrics(data, Math.min(...last7DaysIndices), Math.max(...last7DaysIndices)) : 
+                calculateAggregatedMetrics(data, 0, 0);
+
             const rows = [
+                "Период",
+                "7 дней",
                 "Дата",
                 "Рейтинг",
                 "CPL (день)",
@@ -2984,35 +3204,94 @@
 
             rows.forEach((rowName, index) => {
                 html += `<tr><td class="metric-row" style="min-width: 220px;">${rowName}</td>`;
+                
+                // Первые два столбца - агрегированные данные
+                // Обрабатываем данные для каждой строки
+                switch (index) {
+                    case 0: // Период
+                        html += `<td style="background-color: #f8fafc; color: #64748b; text-align: center; font-style: italic; font-size: 12px;">Период</td>`;
+                        html += `<td style="background-color: #f8fafc; color: #64748b; text-align: center; font-style: italic; font-size: 12px;">7дн.</td>`;
+                        break;
+                    case 1: // Рейтинг
+                        html += `<td style="background-color: #f8fafc;"></td>`;
+                        html += `<td style="background-color: #f8fafc;"></td>`;
+                        break;
+                    case 2: // CPL
+                        html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPL}</td>`;
+                        html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPL}</td>`;
+                        break;
+                    case 3: // Лиды
+                        html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalLeads}</td>`;
+                        html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalLeads}</td>`;
+                        break;
+                    case 4: // Расходы
+                        html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalSpend}</td>`;
+                        html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalSpend}</td>`;
+                        break;
+                    case 5: // Конверсия
+                        html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgConversion}</td>`;
+                        html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgConversion}</td>`;
+                        break;
+                    case 12: // CTR
+                        html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCTR}</td>`;
+                        html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCTR}</td>`;
+                        break;
+                    case 13: // CPM
+                        html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPM}</td>`;
+                        html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPM}</td>`;
+                        break;
+                    case 14: // Показы
+                        html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalImpressions}</td>`;
+                        html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalImpressions}</td>`;
+                        break;
+                    case 15: // Клики
+                        html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalClicks}</td>`;
+                        html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalClicks}</td>`;
+                        break;
+                    case 16: // CPC
+                        html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPC}</td>`;
+                        html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPC}</td>`;
+                        break;
+                    case 17: // Время просмотра
+                        html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgWatchTime}</td>`;
+                        html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgWatchTime}</td>`;
+                        break;
+                    default: // Остальные строки
+                        html += `<td style="background-color: #f8fafc;"></td>`;
+                        html += `<td style="background-color: #f8fafc;"></td>`;
+                        break;
+                }
+
+                // Основные данные по дням
                 for (let i = 0; i < data.dates.length; i++) {
                     let value = "";
                     let className = "";
                     let cellStyle = "";
 
                     switch (index) {
-                        case 0:
+                        case 2:
                             value = data.dates[i];
                             break;
-                        case 1:
+                        case 3:
                             value = data.ratings[i];
                             className = value ? `rating-${value}` : "";
                             break;
-                        case 2:
+                        case 4:
                             value = formatNumberWithZero(data.cplDay[i]);
                             break;
-                        case 3:
+                        case 5:
                             value = data.leadsDay[i];
                             break;
-                        case 4:
+                        case 6:
                             value = formatNumberWithZero(data.spendDay[i]);
                             break;
-                        case 5:
+                        case 7:
                             value = data.conversionDay ? data.conversionDay[i] : "";
                             break;
-                        case 6:
+                        case 8:
                             value = formatNumber(data.maxCPL[i]);
                             break;
-                        case 7:
+                        case 9:
                             value = formatNumberWithZero(data.cplCumulative[i]);
                             if (data.cplCumulativeArrows && data.cplCumulativeArrows[i]) {
                                 value += " " + data.cplCumulativeArrows[i];
@@ -3031,66 +3310,44 @@
                                 }
                             }
                             break;
-                        case 8:
+                        case 10:
                             value = data.groups ? data.groups[i] : "";
                             break;
-                        case 9:
+                        case 11:
                             value = data.buyers ? data.buyers[i] : "";
                             break;
-                        case 10:
+                        case 12:
                             value = data.accounts ? data.accounts[i] : "";
                             break;
-                        case 11:
+                        case 13:
                             value = data.freq ? data.freq[i] : "";
                             break;
-                        case 12:
+                        case 14:
                             value = data.ctr ? data.ctr[i] : "";
                             break;
-                        case 13:
+                        case 15:
                             value = data.cpm ? data.cpm[i] : "";
                             break;
-                        case 14:
-                            // Показы = Расход / CPM * 1000 (для каждого CPM отдельно)
-                            const daySpendForImpressions = data.spendDay ? data.spendDay[i] : 0;
-                            const cpmValues = data.cpm ? data.cpm[i] : "";
-                            if (cpmValues && cpmValues.trim() !== "" && daySpendForImpressions > 0) {
-                                const cpmLines = cpmValues.split('\n').filter(line => line.trim() !== "");
-                                if (cpmLines.length > 0) {
-                                    const impressionsArray = [];
-                                    cpmLines.forEach(cpmLine => {
-                                        const cpmValue = parseFloat(cpmLine.replace(',', '.'));
-                                        if (!isNaN(cpmValue) && cpmValue > 0) {
-                                            const impressions = Math.round((daySpendForImpressions / cpmValue) * 1000);
-                                            impressionsArray.push(impressions.toString());
-                                        } else {
-                                            impressionsArray.push("");
-                                        }
-                                    });
-                                    value = impressionsArray.join('\n');
-                                } else {
-                                    value = "";
-                                }
-                            } else {
-                                value = "";
-                            }
-                            break;
-                        case 15:
-                            value = data.linkClicks ? data.linkClicks[i] : "";
-                            break;
                         case 16:
-                            value = data.cpc ? data.cpc[i] : "";
+                            value = data.impressions[i];
                             break;
                         case 17:
-                            value = data.avgWatchTime ? data.avgWatchTime[i] : "";
+                            value = data.linkClicks ? data.linkClicks[i] : "";
                             break;
                         case 18:
-                            value = data.videoName ? data.videoName[i] : "";
+                            value = data.cpc ? data.cpc[i] : "";
                             break;
                         case 19:
+                            value = data.avgWatchTime ? data.avgWatchTime[i] : "";
+                            break;
+                        case 20:
+                            value = data.videoName ? data.videoName[i] : "";
+                            break;
+                        case 21:
                             const urlValue = data.siteUrl ? data.siteUrl[i] : "";
                             value = makeUrlsClickable(urlValue);
                             break;
-                        case 20:
+                        case 22:
                             value = data.budget ? data.budget[i] : "";
                             break;
                     }
@@ -3107,7 +3364,7 @@
                         additionalStyle = " text-align: center;";
                     }
 
-                    if (index === 19) {
+                    if (index === 21) {
                         html += `<td class="${className} url-cell" style="${cellStyle}${additionalStyle}">${value}</td>`;
                     } else {
                         html += `<td class="${className}" style="${cellStyle}${additionalStyle}">${escapeHtml(
@@ -3122,7 +3379,7 @@
             table.innerHTML = html;
         }
 
-        function displayBuyerGroups(article, buyerGroupsData) {
+        function displayBuyerGroups(article, buyerGroupsData, userStartDate = null, userEndDate = null) {
             console.log("🌲 Отображаем деревовидную структуру:", buyerGroupsData);
             console.log("🔍 Список байеров:", Object.keys(buyerGroupsData));
             Object.keys(buyerGroupsData).forEach((buyerName, index) => {
@@ -3602,7 +3859,7 @@
                                     bName,
                                     bData.buyerData.data
                                 );
-                                displaySegmentTable(bTableId, bData.buyerData.data, "buyer");
+                                displaySegmentTable(bTableId, bData.buyerData.data, "buyer", userStartDate, userEndDate);
                             }
                         })(buyerName, buyerData, buyerChartId, buyerTableId);
 
@@ -3629,7 +3886,7 @@
                                 // Создаем график и таблицу для кампании
                                 if (campaignData.campaignData) {
                                     (function (cName, cData, cChartId, cTableId, bName) {
-                                        displaySegmentTable(cTableId, cData.data, "campaign");
+                                        displaySegmentTable(cTableId, cData.data, "campaign", userStartDate, userEndDate);
                                         displaySegmentChart(
                                             cChartId,
                                             article,
@@ -3662,7 +3919,7 @@
                                         // Создаем график и таблицу для группы
                                         if (groupData.groupData) {
                                             (function (gName, gData, gChartId, gTableId, bName, cName) {
-                                                displaySegmentTable(gTableId, gData.data, "group");
+                                                displaySegmentTable(gTableId, gData.data, "group", userStartDate, userEndDate);
                                                 displaySegmentChart(
                                                     gChartId,
                                                     article,
@@ -3695,7 +3952,7 @@
                                                 // Создаем график и таблицу для объявления
                                                 if (adData) {
                                                     (function (aName, aData, aChartId, aTableId, bName, cName, gName) {
-                                                        displaySegmentTable(aTableId, aData.data, "ad");
+                                                        displaySegmentTable(aTableId, aData.data, "ad", userStartDate, userEndDate);
                                                         displaySegmentChart(
                                                             aChartId,
                                                             article,
@@ -3910,7 +4167,7 @@
       `;
         }
 
-        function displaySegmentTable(tableId, data, segmentType = "group") {
+        function displaySegmentTable(tableId, data, segmentType = "group", userStartDate = null, userEndDate = null) {
             console.log(`📋 Отображаем таблицу ${tableId} с данными:`, data);
             console.log(
                 `📋 Проверяем наличие budget в данных:`,
@@ -3934,9 +4191,45 @@
 
             console.log("✅ Таблица найдена:", table);
 
+            // Добавляем показы в данные для расчетов
+            data.impressions = [];
+            for (let i = 0; i < data.dates.length; i++) {
+                const daySpendForImpressions = data.spendDay ? data.spendDay[i] : 0;
+                const cpmValues = data.cpm ? data.cpm[i] : "";
+                if (cpmValues && cpmValues.trim() !== "" && daySpendForImpressions > 0) {
+                    const cpmLines = cpmValues.split('\n').filter(line => line.trim() !== "");
+                    if (cpmLines.length > 0) {
+                        const impressionsArray = [];
+                        cpmLines.forEach(cpmLine => {
+                            const cpmValue = parseFloat(cpmLine.replace(',', '.'));
+                            if (!isNaN(cpmValue) && cpmValue > 0) {
+                                const impressions = Math.round((daySpendForImpressions / cpmValue) * 1000);
+                                impressionsArray.push(impressions.toString());
+                            } else {
+                                impressionsArray.push("");
+                            }
+                        });
+                        data.impressions.push(impressionsArray.join('\n'));
+                    } else {
+                        data.impressions.push("");
+                    }
+                } else {
+                    data.impressions.push("");
+                }
+            }
+
+            // Расчет агрегированных метрик
+            const last7DaysIndices = getLast7ActiveDaysIndices(data);
+            const periodMetrics = calculateAggregatedMetrics(data, 0, data.dates.length - 1, userStartDate, userEndDate);
+            const last7DaysMetrics = last7DaysIndices.length > 0 ? 
+                calculateAggregatedMetrics(data, Math.min(...last7DaysIndices), Math.max(...last7DaysIndices)) : 
+                calculateAggregatedMetrics(data, 0, 0);
+
             const rows =
                 segmentType === "buyer"
                     ? [
+                        "Период",
+                        "7 дней",
                         "Дата",
                         "Рейтинг",
                         "CPL (день)",
@@ -3959,6 +4252,8 @@
                     ]
                     : segmentType === "campaign"
                         ? [
+                            "Период",
+                            "7 дней",
                             "Дата",
                             "Рейтинг",
                             "CPL (день)",
@@ -3980,6 +4275,8 @@
                         ]
                         : segmentType === "group"
                             ? [
+                                "Период",
+                                "7 дней",
                                 "Дата",
                                 "Рейтинг",
                                 "CPL (день)",
@@ -4000,6 +4297,8 @@
                                 "Бюджет группы объявлений",
                             ]
                             : [
+                                "Период",
+                                "7 дней",
                                 "Дата",
                                 "Рейтинг",
                                 "CPL (день)",
@@ -4024,6 +4323,137 @@
 
             rows.forEach((rowName, index) => {
                 html += `<tr><td class="metric-row" style="min-width: 220px;">${rowName}</td>`;
+                
+                // Обрабатываем данные для каждой строки
+                if (segmentType === "buyer") {
+                    switch (index) {
+                        case 0: // Период
+                            html += `<td style="background-color: #f8fafc; color: #64748b; text-align: center; font-style: italic; font-size: 12px;">Период</td>`;
+                            html += `<td style="background-color: #f8fafc; color: #64748b; text-align: center; font-style: italic; font-size: 12px;">7дн.</td>`;
+                            break;
+                        case 1: // 7 дней
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            break;
+                        case 2: // Дата
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            break;
+                        case 3: // Рейтинг
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            break;
+                        case 4: // CPL
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPL}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPL}</td>`;
+                            break;
+                        case 5: // Лиды
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalLeads}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalLeads}</td>`;
+                            break;
+                        case 6: // Расходы
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalSpend}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalSpend}</td>`;
+                            break;
+                        case 7: // Конверсия
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgConversion}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgConversion}</td>`;
+                            break;
+                        case 12: // CTR
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCTR}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCTR}</td>`;
+                            break;
+                        case 13: // CPM
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPM}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPM}</td>`;
+                            break;
+                        case 14: // Показы
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalImpressions}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalImpressions}</td>`;
+                            break;
+                        case 15: // Клики
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalClicks}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalClicks}</td>`;
+                            break;
+                        case 16: // CPC
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPC}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPC}</td>`;
+                            break;
+                        case 17: // Время просмотра
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgWatchTime}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgWatchTime}</td>`;
+                            break;
+                        default: // Остальные строки
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            break;
+                    }
+                } else {
+                    // Для campaign, group, ad
+                    switch (index) {
+                        case 0: // Период
+                            html += `<td style="background-color: #f8fafc; color: #64748b; text-align: center; font-style: italic; font-size: 12px;">Период</td>`;
+                            html += `<td style="background-color: #f8fafc; color: #64748b; text-align: center; font-style: italic; font-size: 12px;">7дн.</td>`;
+                            break;
+                        case 1: // 7 дней
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            break;
+                        case 2: // Дата
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            break;
+                        case 3: // Рейтинг
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            break;
+                        case 4: // CPL
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPL}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPL}</td>`;
+                            break;
+                        case 5: // Лиды
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalLeads}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalLeads}</td>`;
+                            break;
+                        case 6: // Расходы
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalSpend}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalSpend}</td>`;
+                            break;
+                        case 7: // Конверсия
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgConversion}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgConversion}</td>`;
+                            break;
+                        case 11: // CTR
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCTR}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCTR}</td>`;
+                            break;
+                        case 12: // CPM
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPM}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPM}</td>`;
+                            break;
+                        case 13: // Показы
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalImpressions}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalImpressions}</td>`;
+                            break;
+                        case 14: // Клики
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalClicks}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalClicks}</td>`;
+                            break;
+                        case 15: // CPC
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPC}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPC}</td>`;
+                            break;
+                        case 16: // Время просмотра
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgWatchTime}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgWatchTime}</td>`;
+                            break;
+                        default: // Остальные строки
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            break;
+                    }
+                }
+
                 for (let i = 0; i < data.dates.length; i++) {
                     let value = "";
                     let className = "";
@@ -4031,29 +4461,29 @@
 
                     if (segmentType === "buyer") {
                         switch (index) {
-                            case 0:
+                            case 2:
                                 value = data.dates[i];
                                 break;
-                            case 1:
+                            case 3:
                                 value = data.ratings[i];
                                 className = value ? `rating-${value}` : "";
                                 break;
-                            case 2:
+                            case 4:
                                 value = formatNumberWithZero(data.cplDay[i]);
                                 break;
-                            case 3:
+                            case 5:
                                 value = data.leadsDay[i];
                                 break;
-                            case 4:
+                            case 6:
                                 value = formatNumberWithZero(data.spendDay[i]);
                                 break;
-                            case 5:
+                            case 7:
                                 value = data.conversionDay ? data.conversionDay[i] : "";
                                 break;
-                            case 6:
+                            case 8:
                                 value = formatNumber(data.maxCPL ? data.maxCPL[i] : "");
                                 break;
-                            case 7:
+                            case 9:
                                 value = formatNumberWithZero(
                                     data.cplCumulative ? data.cplCumulative[i] : 0
                                 );
@@ -4074,94 +4504,66 @@
                                     }
                                 }
                                 break;
-                            case 8:
+                            case 10:
                                 value = data.groups ? data.groups[i] : "";
                                 break;
-                            case 9:
+                            case 11:
                                 value = data.freq ? data.freq[i] : "";
                                 break;
-                            case 10:
+                            case 12:
                                 value = data.ctr ? data.ctr[i] : "";
                                 break;
-                            case 11:
+                            case 13:
                                 value = data.cpm ? data.cpm[i] : "";
                                 break;
-                            case 12:
-                                // Показы = Расход / CPM * 1000 (для каждого CPM отдельно)
-                                const daySpendForImpressions = data.spendDay ? data.spendDay[i] : 0;
-                                const cpmValues = data.cpm ? data.cpm[i] : "";
-                                if (cpmValues && cpmValues.trim() !== "" && daySpendForImpressions > 0) {
-                                    const cpmLines = cpmValues.split('\n').filter(line => line.trim() !== "");
-                                    if (cpmLines.length > 0) {
-                                        const impressionsArray = [];
-                                        cpmLines.forEach(cpmLine => {
-                                            const cpmValue = parseFloat(cpmLine.replace(',', '.'));
-                                            if (!isNaN(cpmValue) && cpmValue > 0) {
-                                                const impressions = Math.round((daySpendForImpressions / cpmValue) * 1000);
-                                                impressionsArray.push(impressions.toString());
-                                            } else {
-                                                impressionsArray.push("");
-                                            }
-                                        });
-                                        value = impressionsArray.join('\n');
-                                    } else {
-                                        value = "";
-                                    }
-                                } else {
-                                    value = "";
-                                }
-                                break;
-                            case 13:
-                                value = data.linkClicks ? data.linkClicks[i] : "";
-                                break;
                             case 14:
-                                value = data.cpc ? data.cpc[i] : "";
+                                value = data.impressions[i];
                                 break;
                             case 15:
-                                value = data.avgWatchTime ? data.avgWatchTime[i] : "";
+                                value = data.linkClicks ? data.linkClicks[i] : "";
                                 break;
                             case 16:
-                                value = data.videoName ? data.videoName[i] : "";
+                                value = data.cpc ? data.cpc[i] : "";
                                 break;
                             case 17:
+                                value = data.avgWatchTime ? data.avgWatchTime[i] : "";
+                                break;
+                            case 18:
+                                value = data.videoName ? data.videoName[i] : "";
+                                break;
+                            case 19:
                                 const urlValue = data.siteUrl ? data.siteUrl[i] : "";
                                 value = makeUrlsClickable(urlValue);
                                 break;
-                            case 18:
+                            case 20:
                                 value = data.budget ? data.budget[i] : "";
-                                console.log(
-                                    "🔍 BUYER Budget case 18 - data.budget[" + i + "]:",
-                                    value,
-                                    "Full budget array:",
-                                    data.budget
-                                );
                                 break;
                         }
                     } else if (segmentType === "campaign" || segmentType === "group" || segmentType === "ad") {
                         switch (index) {
-                            case 0:
+                            case 2:
                                 value = data.dates[i];
                                 break;
-                            case 1:
+                            case 3:
                                 value = data.ratings[i];
                                 className = value ? `rating-${value}` : "";
                                 break;
-                            case 2:
+                            case 4:
                                 value = formatNumberWithZero(data.cplDay[i]);
                                 break;
-                            case 3:
+                            case 5:
                                 value = data.leadsDay[i];
                                 break;
-                            case 4:
+                            case 6:
                                 value = formatNumberWithZero(data.spendDay[i]);
                                 break;
-                            case 5:
+                            case 7:
                                 value = data.conversionDay ? data.conversionDay[i] : "";
                                 break;
-                            case 6:
+                            case 8:
                                 value = formatNumber(data.maxCPL ? data.maxCPL[i] : "");
                                 break;
-                            case 7:
+                            case 9:
                                 value = formatNumberWithZero(
                                     data.cplCumulative ? data.cplCumulative[i] : 0
                                 );
@@ -4182,64 +4584,36 @@
                                     }
                                 }
                                 break;
-                            case 8:
+                            case 10:
                                 value = data.freq ? data.freq[i] : "";
                                 break;
-                            case 9:
+                            case 11:
                                 value = data.ctr ? data.ctr[i] : "";
                                 break;
-                            case 10:
+                            case 12:
                                 value = data.cpm ? data.cpm[i] : "";
                                 break;
-                            case 11:
-                                // Показы = Расход / CPM * 1000 (для каждого CPM отдельно)
-                                const daySpendForImpressions = data.spendDay ? data.spendDay[i] : 0;
-                                const cpmValues = data.cpm ? data.cpm[i] : "";
-                                if (cpmValues && cpmValues.trim() !== "" && daySpendForImpressions > 0) {
-                                    const cpmLines = cpmValues.split('\n').filter(line => line.trim() !== "");
-                                    if (cpmLines.length > 0) {
-                                        const impressionsArray = [];
-                                        cpmLines.forEach(cpmLine => {
-                                            const cpmValue = parseFloat(cpmLine.replace(',', '.'));
-                                            if (!isNaN(cpmValue) && cpmValue > 0) {
-                                                const impressions = Math.round((daySpendForImpressions / cpmValue) * 1000);
-                                                impressionsArray.push(impressions.toString());
-                                            } else {
-                                                impressionsArray.push("");
-                                            }
-                                        });
-                                        value = impressionsArray.join('\n');
-                                    } else {
-                                        value = "";
-                                    }
-                                } else {
-                                    value = "";
-                                }
-                                break;
-                            case 12:
-                                value = data.linkClicks ? data.linkClicks[i] : "";
-                                break;
                             case 13:
-                                value = data.cpc ? data.cpc[i] : "";
+                                value = data.impressions[i];
                                 break;
                             case 14:
-                                value = data.avgWatchTime ? data.avgWatchTime[i] : "";
+                                value = data.linkClicks ? data.linkClicks[i] : "";
                                 break;
                             case 15:
-                                value = data.videoName ? data.videoName[i] : "";
+                                value = data.cpc ? data.cpc[i] : "";
                                 break;
                             case 16:
+                                value = data.avgWatchTime ? data.avgWatchTime[i] : "";
+                                break;
+                            case 17:
+                                value = data.videoName ? data.videoName[i] : "";
+                                break;
+                            case 18:
                                 const urlValue = data.siteUrl ? data.siteUrl[i] : "";
                                 value = makeUrlsClickable(urlValue);
                                 break;
-                            case 17:
+                            case 19:
                                 value = data.budget ? data.budget[i] : "";
-                                console.log(
-                                    "🔍 GROUP Budget case 17 - data.budget[" + i + "]:",
-                                    value,
-                                    "Full budget array:",
-                                    data.budget
-                                );
                                 break;
                         }
                     }
@@ -4257,8 +4631,8 @@
                     }
 
                     if (
-                        (segmentType === "buyer" && index === 17) ||
-                        ((segmentType === "campaign" || segmentType === "group" || segmentType === "ad") && index === 16)
+                        (segmentType === "buyer" && index === 19) ||
+                        ((segmentType === "campaign" || segmentType === "group" || segmentType === "ad") && index === 18)
                     ) {
                         html += `<td class="${className} url-cell" style="${cellStyle}${additionalStyle}">${value}</td>`;
                     } else {
