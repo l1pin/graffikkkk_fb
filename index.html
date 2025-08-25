@@ -75,24 +75,34 @@
             gap: 8px;
         }
 
-        .nav-expand-all,
-        .nav-collapse-all {
+        .nav-toggle-all {
             background: rgba(96, 165, 250, 0.15);
             border: 1px solid rgba(96, 165, 250, 0.3);
             color: #60a5fa;
-            padding: 6px 8px;
+            padding: 6px 12px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 12px;
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
+            min-width: 100px;
         }
 
-        .nav-expand-all:hover,
-        .nav-collapse-all:hover {
+        .nav-toggle-all:hover {
             background: rgba(96, 165, 250, 0.25);
+            color: white;
+        }
+
+        .nav-toggle-all.expanded {
+            background: rgba(34, 197, 94, 0.15);
+            border-color: rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+        }
+
+        .nav-toggle-all.expanded:hover {
+            background: rgba(34, 197, 94, 0.25);
             color: white;
         }
 
@@ -1629,42 +1639,48 @@
         .nav-tree-item.level-0 {
             font-weight: 600;
             color: #60a5fa;
-            padding-left: 8px;
+            padding-left: 12px;
+            padding-right: 30px;
         }
 
         .nav-tree-item.level-1 {
-            padding-left: 24px;
+            padding-left: 36px;
+            padding-right: 30px;
             color: #a78bfa;
         }
 
         .nav-tree-item.level-2 {
-            padding-left: 40px;
+            padding-left: 60px;
+            padding-right: 30px;
             color: #34d399;
         }
 
         .nav-tree-item.level-3 {
-            padding-left: 56px;
+            padding-left: 84px;
+            padding-right: 30px;
             color: #fbbf24;
         }
 
         .nav-tree-toggle {
             position: absolute;
-            left: 2px;
+            right: 8px;
             top: 50%;
             transform: translateY(-50%);
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
+            font-size: 12px;
             cursor: pointer;
-            border-radius: 3px;
-            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.15);
+            transition: all 0.2s ease;
         }
 
         .nav-tree-toggle:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-50%) scale(1.1);
         }
 
         .nav-tree-children {
@@ -1779,11 +1795,9 @@
         <div class="nav-header">
             <h2><i class="fas fa-sitemap"></i> Навигация</h2>
             <div class="nav-controls">
-                <button class="nav-expand-all" onclick="expandAllNavigation()">
-                    <i class="fas fa-plus-square"></i>
-                </button>
-                <button class="nav-collapse-all" onclick="collapseAllNavigation()">
-                    <i class="fas fa-minus-square"></i>
+                <button class="nav-toggle-all" onclick="toggleAllNavigation()" id="navToggleBtn">
+                    <i class="fas fa-plus-square" id="navToggleIcon"></i>
+                    <span id="navToggleText">Раскрыть</span>
                 </button>
             </div>
         </div>
@@ -2498,9 +2512,9 @@
 
                 html += `
                     <div class="nav-tree-item level-0" onclick="navigateToElement('${buyerId}')">
-                        <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('buyer_${buyerIndex}')">▸</span>
                         <i class="fas fa-user-tie nav-icon"></i>
                         ${escapeHtml(buyerName)}
+                        <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('buyer_${buyerIndex}')">▸</span>
                     </div>
                     <div class="nav-tree-children collapsed" id="buyer_${buyerIndex}_children">
                 `;
@@ -2514,9 +2528,9 @@
 
                     html += `
                         <div class="nav-tree-item level-1" onclick="navigateToElement('${campaignId}')">
-                            <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('campaign_${buyerIndex}_${campaignIndex}')">▸</span>
                             <i class="fas fa-tv nav-icon"></i>
                             ${escapeHtml(campaignName)}
+                            <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('campaign_${buyerIndex}_${campaignIndex}')">▸</span>
                         </div>
                         <div class="nav-tree-children collapsed" id="campaign_${buyerIndex}_${campaignIndex}_children">
                     `;
@@ -2530,9 +2544,9 @@
 
                         html += `
                             <div class="nav-tree-item level-2" onclick="navigateToElement('${groupId}')">
-                                <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('group_${buyerIndex}_${campaignIndex}_${groupIndex}')">▸</span>
                                 <i class="fas fa-folder nav-icon"></i>
                                 ${escapeHtml(groupName)}
+                                <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('group_${buyerIndex}_${campaignIndex}_${groupIndex}')">▸</span>
                             </div>
                             <div class="nav-tree-children collapsed" id="group_${buyerIndex}_${campaignIndex}_${groupIndex}_children">
                         `;
@@ -5289,25 +5303,56 @@
         window.setupTooltipHandlers = setupTooltipHandlers;
 
         // Navigation expand/collapse functions
+        let navigationExpanded = false;
+
+        function toggleAllNavigation() {
+            const toggleBtn = document.getElementById('navToggleBtn');
+            const toggleIcon = document.getElementById('navToggleIcon');
+            const toggleText = document.getElementById('navToggleText');
+            
+            if (navigationExpanded) {
+                // Свернуть все
+                document.querySelectorAll('.nav-tree-children').forEach(children => {
+                    children.classList.add('collapsed');
+                });
+                document.querySelectorAll('.nav-tree-toggle').forEach(toggle => {
+                    toggle.textContent = '▸';
+                });
+                
+                toggleBtn.classList.remove('expanded');
+                toggleIcon.className = 'fas fa-plus-square';
+                toggleText.textContent = 'Раскрыть';
+                navigationExpanded = false;
+            } else {
+                // Раскрыть все
+                document.querySelectorAll('.nav-tree-children.collapsed').forEach(children => {
+                    children.classList.remove('collapsed');
+                });
+                document.querySelectorAll('.nav-tree-toggle').forEach(toggle => {
+                    toggle.textContent = '▾';
+                });
+                
+                toggleBtn.classList.add('expanded');
+                toggleIcon.className = 'fas fa-minus-square';
+                toggleText.textContent = 'Свернуть';
+                navigationExpanded = true;
+            }
+        }
+
         function expandAllNavigation() {
-            document.querySelectorAll('.nav-tree-children.collapsed').forEach(children => {
-                children.classList.remove('collapsed');
-            });
-            document.querySelectorAll('.nav-tree-toggle').forEach(toggle => {
-                toggle.textContent = '▾';
-            });
+            if (!navigationExpanded) {
+                toggleAllNavigation();
+            }
         }
 
         function collapseAllNavigation() {
-            document.querySelectorAll('.nav-tree-children').forEach(children => {
-                children.classList.add('collapsed');
-            });
-            document.querySelectorAll('.nav-tree-toggle').forEach(toggle => {
-                toggle.textContent = '▸';
-            });
+            if (navigationExpanded) {
+                toggleAllNavigation();
+            }
         }
 
         // Make functions globally available
+        window.toggleAllNavigation = toggleAllNavigation;
         window.expandAllNavigation = expandAllNavigation;
         window.collapseAllNavigation = collapseAllNavigation;
         window.toggleNavTree = toggleNavTree;
