@@ -29,6 +29,68 @@
             width: 100%;
         }
 
+        /* Navigation Sidebar */
+        .navigation-sidebar {
+            width: 320px;
+            background: #0f172a;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            left: 280px;
+            top: 0;
+            z-index: 1001;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-header {
+            padding: 20px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            background: #0f172a;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .nav-header h2 {
+            color: #60a5fa;
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0 0 12px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-expand-all,
+        .nav-collapse-all {
+            background: rgba(96, 165, 250, 0.15);
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            color: #60a5fa;
+            padding: 6px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .nav-expand-all:hover,
+        .nav-collapse-all:hover {
+            background: rgba(96, 165, 250, 0.25);
+            color: white;
+        }
+
+        .navigation-tree-container {
+            padding: 0 8px 20px 8px;
+        }
+
         /* Sidebar */
         .sidebar {
             width: 280px;
@@ -38,6 +100,8 @@
             position: fixed;
             height: 100vh;
             overflow-y: auto;
+            left: 0;
+            z-index: 1000;
         }
 
         .logo {
@@ -84,9 +148,9 @@
         /* Main Content */
         .main-content {
             flex: 1;
-            margin-left: 280px;
+            margin-left: 600px;
             padding: 24px 32px;
-            width: calc(100% - 280px);
+            width: calc(100% - 600px);
             overflow-x: hidden;
             min-height: 100vh;
         }
@@ -1518,27 +1582,30 @@
 
         .nav-tree-item {
             display: block;
-            padding: 6px 8px;
+            padding: 8px 12px;
             color: rgba(255, 255, 255, 0.8);
             text-decoration: none;
-            border-radius: 6px;
-            margin-bottom: 4px;
-            font-size: 12px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            font-size: 13px;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s ease;
             position: relative;
+            border: 1px solid transparent;
         }
 
         .nav-tree-item:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(96, 165, 250, 0.15);
             color: white;
+            border-color: rgba(96, 165, 250, 0.3);
         }
 
         .nav-tree-item.active {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(96, 165, 250, 0.25);
             color: white;
             font-weight: 600;
+            border-color: rgba(96, 165, 250, 0.5);
         }
 
         .nav-tree-item.level-0 {
@@ -1614,13 +1681,30 @@
 
         /* Responsive */
         @media (max-width: 1024px) {
+            .navigation-sidebar {
+                transform: translateX(100%);
+            }
+
+            .sidebar {
+                left: 0;
+            }
+
+            .main-content {
+                margin-left: 280px;
+                padding: 20px;
+                width: calc(100% - 280px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navigation-sidebar,
             .sidebar {
                 transform: translateX(-100%);
             }
 
             .main-content {
                 margin-left: 0;
-                padding: 20px;
+                padding: 16px;
                 width: 100%;
             }
 
@@ -1672,6 +1756,29 @@
 </head>
 
 <body>
+    <!-- Navigation Sidebar -->
+    <div class="navigation-sidebar">
+        <div class="nav-header">
+            <h2><i class="fas fa-sitemap"></i> Навигация</h2>
+            <div class="nav-controls">
+                <button class="nav-expand-all" onclick="expandAllNavigation()">
+                    <i class="fas fa-plus-square"></i>
+                </button>
+                <button class="nav-collapse-all" onclick="collapseAllNavigation()">
+                    <i class="fas fa-minus-square"></i>
+                </button>
+            </div>
+        </div>
+        <div class="navigation-tree-container">
+            <div class="navigation-tree" id="navigationTree">
+                <div class="nav-placeholder">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Загрузите данные для отображения навигации</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="logo">
@@ -1682,17 +1789,6 @@
                 <i class="fas fa-chart-bar"></i>
                 Аналитика
             </a>
-            <div class="nav-item nav-navigation" onclick="toggleNavigation()">
-                <i class="fas fa-sitemap"></i>
-                Навигация
-                <i class="fas fa-chevron-right nav-arrow" id="navArrow"></i>
-            </div>
-            <div class="navigation-tree collapsed" id="navigationTree">
-                <div class="nav-placeholder">
-                    <i class="fas fa-info-circle"></i>
-                    <span>Загрузите данные для отображения навигации</span>
-                </div>
-            </div>
         </nav>
     </div>
 
@@ -2268,6 +2364,11 @@
 
             html += `</tbody></table></div>`;
             container.innerHTML = html;
+            
+            // Автоматически раскрываем все уровни при первой загрузке
+            setTimeout(() => {
+                expandAllNavigation();
+            }, 100);
 
             setTimeout(() => {
                 setupCalendarToggles();
@@ -2336,21 +2437,6 @@
             setupTooltipHandlers();
         }
 
-        // Navigation functions
-        function toggleNavigation() {
-            const tree = document.getElementById('navigationTree');
-            const arrow = document.getElementById('navArrow');
-            const navItem = document.querySelector('.nav-navigation');
-
-            if (tree.classList.contains('collapsed')) {
-                tree.classList.remove('collapsed');
-                navItem.classList.add('expanded');
-            } else {
-                tree.classList.add('collapsed');
-                navItem.classList.remove('expanded');
-            }
-        }
-
         function buildNavigationTree(buyerGroupsData) {
             const container = document.getElementById('navigationTree');
 
@@ -2363,6 +2449,11 @@
                 `;
                 return;
             }
+
+            // Автоматически раскрываем навигацию при загрузке данных
+            setTimeout(() => {
+                expandAllNavigation();
+            }, 500);
 
             // Функция для очистки имен (как в основном коде)
             function cleanName(name, index, prefix) {
@@ -2458,10 +2549,10 @@
             const children = document.getElementById(itemId + '_children');
             const toggle = event.currentTarget;
 
-            if (children.classList.contains('collapsed')) {
+            if (children && children.classList.contains('collapsed')) {
                 children.classList.remove('collapsed');
                 toggle.textContent = '▾';
-            } else {
+            } else if (children) {
                 children.classList.add('collapsed');
                 toggle.textContent = '▸';
             }
@@ -5178,6 +5269,31 @@
         window.hideTooltip = hideTooltip;
         window.pinTooltip = pinTooltip;
         window.setupTooltipHandlers = setupTooltipHandlers;
+
+        // Navigation expand/collapse functions
+        function expandAllNavigation() {
+            document.querySelectorAll('.nav-tree-children.collapsed').forEach(children => {
+                children.classList.remove('collapsed');
+            });
+            document.querySelectorAll('.nav-tree-toggle').forEach(toggle => {
+                toggle.textContent = '▾';
+            });
+        }
+
+        function collapseAllNavigation() {
+            document.querySelectorAll('.nav-tree-children').forEach(children => {
+                children.classList.add('collapsed');
+            });
+            document.querySelectorAll('.nav-tree-toggle').forEach(toggle => {
+                toggle.textContent = '▸';
+            });
+        }
+
+        // Make functions globally available
+        window.expandAllNavigation = expandAllNavigation;
+        window.collapseAllNavigation = collapseAllNavigation;
+        window.toggleNavTree = toggleNavTree;
+        window.navigateToElement = navigateToElement;
     </script>
 </body>
 
