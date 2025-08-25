@@ -1691,6 +1691,64 @@
             display: none;
         }
 
+        /* Navigation Blocks */
+        .nav-block {
+            margin-bottom: 16px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .nav-block-header {
+            background: rgba(96, 165, 250, 0.2);
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+            color: #60a5fa;
+            font-size: 14px;
+        }
+
+        .nav-block-header:hover {
+            background: rgba(96, 165, 250, 0.3);
+            color: white;
+        }
+
+        .nav-block-header.collapsed {
+            background: rgba(96, 165, 250, 0.1);
+        }
+
+        .nav-block-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-block-toggle {
+            font-size: 12px;
+            transition: transform 0.3s ease;
+        }
+
+        .nav-block-header:not(.collapsed) .nav-block-toggle {
+            transform: rotate(90deg);
+        }
+
+        .nav-block-content {
+            padding: 8px;
+            max-height: 1000px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .nav-block-content.collapsed {
+            max-height: 0;
+            padding: 0 8px;
+        }
+
         .nav-icon {
             margin-right: 6px;
             font-size: 10px;
@@ -2455,6 +2513,8 @@
 
             displayStatusBanner(data.article, data.generalMetrics);
             displayGeneralMetrics(data.generalMetrics);
+            // Сохраняем календарные данные глобально для навигации
+            window.currentCalendarData = data.calendarData || {};
             displayCalendarMetrics(data.calendarData || {});
             displayGeneralChart(data.article, data.generalData);
             displayGeneralTable(data.generalData, periodStart, periodEnd);
@@ -2501,68 +2561,73 @@
                 return cleanedName;
             }
 
-            let html = '';
+            // Функция для создания структуры навигации по байерам
+            function createBuyersNavigationStructure(data, targetPrefix) {
+                let html = '';
 
-            Object.keys(buyerGroupsData).forEach((buyerName, buyerIndex) => {
-                const buyerData = buyerGroupsData[buyerName];
-                const cleanBuyerName = cleanName(buyerName, buyerIndex, 'buyer');
-                const buyerId = `enhanced_buyer_${cleanBuyerName}`;
+                Object.keys(data).forEach((buyerName, buyerIndex) => {
+                    const buyerData = data[buyerName];
+                    const cleanBuyerName = cleanName(buyerName, buyerIndex, 'buyer');
+                    const buyerId = `${targetPrefix}_buyer_${cleanBuyerName}`;
 
-                console.log('🔍 NAV: Creating buyer link:', buyerName, '→', buyerId);
-
-                html += `
-                    <div class="nav-tree-item level-0" onclick="navigateToElement('${buyerId}')">
-                        <i class="fas fa-user-tie nav-icon"></i>
-                        ${escapeHtml(buyerName)}
-                        <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('buyer_${buyerIndex}')">▸</span>
-                    </div>
-                    <div class="nav-tree-children collapsed" id="buyer_${buyerIndex}_children">
-                `;
-
-                Object.keys(buyerData.campaigns || {}).forEach((campaignName, campaignIndex) => {
-                    const campaignData = buyerData.campaigns[campaignName];
-                    const cleanCampaignName = cleanName(campaignName, campaignIndex, 'campaign');
-                    const campaignId = `enhanced_campaign_${cleanBuyerName}_${cleanCampaignName}_${campaignIndex}`;
-
-                    console.log('🔍 NAV: Creating campaign link:', campaignName, '→', campaignId);
+                    console.log(`🔍 NAV: Creating buyer link for ${targetPrefix}:`, buyerName, '→', buyerId);
 
                     html += `
-                        <div class="nav-tree-item level-1" onclick="navigateToElement('${campaignId}')">
-                            <i class="fas fa-tv nav-icon"></i>
-                            ${escapeHtml(campaignName)}
-                            <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('campaign_${buyerIndex}_${campaignIndex}')">▸</span>
+                        <div class="nav-tree-item level-0" onclick="navigateToElement('${buyerId}')">
+                            <i class="fas fa-user-tie nav-icon"></i>
+                            ${escapeHtml(buyerName)}
+                            <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('${targetPrefix}_buyer_${buyerIndex}')">▸</span>
                         </div>
-                        <div class="nav-tree-children collapsed" id="campaign_${buyerIndex}_${campaignIndex}_children">
+                        <div class="nav-tree-children collapsed" id="${targetPrefix}_buyer_${buyerIndex}_children">
                     `;
 
-                    Object.keys(campaignData.groups || {}).forEach((groupName, groupIndex) => {
-                        const groupData = campaignData.groups[groupName];
-                        const cleanGroupName = cleanName(groupName, groupIndex, 'group');
-                        const groupId = `enhanced_group_${cleanBuyerName}_${cleanCampaignName}_${cleanGroupName}_${groupIndex}`;
+                    Object.keys(buyerData.campaigns || {}).forEach((campaignName, campaignIndex) => {
+                        const campaignData = buyerData.campaigns[campaignName];
+                        const cleanCampaignName = cleanName(campaignName, campaignIndex, 'campaign');
+                        const campaignId = `${targetPrefix}_campaign_${cleanBuyerName}_${cleanCampaignName}_${campaignIndex}`;
 
-                        console.log('🔍 NAV: Creating group link:', groupName, '→', groupId);
+                        console.log(`🔍 NAV: Creating campaign link for ${targetPrefix}:`, campaignName, '→', campaignId);
 
                         html += `
-                            <div class="nav-tree-item level-2" onclick="navigateToElement('${groupId}')">
-                                <i class="fas fa-folder nav-icon"></i>
-                                ${escapeHtml(groupName)}
-                                <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('group_${buyerIndex}_${campaignIndex}_${groupIndex}')">▸</span>
+                            <div class="nav-tree-item level-1" onclick="navigateToElement('${campaignId}')">
+                                <i class="fas fa-tv nav-icon"></i>
+                                ${escapeHtml(campaignName)}
+                                <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('${targetPrefix}_campaign_${buyerIndex}_${campaignIndex}')">▸</span>
                             </div>
-                            <div class="nav-tree-children collapsed" id="group_${buyerIndex}_${campaignIndex}_${groupIndex}_children">
+                            <div class="nav-tree-children collapsed" id="${targetPrefix}_campaign_${buyerIndex}_${campaignIndex}_children">
                         `;
 
-                        Object.keys(groupData.ads || {}).forEach((adName, adIndex) => {
-                            const cleanAdName = cleanName(adName, adIndex, 'ad');
-                            const adId = `enhanced_ad_${cleanBuyerName}_${cleanCampaignName}_${cleanGroupName}_${cleanAdName}_${adIndex}`;
+                        Object.keys(campaignData.groups || {}).forEach((groupName, groupIndex) => {
+                            const groupData = campaignData.groups[groupName];
+                            const cleanGroupName = cleanName(groupName, groupIndex, 'group');
+                            const groupId = `${targetPrefix}_group_${cleanBuyerName}_${cleanCampaignName}_${cleanGroupName}_${groupIndex}`;
 
-                            console.log('🔍 NAV: Creating ad link:', adName, '→', adId);
+                            console.log(`🔍 NAV: Creating group link for ${targetPrefix}:`, groupName, '→', groupId);
 
                             html += `
-                                <div class="nav-tree-item level-3" onclick="navigateToElement('${adId}')">
-                                    <i class="fas fa-rectangle-ad nav-icon"></i>
-                                    ${escapeHtml(adName)}
+                                <div class="nav-tree-item level-2" onclick="navigateToElement('${groupId}')">
+                                    <i class="fas fa-folder nav-icon"></i>
+                                    ${escapeHtml(groupName)}
+                                    <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('${targetPrefix}_group_${buyerIndex}_${campaignIndex}_${groupIndex}')">▸</span>
                                 </div>
+                                <div class="nav-tree-children collapsed" id="${targetPrefix}_group_${buyerIndex}_${campaignIndex}_${groupIndex}_children">
                             `;
+
+                            Object.keys(groupData.ads || {}).forEach((adName, adIndex) => {
+                                const cleanAdName = cleanName(adName, adIndex, 'ad');
+                                const adId = `${targetPrefix}_ad_${cleanBuyerName}_${cleanCampaignName}_${cleanGroupName}_${cleanAdName}_${adIndex}`;
+
+                                console.log(`🔍 NAV: Creating ad link for ${targetPrefix}:`, adName, '→', adId);
+
+                                html += `
+                                    <div class="nav-tree-item level-3" onclick="navigateToElement('${adId}')">
+                                        <i class="fas fa-rectangle-ad nav-icon"></i>
+                                        ${escapeHtml(adName)}
+                                    </div>
+                                `;
+                            });
+
+                            html += '</div>';
                         });
 
                         html += '</div>';
@@ -2571,8 +2636,113 @@
                     html += '</div>';
                 });
 
-                html += '</div>';
-            });
+                return html;
+            }
+
+            // Функция для создания структуры навигации календаря
+            function createCalendarNavigationStructure(calendarData) {
+                let html = '';
+
+                if (!calendarData || Object.keys(calendarData).length === 0) {
+                    return '<div class="nav-placeholder"><i class="fas fa-calendar-times"></i><span>Нет данных календаря</span></div>';
+                }
+
+                Object.keys(calendarData).forEach((trackerName, trackerIndex) => {
+                    const trackerData = calendarData[trackerName];
+                    const cleanTrackerName = cleanName(trackerName, trackerIndex, 'tracker');
+
+                    console.log(`🔍 CALENDAR NAV: Creating tracker:`, trackerName);
+
+                    html += `
+                        <div class="nav-tree-item level-0" onclick="scrollToCalendarElement('${escapeHtml(trackerName)}', 'tracker')">
+                            <i class="fas fa-chart-line nav-icon"></i>
+                            ${escapeHtml(trackerName)}
+                            <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('calendar_tracker_${trackerIndex}')">▸</span>
+                        </div>
+                        <div class="nav-tree-children collapsed" id="calendar_tracker_${trackerIndex}_children">
+                    `;
+
+                    Object.keys(trackerData.campaigns || {}).forEach((campaignName, campaignIndex) => {
+                        const campaignData = trackerData.campaigns[campaignName];
+
+                        console.log(`🔍 CALENDAR NAV: Creating campaign:`, campaignName);
+
+                        html += `
+                            <div class="nav-tree-item level-1" onclick="scrollToCalendarElement('${escapeHtml(campaignName)}', 'campaign')">
+                                <i class="fas fa-tv nav-icon"></i>
+                                ${escapeHtml(campaignName)}
+                                <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('calendar_campaign_${trackerIndex}_${campaignIndex}')">▸</span>
+                            </div>
+                            <div class="nav-tree-children collapsed" id="calendar_campaign_${trackerIndex}_${campaignIndex}_children">
+                        `;
+
+                        Object.keys(campaignData.groups || {}).forEach((groupName, groupIndex) => {
+                            const groupData = campaignData.groups[groupName];
+
+                            console.log(`🔍 CALENDAR NAV: Creating group:`, groupName);
+
+                            html += `
+                                <div class="nav-tree-item level-2" onclick="scrollToCalendarElement('${escapeHtml(groupName)}', 'group')">
+                                    <i class="fas fa-folder nav-icon"></i>
+                                    ${escapeHtml(groupName)}
+                                    <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('calendar_group_${trackerIndex}_${campaignIndex}_${groupIndex}')">▸</span>
+                                </div>
+                                <div class="nav-tree-children collapsed" id="calendar_group_${trackerIndex}_${campaignIndex}_${groupIndex}_children">
+                            `;
+
+                            Object.keys(groupData.ads || {}).forEach((adName, adIndex) => {
+                                console.log(`🔍 CALENDAR NAV: Creating ad:`, adName);
+
+                                html += `
+                                    <div class="nav-tree-item level-3" onclick="scrollToCalendarElement('${escapeHtml(adName)}', 'ad')">
+                                        <i class="fas fa-rectangle-ad nav-icon"></i>
+                                        ${escapeHtml(adName)}
+                                    </div>
+                                `;
+                            });
+
+                            html += '</div>';
+                        });
+
+                        html += '</div>';
+                    });
+
+                    html += '</div>';
+                });
+
+                return html;
+            }
+
+            // Создаем полную структуру с блоками
+            let html = `
+                <!-- Блок Календарь -->
+                <div class="nav-block">
+                    <div class="nav-block-header" onclick="toggleNavBlock('calendar')" id="calendarBlockHeader">
+                        <div class="nav-block-title">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Календарь</span>
+                        </div>
+                        <span class="nav-block-toggle">▾</span>
+                    </div>
+                    <div class="nav-block-content" id="calendarBlockContent">
+                        ${createCalendarNavigationStructure(window.currentCalendarData || {})}
+                    </div>
+                </div>
+
+                <!-- Блок По байерам -->
+                <div class="nav-block">
+                    <div class="nav-block-header" onclick="toggleNavBlock('buyers')" id="buyersBlockHeader">
+                        <div class="nav-block-title">
+                            <i class="fas fa-users"></i>
+                            <span>По байерам</span>
+                        </div>
+                        <span class="nav-block-toggle">▾</span>
+                    </div>
+                    <div class="nav-block-content" id="buyersBlockContent">
+                        ${createBuyersNavigationStructure(buyerGroupsData, 'enhanced')}
+                    </div>
+                </div>
+            `;
 
             container.innerHTML = html;
         }
@@ -2593,15 +2763,22 @@
         function navigateToElement(elementId) {
             console.log('🚀 SMART NAVIGATION for:', elementId);
 
+            // Определяем реальный ID элемента (убираем префиксы навигационных блоков)
+            let realElementId = elementId;
+            if (elementId.startsWith('calendar_')) {
+                realElementId = elementId.replace('calendar_', 'enhanced_');
+                console.log('🔄 Converting calendar navigation to real element:', elementId, '→', realElementId);
+            }
+
             // Найдем целевой элемент сразу
-            const targetElement = findTargetElement(elementId);
+            const targetElement = findTargetElement(realElementId);
             if (!targetElement) {
-                console.log('❌ Target element not found:', elementId);
+                console.log('❌ Target element not found:', realElementId);
                 return;
             }
 
             // Раскрываем всю цепочку до этого элемента
-            expandToTarget(targetElement, elementId);
+            expandToTarget(targetElement, realElementId);
 
             // Прокручиваем к элементу
             setTimeout(() => {
@@ -5355,6 +5532,73 @@
         window.toggleAllNavigation = toggleAllNavigation;
         window.expandAllNavigation = expandAllNavigation;
         window.collapseAllNavigation = collapseAllNavigation;
+        // Navigation blocks management
+        function toggleNavBlock(blockName) {
+            const header = document.getElementById(blockName + 'BlockHeader');
+            const content = document.getElementById(blockName + 'BlockContent');
+            const toggle = header.querySelector('.nav-block-toggle');
+
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+                header.classList.remove('collapsed');
+                toggle.textContent = '▾';
+            } else {
+                content.classList.add('collapsed');
+                header.classList.add('collapsed');
+                toggle.textContent = '▸';
+            }
+        }
+
+        // Make block navigation globally available
+        window.toggleNavBlock = toggleNavBlock;
+        // Calendar navigation function
+        function scrollToCalendarElement(elementName, elementType) {
+            console.log('📅 CALENDAR NAVIGATION for:', elementName, 'type:', elementType);
+            
+            // Находим элемент в таблице календаря по тексту
+            const calendarTable = document.querySelector('.calendar-table');
+            if (!calendarTable) {
+                console.log('❌ Calendar table not found');
+                return;
+            }
+
+            // Ищем строку с соответствующим названием
+            const rows = calendarTable.querySelectorAll('tbody tr');
+            let targetRow = null;
+
+            rows.forEach(row => {
+                const nameCell = row.querySelector('td:first-child .calendar-name');
+                if (nameCell && nameCell.textContent.trim() === elementName) {
+                    targetRow = row;
+                }
+            });
+
+            if (targetRow) {
+                console.log('✅ Found calendar element:', elementName);
+                
+                // Прокручиваем к элементу
+                targetRow.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                    inline: 'nearest'
+                });
+
+                // Подсвечиваем строку
+                setTimeout(() => {
+                    targetRow.style.background = 'rgba(96, 165, 250, 0.2)';
+                    targetRow.style.transition = 'background 0.3s ease';
+                    
+                    setTimeout(() => {
+                        targetRow.style.background = '';
+                    }, 3000);
+                }, 300);
+            } else {
+                console.log('❌ Calendar element not found:', elementName);
+            }
+        }
+
+        // Make calendar navigation globally available
+        window.scrollToCalendarElement = scrollToCalendarElement;
         window.toggleNavTree = toggleNavTree;
         window.navigateToElement = navigateToElement;
     </script>
