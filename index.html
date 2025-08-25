@@ -2974,33 +2974,54 @@
                 };
             }
 
-            // Если указаны пользовательские даты, фильтруем по ним
+            // Если указаны пользовательские даты, фильтруем только по ним и только активные дни
             let actualStartIndex = startIndex;
             let actualEndIndex = endIndex || data.dates.length - 1;
+            let useUserPeriod = false;
 
             if (userStartDate && userEndDate) {
-                // Конвертируем пользовательские даты в нужный формат для сравнения
-                const userStart = new Date(userStartDate);
-                const userEnd = new Date(userEndDate);
+                useUserPeriod = true;
+                
+                // Нормализуем пользовательские даты к началу дня
+                const userStartForComparison = new Date(userStartDate);
+                userStartForComparison.setHours(0, 0, 0, 0);
+                
+                const userEndForComparison = new Date(userEndDate);
+                userEndForComparison.setHours(23, 59, 59, 999);
+                
+                console.log('🔍 User period:', userStartDate, 'to', userEndDate);
+                console.log('🔍 Normalized period:', userStartForComparison, 'to', userEndForComparison);
                 
                 actualStartIndex = -1;
                 actualEndIndex = -1;
 
                 for (let i = 0; i < data.dates.length; i++) {
-                    // Конвертируем дату из формата "dd.MM.yyyy" в Date объект
-                    const [day, month, year] = data.dates[i].split('.');
-                    const currentDate = new Date(year, month - 1, day);
+                    const currentDateStr = data.dates[i]; // Формат "dd.MM.yyyy"
                     
-                    if (currentDate >= userStart && actualStartIndex === -1) {
-                        actualStartIndex = i;
-                    }
-                    if (currentDate <= userEnd) {
+                    // Конвертируем в формат для сравнения и нормализуем к началу дня
+                    const [day, month, year] = currentDateStr.split('.');
+                    const currentDateForComparison = new Date(year, month - 1, day);
+                    currentDateForComparison.setHours(12, 0, 0, 0); // Ставим на середину дня для избежания проблем с часовыми поясами
+                    
+                    console.log('🔍 Checking date:', currentDateStr, '(', currentDateForComparison, ') vs period:', userStartForComparison, '-', userEndForComparison);
+                    
+                    // Сравниваем даты
+                    if (currentDateForComparison >= userStartForComparison && currentDateForComparison <= userEndForComparison) {
+                        if (actualStartIndex === -1) {
+                            actualStartIndex = i;
+                        }
                         actualEndIndex = i;
+                        console.log('✅ Date', currentDateStr, 'is in period, index:', i);
+                    } else {
+                        console.log('❌ Date', currentDateStr, 'is NOT in period');
                     }
                 }
 
+                console.log('🔍 Period indices:', actualStartIndex, 'to', actualEndIndex);
+
                 // Если не найдены даты в диапазоне, возвращаем пустые метрики
-                if (actualStartIndex === -1 || actualEndIndex === -1) {
+                if (actualStartIndex === -1) {
+                    console.log('❌ No dates found in user period');
                     return {
                         avgCPL: "0,00",
                         totalLeads: 0,
@@ -3024,8 +3045,17 @@
                 const dayLeads = data.leadsDay ? (data.leadsDay[i] || 0) : 0;
                 const daySpend = data.spendDay ? (data.spendDay[i] || 0) : 0;
                 
+                console.log('🔍 Processing day:', data.dates[i], 'leads:', dayLeads, 'spend:', daySpend, 'active:', (dayLeads > 0 || daySpend > 0));
+                
+                // Если используется пользовательский период, учитываем только активные дни
+                if (useUserPeriod && dayLeads === 0 && daySpend === 0) {
+                    console.log('⏩ Skipping inactive day:', data.dates[i]);
+                    continue; // Пропускаем неактивные дни в пользовательском периоде
+                }
+                
                 totalLeads += dayLeads;
                 totalSpend += daySpend;
+                console.log('✅ Added to totals - day:', data.dates[i], 'total leads:', totalLeads, 'total spend:', totalSpend);
 
                 // CPL
                 if (dayLeads > 0 && daySpend > 0) {
@@ -3175,8 +3205,6 @@
                 calculateAggregatedMetrics(data, 0, 0);
 
             const rows = [
-                "Период",
-                "7 дней",
                 "Дата",
                 "Рейтинг",
                 "CPL (день)",
@@ -3208,7 +3236,7 @@
                 // Первые два столбца - агрегированные данные
                 // Обрабатываем данные для каждой строки
                 switch (index) {
-                    case 0: // Период
+                    case 0: // Дата
                         html += `<td style="background-color: #f8fafc; color: #64748b; text-align: center; font-style: italic; font-size: 12px;">Период</td>`;
                         html += `<td style="background-color: #f8fafc; color: #64748b; text-align: center; font-style: italic; font-size: 12px;">7дн.</td>`;
                         break;
@@ -3216,43 +3244,43 @@
                         html += `<td style="background-color: #f8fafc;"></td>`;
                         html += `<td style="background-color: #f8fafc;"></td>`;
                         break;
-                    case 2: // CPL
+                    case 2: // CPL (день)
                         html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPL}</td>`;
                         html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPL}</td>`;
                         break;
-                    case 3: // Лиды
+                    case 3: // Лиды (день)
                         html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalLeads}</td>`;
                         html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalLeads}</td>`;
                         break;
-                    case 4: // Расходы
+                    case 4: // Расход (день)
                         html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalSpend}</td>`;
                         html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalSpend}</td>`;
                         break;
-                    case 5: // Конверсия
+                    case 5: // Конверт в день
                         html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgConversion}</td>`;
                         html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgConversion}</td>`;
                         break;
-                    case 12: // CTR
+                    case 11: // CTR (целевая страница)
                         html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCTR}</td>`;
                         html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCTR}</td>`;
                         break;
-                    case 13: // CPM
+                    case 12: // CPM
                         html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPM}</td>`;
                         html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPM}</td>`;
                         break;
-                    case 14: // Показы
+                    case 13: // Показы
                         html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalImpressions}</td>`;
                         html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalImpressions}</td>`;
                         break;
-                    case 15: // Клики
+                    case 14: // Клики (переход)
                         html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalClicks}</td>`;
                         html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalClicks}</td>`;
                         break;
-                    case 16: // CPC
+                    case 15: // CPC (целевая страница)
                         html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPC}</td>`;
                         html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPC}</td>`;
                         break;
-                    case 17: // Время просмотра
+                    case 16: // Среднее время воспроизведения видео
                         html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgWatchTime}</td>`;
                         html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgWatchTime}</td>`;
                         break;
@@ -3269,29 +3297,29 @@
                     let cellStyle = "";
 
                     switch (index) {
-                        case 2:
+                        case 0:
                             value = data.dates[i];
                             break;
-                        case 3:
+                        case 1:
                             value = data.ratings[i];
                             className = value ? `rating-${value}` : "";
                             break;
-                        case 4:
+                        case 2:
                             value = formatNumberWithZero(data.cplDay[i]);
                             break;
-                        case 5:
+                        case 3:
                             value = data.leadsDay[i];
                             break;
-                        case 6:
+                        case 4:
                             value = formatNumberWithZero(data.spendDay[i]);
                             break;
-                        case 7:
+                        case 5:
                             value = data.conversionDay ? data.conversionDay[i] : "";
                             break;
-                        case 8:
+                        case 6:
                             value = formatNumber(data.maxCPL[i]);
                             break;
-                        case 9:
+                        case 7:
                             value = formatNumberWithZero(data.cplCumulative[i]);
                             if (data.cplCumulativeArrows && data.cplCumulativeArrows[i]) {
                                 value += " " + data.cplCumulativeArrows[i];
@@ -3310,44 +3338,44 @@
                                 }
                             }
                             break;
-                        case 10:
+                        case 8:
                             value = data.groups ? data.groups[i] : "";
                             break;
-                        case 11:
+                        case 9:
                             value = data.buyers ? data.buyers[i] : "";
                             break;
-                        case 12:
+                        case 10:
                             value = data.accounts ? data.accounts[i] : "";
                             break;
-                        case 13:
+                        case 11:
                             value = data.freq ? data.freq[i] : "";
                             break;
-                        case 14:
+                        case 12:
                             value = data.ctr ? data.ctr[i] : "";
                             break;
-                        case 15:
+                        case 13:
                             value = data.cpm ? data.cpm[i] : "";
                             break;
-                        case 16:
+                        case 14:
                             value = data.impressions[i];
                             break;
-                        case 17:
+                        case 15:
                             value = data.linkClicks ? data.linkClicks[i] : "";
                             break;
-                        case 18:
+                        case 16:
                             value = data.cpc ? data.cpc[i] : "";
                             break;
-                        case 19:
+                        case 17:
                             value = data.avgWatchTime ? data.avgWatchTime[i] : "";
                             break;
-                        case 20:
+                        case 18:
                             value = data.videoName ? data.videoName[i] : "";
                             break;
-                        case 21:
+                        case 19:
                             const urlValue = data.siteUrl ? data.siteUrl[i] : "";
                             value = makeUrlsClickable(urlValue);
                             break;
-                        case 22:
+                        case 20:
                             value = data.budget ? data.budget[i] : "";
                             break;
                     }
@@ -3364,7 +3392,7 @@
                         additionalStyle = " text-align: center;";
                     }
 
-                    if (index === 21) {
+                    if (index === 19) {
                         html += `<td class="${className} url-cell" style="${cellStyle}${additionalStyle}">${value}</td>`;
                     } else {
                         html += `<td class="${className}" style="${cellStyle}${additionalStyle}">${escapeHtml(
