@@ -2447,7 +2447,7 @@
             displayBuyerGroups(data.article, data.buyerGroupsData || {}, periodStart, periodEnd);
 
             // Строим навигационное дерево
-            buildNavigationTree(data.buyerGroupsData || {}, data.calendarData || {});
+            buildNavigationTree(data.buyerGroupsData || {});
 
             showResults();
 
@@ -2455,11 +2455,10 @@
             setupTooltipHandlers();
         }
 
-        function buildNavigationTree(buyerGroupsData, calendarData = {}) {
+        function buildNavigationTree(buyerGroupsData) {
             const container = document.getElementById('navigationTree');
 
-            if ((!buyerGroupsData || Object.keys(buyerGroupsData).length === 0) && 
-                (!calendarData || Object.keys(calendarData).length === 0)) {
+            if (!buyerGroupsData || Object.keys(buyerGroupsData).length === 0) {
                 container.innerHTML = `
                     <div class="nav-placeholder">
                         <i class="fas fa-info-circle"></i>
@@ -2486,89 +2485,6 @@
                 }
 
                 return cleanedName;
-            }
-
-
-            // КАЛЕНДАРЬ МЕТРИК НАВИГАЦИЯ
-            if (calendarData && Object.keys(calendarData).length > 0) {
-                html += `
-                    <div class="nav-tree-item level-0" style="background: rgba(96, 165, 250, 0.2); border: 1px solid rgba(96, 165, 250, 0.4); margin-bottom: 8px;">
-                        <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('calendar_section')">▸</span>
-                        <i class="fas fa-calendar-alt nav-icon" style="color: #60a5fa;"></i>
-                        <strong>📅 Календарь метрик</strong>
-                    </div>
-                    <div class="nav-tree-children collapsed" id="calendar_section_children">
-                `;
-
-                Object.keys(calendarData).forEach((trackerName, trackerIndex) => {
-                    const trackerData = calendarData[trackerName];
-                    const cleanTrackerName = cleanName(trackerName, trackerIndex, 'tracker');
-                    const trackerId = `tracker_${cleanTrackerName}`;
-
-                    html += `
-                        <div class="nav-tree-item level-1" onclick="navigateToCalendarElement('tracker_${trackerIndex}')">
-                            <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('calendar_tracker_${trackerIndex}')">▸</span>
-                            <i class="fas fa-chart-line nav-icon"></i>
-                            📊 ${escapeHtml(trackerName)}
-                        </div>
-                        <div class="nav-tree-children collapsed" id="calendar_tracker_${trackerIndex}_children">
-                    `;
-
-                    Object.keys(trackerData.campaigns || {}).forEach((campaignName, campaignIndex) => {
-                        const campaignData = trackerData.campaigns[campaignName];
-                        
-                        html += `
-                            <div class="nav-tree-item level-2" onclick="navigateToCalendarElement('campaign_${trackerIndex}_${campaignIndex}')">
-                                <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('calendar_campaign_${trackerIndex}_${campaignIndex}')">▸</span>
-                                <i class="fas fa-tv nav-icon"></i>
-                                📱 ${escapeHtml(campaignName)}
-                            </div>
-                            <div class="nav-tree-children collapsed" id="calendar_campaign_${trackerIndex}_${campaignIndex}_children">
-                        `;
-
-                        Object.keys(campaignData.groups || {}).forEach((groupName, groupIndex) => {
-                            const groupData = campaignData.groups[groupName];
-                            
-                            html += `
-                                <div class="nav-tree-item level-3" onclick="navigateToCalendarElement('group_${trackerIndex}_${campaignIndex}_${groupIndex}')">
-                                    <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('calendar_group_${trackerIndex}_${campaignIndex}_${groupIndex}')">▸</span>
-                                    <i class="fas fa-folder nav-icon"></i>
-                                    📁 ${escapeHtml(groupName)}
-                                </div>
-                                <div class="nav-tree-children collapsed" id="calendar_group_${trackerIndex}_${campaignIndex}_${groupIndex}_children">
-                            `;
-
-                            Object.keys(groupData.ads || {}).forEach((adName, adIndex) => {
-                                html += `
-                                    <div class="nav-tree-item level-4" onclick="navigateToCalendarElement('group_${trackerIndex}_${campaignIndex}_${groupIndex}')">
-                                        <i class="fas fa-rectangle-ad nav-icon"></i>
-                                        📄 ${escapeHtml(adName)}
-                                    </div>
-                                `;
-                            });
-
-                            html += '</div>';
-                        });
-
-                        html += '</div>';
-                    });
-
-                    html += '</div>';
-                });
-
-                html += '</div>';
-            }
-
-            // БАЙЕРЫ НАВИГАЦИЯ
-            if (buyerGroupsData && Object.keys(buyerGroupsData).length > 0) {
-                html += `
-                    <div class="nav-tree-item level-0" style="background: rgba(34, 197, 94, 0.2); border: 1px solid rgba(34, 197, 94, 0.4); margin-bottom: 8px; margin-top: 12px;">
-                        <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('buyers_section')">▸</span>
-                        <i class="fas fa-users nav-icon" style="color: #22c55e;"></i>
-                        <strong>👥 Медиабайеры</strong>
-                    </div>
-                    <div class="nav-tree-children collapsed" id="buyers_section_children">
-                `;
             }
 
             let html = '';
@@ -2644,90 +2560,8 @@
                 html += '</div>';
             });
 
-                html += '</div>'; // Закрываем секцию байеров
-            }
-
             container.innerHTML = html;
-
-        function navigateToCalendarElement(elementId) {
-            console.log('🗓️ Navigating to calendar element:', elementId);
-            
-            // Найдем соответствующую строку в календарной таблице
-            const calendarRows = document.querySelectorAll('.calendar-table tbody tr');
-            let targetRow = null;
-            
-            calendarRows.forEach(row => {
-                const rowId = row.getAttribute('data-id');
-                if (rowId === elementId) {
-                    targetRow = row;
-                }
-            });
-            
-            if (targetRow) {
-                // Раскрываем все родительские элементы
-                expandCalendarToTarget(targetRow, elementId);
-                
-                // Прокручиваем к элементу
-                setTimeout(() => {
-                    targetRow.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'center',
-                        inline: 'nearest'
-                    });
-                    
-                    // Подсвечиваем элемент
-                    setTimeout(() => {
-                        targetRow.style.boxShadow = '0 0 20px rgba(96, 165, 250, 0.8)';
-                        targetRow.style.transition = 'box-shadow 0.3s ease';
-                        targetRow.style.border = '2px solid #60a5fa';
-                        
-                        setTimeout(() => {
-                            targetRow.style.boxShadow = '';
-                            targetRow.style.border = '';
-                        }, 3000);
-                    }, 300);
-                }, 800);
-            } else {
-                console.log('❌ Calendar element not found:', elementId);
-            }
         }
-
-        function expandCalendarToTarget(targetRow, elementId) {
-            // Логика раскрытия календарных элементов
-            const parts = elementId.split('_');
-            
-            if (parts.length >= 2) {
-                const trackerIndex = parts[1];
-                const trackerToggle = document.querySelector(`[data-target="tracker_${trackerIndex}"]`);
-                if (trackerToggle && trackerToggle.textContent === '▸') {
-                    trackerToggle.click();
-                }
-                
-                if (parts.length >= 4) {
-                    const campaignIndex = parts[3];
-                    setTimeout(() => {
-                        const campaignToggle = document.querySelector(`[data-target="campaign_${trackerIndex}_${campaignIndex}"]`);
-                        if (campaignToggle && campaignToggle.textContent === '▸') {
-                            campaignToggle.click();
-                        }
-                    }, 200);
-                }
-                
-                if (parts.length >= 6) {
-                    const groupIndex = parts[5];
-                    setTimeout(() => {
-                        const groupToggle = document.querySelector(`[data-target="group_${trackerIndex}_${campaignIndex}_${groupIndex}"]`);
-                        if (groupToggle && groupToggle.textContent === '▸') {
-                            groupToggle.click();
-                        }
-                    }, 400);
-                }
-            }
-        }
-
-        // Делаем функции глобально доступными
-        window.navigateToCalendarElement = navigateToCalendarElement;
-        window.expandCalendarToTarget = expandCalendarToTarget;
 
         function toggleNavTree(itemId) {
             const children = document.getElementById(itemId + '_children');
