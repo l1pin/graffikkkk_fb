@@ -3069,17 +3069,22 @@
                     if (!isNaN(convValue)) conversionValues.push(convValue);
                 }
 
-                // CTR
+                // CTR - вычисляем среднее за день
                 const ctrStr = data.ctr ? data.ctr[i] : "";
                 if (ctrStr && ctrStr.trim() !== "") {
                     const ctrLines = ctrStr.split('\n').filter(line => line.trim() !== "");
+                    const dailyCtrValues = [];
                     ctrLines.forEach(line => {
                         const ctrValue = parseFloat(line.replace(',', '.'));
-                        if (!isNaN(ctrValue)) ctrValues.push(ctrValue);
+                        if (!isNaN(ctrValue)) dailyCtrValues.push(ctrValue);
                     });
+                    if (dailyCtrValues.length > 0) {
+                        const dailyAvgCtr = dailyCtrValues.reduce((sum, val) => sum + val, 0) / dailyCtrValues.length;
+                        ctrValues.push(dailyAvgCtr);
+                    }
                 }
 
-                // Показы
+                // Показы - суммируем за день
                 const impressionsStr = data.impressions ? data.impressions[i] : "";
                 if (impressionsStr && impressionsStr.trim() !== "") {
                     const impLines = impressionsStr.split('\n').filter(line => line.trim() !== "");
@@ -3089,17 +3094,22 @@
                     });
                 }
 
-                // CPM
+                // CPM - вычисляем среднее за день
                 const cpmStr = data.cpm ? data.cpm[i] : "";
                 if (cpmStr && cpmStr.trim() !== "") {
                     const cpmLines = cpmStr.split('\n').filter(line => line.trim() !== "");
+                    const dailyCpmValues = [];
                     cpmLines.forEach(line => {
                         const cpmValue = parseFloat(line.replace(',', '.'));
-                        if (!isNaN(cpmValue)) cpmValues.push(cpmValue);
+                        if (!isNaN(cpmValue)) dailyCpmValues.push(cpmValue);
                     });
+                    if (dailyCpmValues.length > 0) {
+                        const dailyAvgCpm = dailyCpmValues.reduce((sum, val) => sum + val, 0) / dailyCpmValues.length;
+                        cpmValues.push(dailyAvgCpm);
+                    }
                 }
 
-                // Клики
+                // Клики - суммируем за день
                 const clicksStr = data.linkClicks ? data.linkClicks[i] : "";
                 if (clicksStr && clicksStr.trim() !== "") {
                     const clickLines = clicksStr.split('\n').filter(line => line.trim() !== "");
@@ -3109,24 +3119,34 @@
                     });
                 }
 
-                // CPC
+                // CPC - вычисляем среднее за день
                 const cpcStr = data.cpc ? data.cpc[i] : "";
                 if (cpcStr && cpcStr.trim() !== "") {
                     const cpcLines = cpcStr.split('\n').filter(line => line.trim() !== "");
+                    const dailyCpcValues = [];
                     cpcLines.forEach(line => {
                         const cpcValue = parseFloat(line.replace(',', '.'));
-                        if (!isNaN(cpcValue)) cpcValues.push(cpcValue);
+                        if (!isNaN(cpcValue)) dailyCpcValues.push(cpcValue);
                     });
+                    if (dailyCpcValues.length > 0) {
+                        const dailyAvgCpc = dailyCpcValues.reduce((sum, val) => sum + val, 0) / dailyCpcValues.length;
+                        cpcValues.push(dailyAvgCpc);
+                    }
                 }
 
-                // Время просмотра
+                // Время просмотра - вычисляем среднее за день
                 const watchTimeStr = data.avgWatchTime ? data.avgWatchTime[i] : "";
                 if (watchTimeStr && watchTimeStr.trim() !== "") {
                     const watchLines = watchTimeStr.split('\n').filter(line => line.trim() !== "");
+                    const dailyWatchValues = [];
                     watchLines.forEach(line => {
                         const watchValue = parseFloat(line.replace(',', '.'));
-                        if (!isNaN(watchValue)) watchTimeValues.push(watchValue);
+                        if (!isNaN(watchValue)) dailyWatchValues.push(watchValue);
                     });
+                    if (dailyWatchValues.length > 0) {
+                        const dailyAvgWatch = dailyWatchValues.reduce((sum, val) => sum + val, 0) / dailyWatchValues.length;
+                        watchTimeValues.push(dailyAvgWatch);
+                    }
                 }
             }
 
@@ -3138,6 +3158,60 @@
             const avgCPC = cpcValues.length > 0 ? (cpcValues.reduce((a, b) => a + b, 0) / cpcValues.length) : 0;
             const avgWatchTime = watchTimeValues.length > 0 ? (watchTimeValues.reduce((a, b) => a + b, 0) / watchTimeValues.length) : 0;
 
+            // Собираем байеров и аккаунты за период
+            const periodBuyers = new Set();
+            const periodAccounts = new Set();
+            let maxCPLValue = 0;
+
+            for (let i = actualStartIndex; i <= actualEndIndex && i < data.dates.length; i++) {
+                const dayLeads = data.leadsDay ? (data.leadsDay[i] || 0) : 0;
+                const daySpend = data.spendDay ? (data.spendDay[i] || 0) : 0;
+                
+                // Если используется пользовательский период, учитываем только активные дни
+                if (useUserPeriod && dayLeads === 0 && daySpend === 0) {
+                    continue;
+                }
+
+                // Max CPL
+                if (data.maxCPL && data.maxCPL[i] && !isNaN(Number(data.maxCPL[i]))) {
+                    maxCPLValue = Math.max(maxCPLValue, Number(data.maxCPL[i]));
+                }
+
+                // Байеры (если есть в данных)
+                if (data.buyers) {
+                    const buyersStr = data.buyers[i] || "";
+                    if (buyersStr && buyersStr.trim() !== "") {
+                        const buyerLines = buyersStr.split('\n').filter(line => line.trim() !== "");
+                        buyerLines.forEach(buyer => {
+                            if (buyer.trim() !== "") periodBuyers.add(buyer.trim());
+                        });
+                    }
+                }
+
+                // Аккаунты (если есть в данных)
+                if (data.accounts) {
+                    const accountsStr = data.accounts[i] || "";
+                    if (accountsStr && accountsStr.trim() !== "") {
+                        const accountLines = accountsStr.split('\n').filter(line => line.trim() !== "");
+                        accountLines.forEach(account => {
+                            if (account.trim() !== "") periodAccounts.add(account.trim());
+                        });
+                    }
+                }
+            }
+
+            // Рассчитываем рейтинг на основе среднего CPL
+            // Используем значение 3.5 как пороговое (можно передать как параметр если нужно)
+            const ratingThreshold = 3.5;
+            let rating = "";
+            if (avgCPL > 0) {
+                const percentage = (avgCPL / ratingThreshold) * 100;
+                if (percentage <= 35) rating = "A";
+                else if (percentage <= 65) rating = "B";
+                else if (percentage <= 90) rating = "C";
+                else rating = "D";
+            }
+
             return {
                 avgCPL: avgCPL.toFixed(2).replace('.', ','),
                 totalLeads: totalLeads,
@@ -3148,7 +3222,11 @@
                 avgCPM: avgCPM.toFixed(2).replace('.', ','),
                 totalClicks: totalClicks,
                 avgCPC: avgCPC.toFixed(2).replace('.', ','),
-                avgWatchTime: avgWatchTime.toFixed(2).replace('.', ',')
+                avgWatchTime: avgWatchTime.toFixed(2).replace('.', ','),
+                maxCPL: maxCPLValue.toFixed(2).replace('.', ','),
+                rating: rating,
+                buyers: Array.from(periodBuyers).join('\n'),
+                accounts: Array.from(periodAccounts).join('\n')
             };
         }
 
@@ -3231,64 +3309,100 @@
             let html = "<tbody>";
 
             rows.forEach((rowName, index) => {
-                html += `<tr><td class="metric-row" style="min-width: 220px;">${rowName}</td>`;
-                
-                // Первые два столбца - агрегированные данные
-                // Обрабатываем данные для каждой строки
-                switch (index) {
-                    case 0: // Дата
-                        html += `<td style="background-color: #f8fafc; color: #64748b; text-align: center; font-style: italic; font-size: 12px;">Период</td>`;
-                        html += `<td style="background-color: #f8fafc; color: #64748b; text-align: center; font-style: italic; font-size: 12px;">7дн.</td>`;
-                        break;
-                    case 1: // Рейтинг
-                        html += `<td style="background-color: #f8fafc;"></td>`;
-                        html += `<td style="background-color: #f8fafc;"></td>`;
-                        break;
-                    case 2: // CPL (день)
-                        html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPL}</td>`;
-                        html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPL}</td>`;
-                        break;
-                    case 3: // Лиды (день)
-                        html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalLeads}</td>`;
-                        html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalLeads}</td>`;
-                        break;
-                    case 4: // Расход (день)
-                        html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalSpend}</td>`;
-                        html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalSpend}</td>`;
-                        break;
-                    case 5: // Конверт в день
-                        html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgConversion}</td>`;
-                        html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgConversion}</td>`;
-                        break;
-                    case 11: // CTR (целевая страница)
-                        html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCTR}</td>`;
-                        html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCTR}</td>`;
-                        break;
-                    case 12: // CPM
-                        html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPM}</td>`;
-                        html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPM}</td>`;
-                        break;
-                    case 13: // Показы
-                        html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalImpressions}</td>`;
-                        html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalImpressions}</td>`;
-                        break;
-                    case 14: // Клики (переход)
-                        html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalClicks}</td>`;
-                        html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalClicks}</td>`;
-                        break;
-                    case 15: // CPC (целевая страница)
-                        html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPC}</td>`;
-                        html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPC}</td>`;
-                        break;
-                    case 16: // Среднее время воспроизведения видео
-                        html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgWatchTime}</td>`;
-                        html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgWatchTime}</td>`;
-                        break;
-                    default: // Остальные строки
-                        html += `<td style="background-color: #f8fafc;"></td>`;
-                        html += `<td style="background-color: #f8fafc;"></td>`;
-                        break;
-                }
+            html += `<tr><td class="metric-row" style="min-width: 220px;">${rowName}</td>`;
+            
+            // Первые два столбца - агрегированные данные
+            // Обрабатываем данные для каждой строки
+            switch (index) {
+                case 0: // Дата
+                    html += `<td style="background-color: #f8fafc; color: #64748b; text-align: center; font-style: italic; font-size: 12px;">Период</td>`;
+                    html += `<td style="background-color: #f8fafc; color: #64748b; text-align: center; font-style: italic; font-size: 12px;">7дн.</td>`;
+                    break;
+                case 1: // Рейтинг
+                    html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9; ${periodMetrics.rating ? (periodMetrics.rating === 'A' ? 'color: #166534; background-color: #dcfce7;' : periodMetrics.rating === 'B' ? 'color: #a16207; background-color: #fef3c7;' : periodMetrics.rating === 'C' ? 'color: #c2410c; background-color: #fed7aa;' : 'color: #dc2626; background-color: #fecaca;') : ''}">${periodMetrics.rating}</td>`;
+                    html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e; ${last7DaysMetrics.rating ? (last7DaysMetrics.rating === 'A' ? 'color: #166534; background-color: #dcfce7;' : last7DaysMetrics.rating === 'B' ? 'color: #a16207; background-color: #fef3c7;' : last7DaysMetrics.rating === 'C' ? 'color: #c2410c; background-color: #fed7aa;' : 'color: #dc2626; background-color: #fecaca;') : ''}">${last7DaysMetrics.rating}</td>`;
+                    break;
+                case 2: // CPL (день)
+                    html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPL}</td>`;
+                    html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPL}</td>`;
+                    break;
+                case 3: // Лиды (день)
+                    html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalLeads}</td>`;
+                    html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalLeads}</td>`;
+                    break;
+                case 4: // Расход (день)
+                    html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalSpend}</td>`;
+                    html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalSpend}</td>`;
+                    break;
+                case 5: // Конверт в день
+                    html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgConversion}</td>`;
+                    html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgConversion}</td>`;
+                    break;
+                case 6: // Max CPL (ROI +20%)
+                    html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.maxCPL}</td>`;
+                    html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.maxCPL}</td>`;
+                    break;
+                case 7: // CPL с учётом сбросов
+                    html += `<td style="background-color: #f8fafc;"></td>`;
+                    html += `<td style="background-color: #f8fafc;"></td>`;
+                    break;
+                case 8: // Группы
+                    html += `<td style="background-color: #f8fafc;"></td>`;
+                    html += `<td style="background-color: #f8fafc;"></td>`;
+                    break;
+                case 9: // Байеры
+                    html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9; white-space: pre-line; font-size: 11px;">${periodMetrics.buyers}</td>`;
+                    html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e; white-space: pre-line; font-size: 11px;">${last7DaysMetrics.buyers}</td>`;
+                    break;
+                case 10: // Аккаунты
+                    html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9; white-space: pre-line; font-size: 11px;">${periodMetrics.accounts}</td>`;
+                    html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e; white-space: pre-line; font-size: 11px;">${last7DaysMetrics.accounts}</td>`;
+                    break;
+                case 11: // Частота (Frequency)
+                    html += `<td style="background-color: #f8fafc;"></td>`;
+                    html += `<td style="background-color: #f8fafc;"></td>`;
+                    break;
+                case 12: // CTR (целевая страница)
+                    html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCTR}</td>`;
+                    html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCTR}</td>`;
+                    break;
+                case 13: // CPM
+                    html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPM}</td>`;
+                    html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPM}</td>`;
+                    break;
+                case 14: // Показы
+                    html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalImpressions}</td>`;
+                    html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalImpressions}</td>`;
+                    break;
+                case 15: // Клики (переход)
+                    html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalClicks}</td>`;
+                    html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalClicks}</td>`;
+                    break;
+                case 16: // CPC (целевая страница)
+                    html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPC}</td>`;
+                    html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPC}</td>`;
+                    break;
+                case 17: // Среднее время воспроизведения видео
+                    html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgWatchTime}</td>`;
+                    html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgWatchTime}</td>`;
+                    break;
+                case 18: // Название рекламы
+                    html += `<td style="background-color: #f8fafc;"></td>`;
+                    html += `<td style="background-color: #f8fafc;"></td>`;
+                    break;
+                case 19: // URL-адрес веб-сайта
+                    html += `<td style="background-color: #f8fafc;"></td>`;
+                    html += `<td style="background-color: #f8fafc;"></td>`;
+                    break;
+                case 20: // Бюджет группы объявлений
+                    html += `<td style="background-color: #f8fafc;"></td>`;
+                    html += `<td style="background-color: #f8fafc;"></td>`;
+                    break;
+                default: // Остальные строки
+                    html += `<td style="background-color: #f8fafc;"></td>`;
+                    html += `<td style="background-color: #f8fafc;"></td>`;
+                    break;
+            }
 
                 // Основные данные по дням
                 for (let i = 0; i < data.dates.length; i++) {
@@ -4256,8 +4370,6 @@
             const rows =
                 segmentType === "buyer"
                     ? [
-                        "Период",
-                        "7 дней",
                         "Дата",
                         "Рейтинг",
                         "CPL (день)",
@@ -4280,8 +4392,6 @@
                     ]
                     : segmentType === "campaign"
                         ? [
-                            "Период",
-                            "7 дней",
                             "Дата",
                             "Рейтинг",
                             "CPL (день)",
@@ -4303,8 +4413,6 @@
                         ]
                         : segmentType === "group"
                             ? [
-                                "Период",
-                                "7 дней",
                                 "Дата",
                                 "Рейтинг",
                                 "CPL (день)",
@@ -4325,8 +4433,6 @@
                                 "Бюджет группы объявлений",
                             ]
                             : [
-                                "Период",
-                                "7 дней",
                                 "Дата",
                                 "Рейтинг",
                                 "CPL (день)",
@@ -4355,61 +4461,81 @@
                 // Обрабатываем данные для каждой строки
                 if (segmentType === "buyer") {
                     switch (index) {
-                        case 0: // Период
+                        case 0: // Дата
                             html += `<td style="background-color: #f8fafc; color: #64748b; text-align: center; font-style: italic; font-size: 12px;">Период</td>`;
                             html += `<td style="background-color: #f8fafc; color: #64748b; text-align: center; font-style: italic; font-size: 12px;">7дн.</td>`;
                             break;
-                        case 1: // 7 дней
-                            html += `<td style="background-color: #f8fafc;"></td>`;
-                            html += `<td style="background-color: #f8fafc;"></td>`;
+                        case 1: // Рейтинг
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9; ${periodMetrics.rating ? (periodMetrics.rating === 'A' ? 'color: #166534; background-color: #dcfce7;' : periodMetrics.rating === 'B' ? 'color: #a16207; background-color: #fef3c7;' : periodMetrics.rating === 'C' ? 'color: #c2410c; background-color: #fed7aa;' : 'color: #dc2626; background-color: #fecaca;') : ''}">${periodMetrics.rating}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e; ${last7DaysMetrics.rating ? (last7DaysMetrics.rating === 'A' ? 'color: #166534; background-color: #dcfce7;' : last7DaysMetrics.rating === 'B' ? 'color: #a16207; background-color: #fef3c7;' : last7DaysMetrics.rating === 'C' ? 'color: #c2410c; background-color: #fed7aa;' : 'color: #dc2626; background-color: #fecaca;') : ''}">${last7DaysMetrics.rating}</td>`;
                             break;
-                        case 2: // Дата
-                            html += `<td style="background-color: #f8fafc;"></td>`;
-                            html += `<td style="background-color: #f8fafc;"></td>`;
-                            break;
-                        case 3: // Рейтинг
-                            html += `<td style="background-color: #f8fafc;"></td>`;
-                            html += `<td style="background-color: #f8fafc;"></td>`;
-                            break;
-                        case 4: // CPL
+                        case 2: // CPL (день)
                             html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPL}</td>`;
                             html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPL}</td>`;
                             break;
-                        case 5: // Лиды
+                        case 3: // Лиды (день)
                             html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalLeads}</td>`;
                             html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalLeads}</td>`;
                             break;
-                        case 6: // Расходы
+                        case 4: // Расход (день)
                             html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalSpend}</td>`;
                             html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalSpend}</td>`;
                             break;
-                        case 7: // Конверсия
+                        case 5: // Конверт в день
                             html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgConversion}</td>`;
                             html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgConversion}</td>`;
                             break;
-                        case 12: // CTR
+                        case 6: // Max CPL (ROI +20%)
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.maxCPL}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.maxCPL}</td>`;
+                            break;
+                        case 7: // CPL с учётом сбросов
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            break;
+                        case 8: // Группы
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            break;
+                        case 9: // Частота (Frequency)
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            break;
+                        case 10: // CTR (целевая страница)
                             html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCTR}</td>`;
                             html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCTR}</td>`;
                             break;
-                        case 13: // CPM
+                        case 11: // CPM
                             html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPM}</td>`;
                             html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPM}</td>`;
                             break;
-                        case 14: // Показы
+                        case 12: // Показы
                             html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalImpressions}</td>`;
                             html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalImpressions}</td>`;
                             break;
-                        case 15: // Клики
+                        case 13: // Клики (переход)
                             html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalClicks}</td>`;
                             html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalClicks}</td>`;
                             break;
-                        case 16: // CPC
+                        case 14: // CPC (целевая страница)
                             html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPC}</td>`;
                             html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPC}</td>`;
                             break;
-                        case 17: // Время просмотра
+                        case 15: // Среднее время воспроизведения видео
                             html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgWatchTime}</td>`;
                             html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgWatchTime}</td>`;
+                            break;
+                        case 16: // Название рекламы
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            break;
+                        case 17: // URL-адрес веб-сайта
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            break;
+                        case 18: // Бюджет группы объявлений
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            html += `<td style="background-color: #f8fafc;"></td>`;
                             break;
                         default: // Остальные строки
                             html += `<td style="background-color: #f8fafc;"></td>`;
@@ -4419,61 +4545,77 @@
                 } else {
                     // Для campaign, group, ad
                     switch (index) {
-                        case 0: // Период
+                        case 0: // Дата
                             html += `<td style="background-color: #f8fafc; color: #64748b; text-align: center; font-style: italic; font-size: 12px;">Период</td>`;
                             html += `<td style="background-color: #f8fafc; color: #64748b; text-align: center; font-style: italic; font-size: 12px;">7дн.</td>`;
                             break;
-                        case 1: // 7 дней
-                            html += `<td style="background-color: #f8fafc;"></td>`;
-                            html += `<td style="background-color: #f8fafc;"></td>`;
+                        case 1: // Рейтинг
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9; ${periodMetrics.rating ? (periodMetrics.rating === 'A' ? 'color: #166534; background-color: #dcfce7;' : periodMetrics.rating === 'B' ? 'color: #a16207; background-color: #fef3c7;' : periodMetrics.rating === 'C' ? 'color: #c2410c; background-color: #fed7aa;' : 'color: #dc2626; background-color: #fecaca;') : ''}">${periodMetrics.rating}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e; ${last7DaysMetrics.rating ? (last7DaysMetrics.rating === 'A' ? 'color: #166534; background-color: #dcfce7;' : last7DaysMetrics.rating === 'B' ? 'color: #a16207; background-color: #fef3c7;' : last7DaysMetrics.rating === 'C' ? 'color: #c2410c; background-color: #fed7aa;' : 'color: #dc2626; background-color: #fecaca;') : ''}">${last7DaysMetrics.rating}</td>`;
                             break;
-                        case 2: // Дата
-                            html += `<td style="background-color: #f8fafc;"></td>`;
-                            html += `<td style="background-color: #f8fafc;"></td>`;
-                            break;
-                        case 3: // Рейтинг
-                            html += `<td style="background-color: #f8fafc;"></td>`;
-                            html += `<td style="background-color: #f8fafc;"></td>`;
-                            break;
-                        case 4: // CPL
+                        case 2: // CPL (день)
                             html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPL}</td>`;
                             html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPL}</td>`;
                             break;
-                        case 5: // Лиды
+                        case 3: // Лиды (день)
                             html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalLeads}</td>`;
                             html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalLeads}</td>`;
                             break;
-                        case 6: // Расходы
+                        case 4: // Расход (день)
                             html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalSpend}</td>`;
                             html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalSpend}</td>`;
                             break;
-                        case 7: // Конверсия
+                        case 5: // Конверт в день
                             html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgConversion}</td>`;
                             html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgConversion}</td>`;
                             break;
-                        case 11: // CTR
+                        case 6: // Max CPL (ROI +20%)
+                            html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.maxCPL}</td>`;
+                            html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.maxCPL}</td>`;
+                            break;
+                        case 7: // CPL с учётом сбросов
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            break;
+                        case 8: // Частота (Frequency)
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            break;
+                        case 9: // CTR (целевая страница)
                             html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCTR}</td>`;
                             html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCTR}</td>`;
                             break;
-                        case 12: // CPM
+                        case 10: // CPM
                             html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPM}</td>`;
                             html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPM}</td>`;
                             break;
-                        case 13: // Показы
+                        case 11: // Показы
                             html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalImpressions}</td>`;
                             html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalImpressions}</td>`;
                             break;
-                        case 14: // Клики
+                        case 12: // Клики (переход)
                             html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.totalClicks}</td>`;
                             html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.totalClicks}</td>`;
                             break;
-                        case 15: // CPC
+                        case 13: // CPC (целевая страница)
                             html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgCPC}</td>`;
                             html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgCPC}</td>`;
                             break;
-                        case 16: // Время просмотра
+                        case 14: // Среднее время воспроизведения видео
                             html += `<td style="background-color: #f0f9ff; font-weight: bold; text-align: center; border: 1px solid #0ea5e9;">${periodMetrics.avgWatchTime}</td>`;
                             html += `<td style="background-color: #f0fdf4; font-weight: bold; text-align: center; border: 1px solid #22c55e;">${last7DaysMetrics.avgWatchTime}</td>`;
+                            break;
+                        case 15: // Название рекламы
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            break;
+                        case 16: // URL-адрес веб-сайта
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            break;
+                        case 17: // Бюджет группы объявлений
+                            html += `<td style="background-color: #f8fafc;"></td>`;
+                            html += `<td style="background-color: #f8fafc;"></td>`;
                             break;
                         default: // Остальные строки
                             html += `<td style="background-color: #f8fafc;"></td>`;
@@ -4489,29 +4631,29 @@
 
                     if (segmentType === "buyer") {
                         switch (index) {
-                            case 2:
+                            case 0:
                                 value = data.dates[i];
                                 break;
-                            case 3:
+                            case 1:
                                 value = data.ratings[i];
                                 className = value ? `rating-${value}` : "";
                                 break;
-                            case 4:
+                            case 2:
                                 value = formatNumberWithZero(data.cplDay[i]);
                                 break;
-                            case 5:
+                            case 3:
                                 value = data.leadsDay[i];
                                 break;
-                            case 6:
+                            case 4:
                                 value = formatNumberWithZero(data.spendDay[i]);
                                 break;
-                            case 7:
+                            case 5:
                                 value = data.conversionDay ? data.conversionDay[i] : "";
                                 break;
-                            case 8:
+                            case 6:
                                 value = formatNumber(data.maxCPL ? data.maxCPL[i] : "");
                                 break;
-                            case 9:
+                            case 7:
                                 value = formatNumberWithZero(
                                     data.cplCumulative ? data.cplCumulative[i] : 0
                                 );
@@ -4532,66 +4674,66 @@
                                     }
                                 }
                                 break;
-                            case 10:
+                            case 8:
                                 value = data.groups ? data.groups[i] : "";
                                 break;
-                            case 11:
+                            case 9:
                                 value = data.freq ? data.freq[i] : "";
                                 break;
-                            case 12:
+                            case 10:
                                 value = data.ctr ? data.ctr[i] : "";
                                 break;
-                            case 13:
+                            case 11:
                                 value = data.cpm ? data.cpm[i] : "";
                                 break;
-                            case 14:
+                            case 12:
                                 value = data.impressions[i];
                                 break;
-                            case 15:
+                            case 13:
                                 value = data.linkClicks ? data.linkClicks[i] : "";
                                 break;
-                            case 16:
+                            case 14:
                                 value = data.cpc ? data.cpc[i] : "";
                                 break;
-                            case 17:
+                            case 15:
                                 value = data.avgWatchTime ? data.avgWatchTime[i] : "";
                                 break;
-                            case 18:
+                            case 16:
                                 value = data.videoName ? data.videoName[i] : "";
                                 break;
-                            case 19:
+                            case 17:
                                 const urlValue = data.siteUrl ? data.siteUrl[i] : "";
                                 value = makeUrlsClickable(urlValue);
                                 break;
-                            case 20:
+                            case 18:
                                 value = data.budget ? data.budget[i] : "";
                                 break;
                         }
                     } else if (segmentType === "campaign" || segmentType === "group" || segmentType === "ad") {
                         switch (index) {
-                            case 2:
+                            case 0:
                                 value = data.dates[i];
                                 break;
-                            case 3:
+                            case 1:
                                 value = data.ratings[i];
                                 className = value ? `rating-${value}` : "";
                                 break;
-                            case 4:
+                            case 2:
                                 value = formatNumberWithZero(data.cplDay[i]);
                                 break;
-                            case 5:
+                            case 3:
                                 value = data.leadsDay[i];
                                 break;
-                            case 6:
+                            case 4:
                                 value = formatNumberWithZero(data.spendDay[i]);
                                 break;
-                            case 7:
+                            case 5:
                                 value = data.conversionDay ? data.conversionDay[i] : "";
                                 break;
-                            case 8:
+                            case 6:
                                 value = formatNumber(data.maxCPL ? data.maxCPL[i] : "");
                                 break;
-                            case 9:
+                            case 7:
                                 value = formatNumberWithZero(
                                     data.cplCumulative ? data.cplCumulative[i] : 0
                                 );
@@ -4612,35 +4754,35 @@
                                     }
                                 }
                                 break;
-                            case 10:
+                            case 8:
                                 value = data.freq ? data.freq[i] : "";
                                 break;
-                            case 11:
+                            case 9:
                                 value = data.ctr ? data.ctr[i] : "";
                                 break;
-                            case 12:
+                            case 10:
                                 value = data.cpm ? data.cpm[i] : "";
                                 break;
-                            case 13:
+                            case 11:
                                 value = data.impressions[i];
                                 break;
-                            case 14:
+                            case 12:
                                 value = data.linkClicks ? data.linkClicks[i] : "";
                                 break;
-                            case 15:
+                            case 13:
                                 value = data.cpc ? data.cpc[i] : "";
                                 break;
-                            case 16:
+                            case 14:
                                 value = data.avgWatchTime ? data.avgWatchTime[i] : "";
                                 break;
-                            case 17:
+                            case 15:
                                 value = data.videoName ? data.videoName[i] : "";
                                 break;
-                            case 18:
+                            case 16:
                                 const urlValue = data.siteUrl ? data.siteUrl[i] : "";
                                 value = makeUrlsClickable(urlValue);
                                 break;
-                            case 19:
+                            case 17:
                                 value = data.budget ? data.budget[i] : "";
                                 break;
                         }
@@ -4659,8 +4801,8 @@
                     }
 
                     if (
-                        (segmentType === "buyer" && index === 19) ||
-                        ((segmentType === "campaign" || segmentType === "group" || segmentType === "ad") && index === 18)
+                        (segmentType === "buyer" && index === 17) ||
+                        ((segmentType === "campaign" || segmentType === "group" || segmentType === "ad") && index === 16)
                     ) {
                         html += `<td class="${className} url-cell" style="${cellStyle}${additionalStyle}">${value}</td>`;
                     } else {
