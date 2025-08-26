@@ -1443,31 +1443,25 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
-        .calendar-cpl {
-            font-weight: 700;
-            font-size: 16px;
+        .calendar-metric {
+            font-weight: 600;
+            font-size: 11px;
             color: #1e293b;
-            line-height: 1;
+            line-height: 1.2;
+            text-align: center;
+            margin-bottom: 2px;
         }
 
-        .calendar-mini {
-            font-size: 10px;
-            color: #64748b;
-            display: flex;
-            gap: 6px;
-            font-weight: 500;
+        .calendar-metric:last-child {
+            margin-bottom: 0;
         }
 
         .calendar-muted {
             opacity: 0.5;
         }
 
-        .calendar-muted .calendar-cpl {
+        .calendar-muted .calendar-metric {
             color: #9ca3af;
-        }
-
-        .calendar-muted .calendar-mini {
-            color: #d1d5db;
         }
 
         /* Level styling */
@@ -1508,43 +1502,48 @@
         }
 
         /* Status colors */
-        .calendar-good {
+        .calendar-excellent {
             background: #dcfce7 !important;
-            border-color: #22c55e !important;
+            border-color: #16a34a !important;
+            color: #166534 !important;
+            font-weight: 600;
         }
 
-        .calendar-good .calendar-cpl {
-            color: #166534;
+        .calendar-excellent .calendar-metric {
+            color: #166534 !important;
         }
 
-        .calendar-good .calendar-mini {
-            color: #15803d;
+        .calendar-good {
+            background: #fef3c7 !important;
+            border-color: #d97706 !important;
+            color: #a16207 !important;
+            font-weight: 600;
+        }
+
+        .calendar-good .calendar-metric {
+            color: #a16207 !important;
         }
 
         .calendar-warning {
-            background: #fef3c7 !important;
-            border-color: #f59e0b !important;
+            background: #fed7aa !important;
+            border-color: #ea580c !important;
+            color: #c2410c !important;
+            font-weight: 600;
         }
 
-        .calendar-warning .calendar-cpl {
-            color: #d97706;
-        }
-
-        .calendar-warning .calendar-mini {
-            color: #b45309;
+        .calendar-warning .calendar-metric {
+            color: #c2410c !important;
         }
 
         .calendar-danger {
             background: #fecaca !important;
             border-color: #ef4444 !important;
+            color: #dc2626 !important;
+            font-weight: 600;
         }
 
-        .calendar-danger .calendar-cpl {
-            color: #dc2626;
-        }
-
-        .calendar-danger .calendar-mini {
-            color: #b91c1c;
+        .calendar-danger .calendar-metric {
+            color: #dc2626 !important;
         }
 
         .calendar-child {
@@ -2447,6 +2446,9 @@
                 return;
             }
 
+            // Получаем правильный порог CPL из сохраненных данных или используем 3.5
+            const maxCPLThreshold = window.currentMaxCPL || 3.5;
+
             // Собираем все даты
             const allDates = [];
             Object.values(calendarData).forEach(trackerData => {
@@ -2460,14 +2462,33 @@
                 return yearA - yearB || monthA - monthB || dayA - dayB;
             });
 
-            function getCPLStatus(leads, spend) {
-                if (spend === 0 && leads === 0) return 'calendar-muted';
-                if (spend > 0 && leads === 0) return 'calendar-danger';
-                const cpl = leads > 0 ? spend / leads : 0;
-                if (cpl <= 2.0) return 'calendar-good';
-                if (cpl <= 3.0) return 'calendar-warning';
-                return 'calendar-danger';
+            function getCPLStatus(leads, spend, maxCPLThreshold = 3.5) {
+            if (spend === 0 && leads === 0) return 'calendar-muted';
+            
+            const cpl = leads > 0 ? spend / leads : 0;
+            
+            // Точно такая же логика как в серверном коде
+            let rating = "";
+            if (leads === 0 && spend > 0) {
+                rating = "D";
+            } else if (cpl === 0 || isNaN(cpl) || maxCPLThreshold === 0) {
+                rating = "";
+            } else {
+                const percentage = (cpl / maxCPLThreshold) * 100;
+                
+                if (percentage <= 35) rating = "A";
+                else if (percentage <= 65) rating = "B";
+                else if (percentage <= 90) rating = "C";
+                else rating = "D";
             }
+            
+            // Возвращаем соответствующий класс
+            if (rating === 'A') return 'calendar-excellent';
+            else if (rating === 'B') return 'calendar-good';
+            else if (rating === 'C') return 'calendar-warning';
+            else if (rating === 'D') return 'calendar-danger';
+            else return 'calendar-muted';
+        }
 
             function formatCPL(leads, spend) {
                 if (spend === 0 && leads === 0) return '—';
@@ -2520,12 +2541,10 @@
 
                     return `
                   <td>
-                    <div class="calendar-cell ${getCPLStatus(totalLeads, totalSpend)}">
-                      <div class="calendar-cpl">${formatCPL(totalLeads, totalSpend)}</div>
-                      <div class="calendar-mini">
-                        <span>л: ${totalLeads}</span>
-                        <span>р: ${formatValue(totalSpend)}</span>
-                      </div>
+                    <div class="calendar-cell ${getCPLStatus(totalLeads, totalSpend, maxCPLThreshold)}">
+                      <div class="calendar-metric">Лиды: ${totalLeads}</div>
+                      <div class="calendar-metric">CPL: ${formatCPL(totalLeads, totalSpend)}</div>
+                      <div class="calendar-metric">Расх.: ${formatValue(totalSpend)}</div>
                     </div>
                   </td>
                 `;
@@ -2555,12 +2574,10 @@
 
                         return `
                     <td>
-                      <div class="calendar-cell ${getCPLStatus(leads, spend)}">
-                        <div class="calendar-cpl">${formatCPL(leads, spend)}</div>
-                        <div class="calendar-mini">
-                          <span>л: ${leads}</span>
-                          <span>р: ${formatValue(spend)}</span>
-                        </div>
+                      <div class="calendar-cell ${getCPLStatus(leads, spend, maxCPLThreshold)}">
+                        <div class="calendar-metric">Лиды: ${leads}</div>
+                        <div class="calendar-metric">CPL: ${formatCPL(leads, spend)}</div>
+                        <div class="calendar-metric">Расх.: ${formatValue(spend)}</div>
                       </div>
                     </td>
                   `;
@@ -2590,12 +2607,10 @@
 
                             return `
                       <td>
-                        <div class="calendar-cell ${getCPLStatus(leads, spend)}">
-                          <div class="calendar-cpl">${formatCPL(leads, spend)}</div>
-                          <div class="calendar-mini">
-                            <span>л: ${leads}</span>
-                            <span>р: ${formatValue(spend)}</span>
-                          </div>
+                        <div class="calendar-cell ${getCPLStatus(leads, spend, maxCPLThreshold)}">
+                          <div class="calendar-metric">Лиды: ${leads}</div>
+                          <div class="calendar-metric">CPL: ${formatCPL(leads, spend)}</div>
+                          <div class="calendar-metric">Расх.: ${formatValue(spend)}</div>
                         </div>
                       </td>
                     `;
@@ -2624,12 +2639,10 @@
 
                                 return `
                         <td>
-                          <div class="calendar-cell ${getCPLStatus(leads, spend)}">
-                            <div class="calendar-cpl">${formatCPL(leads, spend)}</div>
-                            <div class="calendar-mini">
-                              <span>л: ${leads}</span>
-                              <span>р: ${formatValue(spend)}</span>
-                            </div>
+                          <div class="calendar-cell ${getCPLStatus(leads, spend, maxCPLThreshold)}">
+                            <div class="calendar-metric">Лиды: ${leads}</div>
+                            <div class="calendar-metric">CPL: ${formatCPL(leads, spend)}</div>
+                            <div class="calendar-metric">Расх.: ${formatValue(spend)}</div>
                           </div>
                         </td>
                       `;
@@ -2703,6 +2716,8 @@
             displayGeneralMetrics(data.generalMetrics);
             // Сохраняем календарные данные глобально для навигации
             window.currentCalendarData = data.calendarData || {};
+            // Сохраняем порог CPL для календаря
+            window.currentMaxCPL = parseFloat((data.generalMetrics.displayMaxCPL || "3.5").replace(',', '.'));
             displayCalendarMetrics(data.calendarData || {});
             displayGeneralChart(data.article, data.generalData);
             displayGeneralTable(data.generalData, periodStart, periodEnd);
