@@ -2857,7 +2857,7 @@
                     console.log(`🔍 CALENDAR NAV: Creating tracker:`, trackerName);
 
                     html += `
-                        <div class="nav-tree-item level-0" onclick="scrollToCalendarElement('${escapeHtml(trackerName)}', 'tracker')">
+                        <div class="nav-tree-item level-0" onclick="navigateToCalendarElement('${escapeHtml(trackerName)}', 'tracker')">
                             <i class="fas fa-chart-line nav-icon"></i>
                             ${escapeHtml(trackerName)}
                             <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('calendar_tracker_${trackerIndex}')">▸</span>
@@ -2871,7 +2871,7 @@
                         console.log(`🔍 CALENDAR NAV: Creating campaign:`, campaignName);
 
                         html += `
-                            <div class="nav-tree-item level-1" onclick="scrollToCalendarElement('${escapeHtml(campaignName)}', 'campaign')">
+                            <div class="nav-tree-item level-1" onclick="navigateToCalendarElement('${escapeHtml(campaignName)}', 'campaign')">
                                 <i class="fas fa-tv nav-icon"></i>
                                 ${escapeHtml(campaignName)}
                                 <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('calendar_campaign_${trackerIndex}_${campaignIndex}')">▸</span>
@@ -2885,7 +2885,7 @@
                             console.log(`🔍 CALENDAR NAV: Creating group:`, groupName);
 
                             html += `
-                                <div class="nav-tree-item level-2" onclick="scrollToCalendarElement('${escapeHtml(groupName)}', 'group')">
+                                <div class="nav-tree-item level-2" onclick="navigateToCalendarElement('${escapeHtml(groupName)}', 'group')">
                                     <i class="fas fa-folder nav-icon"></i>
                                     ${escapeHtml(groupName)}
                                     <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('calendar_group_${trackerIndex}_${campaignIndex}_${groupIndex}')">▸</span>
@@ -2897,7 +2897,7 @@
                                 console.log(`🔍 CALENDAR NAV: Creating ad:`, adName);
 
                                 html += `
-                                    <div class="nav-tree-item level-3" onclick="scrollToCalendarElement('${escapeHtml(adName)}', 'ad')">
+                                    <div class="nav-tree-item level-3" onclick="navigateToCalendarElement('${escapeHtml(adName)}', 'ad')">
                                         <i class="fas fa-rectangle-ad nav-icon"></i>
                                         ${escapeHtml(adName)}
                                     </div>
@@ -5783,53 +5783,142 @@
         // Make block navigation globally available
         window.toggleNavBlock = toggleNavBlock;
         // Calendar navigation function
-        function scrollToCalendarElement(elementName, elementType) {
-            console.log('📅 CALENDAR NAVIGATION for:', elementName, 'type:', elementType);
+        function navigateToCalendarElement(elementName, elementType) {
+            console.log('🚀 CALENDAR NAVIGATION for:', elementName, 'type:', elementType);
             
-            // Находим элемент в таблице календаря по тексту
-            const calendarTable = document.querySelector('.calendar-table');
-            if (!calendarTable) {
-                console.log('❌ Calendar table not found');
+            // Сначала скроллимся к секции Календарь метрик
+            const calendarSection = document.querySelector('.calendar-metrics-section');
+            if (!calendarSection) {
+                console.log('❌ Calendar metrics section not found');
                 return;
             }
 
-            // Ищем строку с соответствующим названием
-            const rows = calendarTable.querySelectorAll('tbody tr');
-            let targetRow = null;
-
-            rows.forEach(row => {
-                const nameCell = row.querySelector('td:first-child .calendar-name');
-                if (nameCell && nameCell.textContent.trim() === elementName) {
-                    targetRow = row;
-                }
+            // Скроллимся к секции календаря
+            calendarSection.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+                inline: 'nearest'
             });
 
-            if (targetRow) {
-                console.log('✅ Found calendar element:', elementName);
-                
-                // Прокручиваем к элементу
-                targetRow.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center',
-                    inline: 'nearest'
+            // Ждем завершения скролла и ищем элемент
+            setTimeout(() => {
+                const calendarTable = document.querySelector('.calendar-table');
+                if (!calendarTable) {
+                    console.log('❌ Calendar table not found');
+                    return;
+                }
+
+                // Ищем строку с соответствующим названием
+                const rows = calendarTable.querySelectorAll('tbody tr');
+                let targetRow = null;
+
+                rows.forEach(row => {
+                    const nameCell = row.querySelector('td:first-child .calendar-name');
+                    if (nameCell) {
+                        // Убираем эмодзи и пробелы для сравнения (включая некорректно отображаемые символы)
+                        const cellText = nameCell.textContent.replace(/^[\u{1F4CA}\u{1F4F1}\u{1F4C1}\u{1F4C4}�📊📱📁📄]\s*/u, '').trim();
+                        console.log('🔍 Comparing calendar:', cellText, '===', elementName, '?', cellText === elementName);
+                        if (cellText === elementName) {
+                            targetRow = row;
+                            console.log('✅ Found target row:', targetRow);
+                        }
+                    }
                 });
 
-                // Подсвечиваем строку
-                setTimeout(() => {
-                    targetRow.style.background = 'rgba(96, 165, 250, 0.2)';
-                    targetRow.style.transition = 'background 0.3s ease';
+                if (targetRow) {
+                    console.log('✅ Found calendar element:', elementName);
                     
+                    // Раскрываем всю цепочку до этого элемента
+                    expandCalendarToTarget(targetRow);
+
+                    // Подсвечиваем строку
                     setTimeout(() => {
-                        targetRow.style.background = '';
-                    }, 3000);
-                }, 300);
-            } else {
-                console.log('❌ Calendar element not found:', elementName);
+                        highlightCalendarElement(targetRow);
+                    }, 800);
+                } else {
+                    console.log('❌ Calendar element not found:', elementName);
+                }
+            }, 500);
+        }
+
+        // Expand calendar hierarchy to target element
+        function expandCalendarToTarget(targetRow) {
+            console.log('🔓 EXPANDING CALENDAR PATH to target:', targetRow);
+
+            // Собираем всех родителей которых нужно раскрыть
+            const togglesToExpand = [];
+            let currentElement = targetRow;
+
+            // Поднимаемся по иерархии
+            while (currentElement) {
+                const classes = Array.from(currentElement.classList);
+                console.log('🔍 Checking element classes:', classes);
+                
+                // Ищем класс child-of-*
+                const childOfClass = classes.find(cls => cls.startsWith('child-of-'));
+                
+                if (childOfClass) {
+                    const parentId = childOfClass.replace('child-of-', '');
+                    console.log('🔍 Found parent ID:', parentId);
+                    
+                    // Находим toggle родителя
+                    const parentToggle = document.querySelector(`.calendar-toggle[data-target="${parentId}"]`);
+                    console.log('🔍 Parent toggle:', parentToggle);
+                    
+                    if (parentToggle) {
+                        console.log('🔍 Toggle text:', parentToggle.textContent);
+                        // Добавляем в начало списка (чтобы раскрывать от корня к листьям)
+                        if (parentToggle.textContent === '▸') {
+                            togglesToExpand.unshift(parentToggle);
+                            console.log('➕ Added toggle to expand list');
+                        }
+                    }
+                    
+                    // Ищем родительскую строку по data-id
+                    currentElement = document.querySelector(`[data-id="${parentId}"]`);
+                    console.log('🔍 Found parent element:', currentElement);
+                } else {
+                    console.log('🔍 No more parents found, breaking');
+                    break;
+                }
+
+                // Защита от бесконечного цикла
+                if (togglesToExpand.length > 10) {
+                    console.log('⚠️ Too many levels, breaking');
+                    break;
+                }
             }
+
+            console.log('🔓 Found', togglesToExpand.length, 'toggles to expand');
+
+            // Раскрываем элементы последовательно (от корня к листьям)
+            togglesToExpand.forEach((toggle, index) => {
+                setTimeout(() => {
+                    console.log('⚡ Expanding calendar level', index, 'toggle:', toggle);
+                    toggle.click();
+                }, index * 300); // Увеличили задержку для надежности
+            });
+        }
+
+        // Highlight calendar element
+        function highlightCalendarElement(element) {
+            console.log('✨ HIGHLIGHTING CALENDAR ELEMENT');
+            // Добавляем подсветку
+            element.style.boxShadow = '0 0 20px rgba(96, 165, 250, 0.8)';
+            element.style.transition = 'box-shadow 0.3s ease';
+            element.style.border = '2px solid #60a5fa';
+            
+            // Убираем подсветку через 3 секунды
+            setTimeout(() => {
+                element.style.boxShadow = '';
+                element.style.border = '';
+            }, 3000);
         }
 
         // Make calendar navigation globally available
-        window.scrollToCalendarElement = scrollToCalendarElement;
+        window.navigateToCalendarElement = navigateToCalendarElement;
+        window.expandCalendarToTarget = expandCalendarToTarget;
+        window.highlightCalendarElement = highlightCalendarElement;
         window.toggleNavTree = toggleNavTree;
         window.navigateToElement = navigateToElement;
     </script>
