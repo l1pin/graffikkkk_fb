@@ -273,7 +273,7 @@ function openAnalyticsWebApp() {
     try {
         // URL вашего веб-приложения (замените на ваш реальный URL после развертывания)
         const webAppUrl =
-            "https://script.google.com/macros/s/AKfycbwHzc7rzUfwFxdJmS8HPd09O-FTPVtuu3L2v_I2jG1pgSChnfjvvSTEzuQ1iKJQPRw/exec";
+            "https://script.google.com/macros/s/AKfycbzmWfq-Ngo1ZGi7rJ0Ut-6tKG1g7JPYfBxxEMUQTZMOq0Cs9RZMBCB8klXSxhGt5owH/exec";
 
         // Создаем HTML для открытия в новой вкладке
         const html = `
