@@ -31,7 +31,7 @@
 
         /* Navigation Sidebar */
         .navigation-sidebar {
-            width: 320px;
+            width: 400px;
             background: #ffffff;
             position: fixed;
             height: 100vh;
@@ -171,9 +171,9 @@
         /* Main Content */
         .main-content {
             flex: 1;
-            margin-left: 600px;
+            margin-left: 680px;
             padding: 24px 32px;
-            width: calc(100% - 600px);
+            width: calc(100% - 680px);
             overflow-x: hidden;
             min-height: 100vh;
         }
@@ -1854,24 +1854,37 @@
         }
 
         .nav-tree-item {
-            display: block;
-            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
             color: #64748b;
             text-decoration: none;
             border-radius: 8px;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             font-size: 13px;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s ease;
             position: relative;
             border: 1px solid transparent;
+            gap: 12px;
+            min-height: 50px;
         }
 
         .nav-tree-item:hover {
             background: #e2e8f0;
             color: #1e293b;
             border-color: #cbd5e1;
+        }
+
+        .nav-tree-item:hover .nav-metric {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .nav-tree-item:hover .nav-item-name {
+            color: #1e293b;
         }
 
         .nav-tree-item.active {
@@ -1881,51 +1894,169 @@
             border-color: #3b82f6;
         }
 
+        .nav-tree-item.active .nav-metric {
+            background: rgba(59, 130, 246, 0.9);
+            border-color: rgba(59, 130, 246, 1);
+            color: white;
+        }
+
+        .nav-tree-item.active .nav-item-name {
+            color: #1e40af;
+        }
+
+        /* Улучшенное отображение названий */
+        .nav-tree-item.level-0 .nav-item-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .nav-tree-item.level-1 .nav-item-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .nav-tree-item.level-2 .nav-item-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .nav-tree-item.level-3 .nav-item-name {
+            font-size: 11px;
+            font-weight: 500;
+            color: #475569;
+        }
+
         .nav-tree-item.level-0 {
             font-weight: 600;
             color: #60a5fa;
             padding-left: 12px;
-            padding-right: 30px;
+            padding-right: 12px;
         }
 
         .nav-tree-item.level-1 {
-            padding-left: 36px;
-            padding-right: 30px;
+            padding-left: 32px;
+            padding-right: 12px;
             color: #a78bfa;
         }
 
         .nav-tree-item.level-2 {
-            padding-left: 60px;
-            padding-right: 30px;
+            padding-left: 52px;
+            padding-right: 12px;
             color: #34d399;
         }
 
         .nav-tree-item.level-3 {
-            padding-left: 84px;
-            padding-right: 30px;
+            padding-left: 72px;
+            padding-right: 12px;
             color: #fbbf24;
         }
 
+        /* Navigation item content structure */
+        .nav-item-content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .nav-item-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .nav-item-name {
+            font-weight: 600;
+            flex: 1;
+            min-width: 0;
+            line-height: 1.3;
+            word-wrap: break-word;
+            white-space: normal;
+            color: #1e293b;
+        }
+
+        .nav-item-metrics {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 6px;
+            margin-top: 3px;
+            padding-left: 20px;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        .nav-metric {
+            background: #1e293b;
+            padding: 3px 7px;
+            border-radius: 5px;
+            font-size: 9px;
+            font-weight: 600;
+            color: white;
+            border: 1px solid #334155;
+            white-space: nowrap;
+            flex-shrink: 0;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-tree-item.level-0 .nav-metric {
+            background: #60a5fa;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        .nav-tree-item.level-1 .nav-metric {
+            background: #a855f7;
+            color: white;
+            border-color: #7c3aed;
+        }
+
+        .nav-tree-item.level-2 .nav-metric {
+            background: #10b981;
+            color: white;
+            border-color: #059669;
+        }
+
+        .nav-tree-item.level-3 .nav-metric {
+            background: #f59e0b;
+            color: white;
+            border-color: #d97706;
+        }
+
         .nav-tree-toggle {
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 18px;
-            height: 18px;
+            width: 22px;
+            height: 22px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 12px;
             cursor: pointer;
-            border-radius: 4px;
-            background: rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            color: #475569;
             transition: all 0.2s ease;
+            flex-shrink: 0;
+            font-weight: 700;
+            align-self: flex-start;
+            margin-top: 2px;
         }
 
         .nav-tree-toggle:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-50%) scale(1.1);
+            background: #e2e8f0;
+            border-color: #94a3b8;
+            color: #1e293b;
+            transform: scale(1.05);
+        }
+
+        .nav-tree-item:hover .nav-tree-toggle {
+            background: #dbeafe;
+            border-color: #60a5fa;
+            color: #1e40af;
         }
 
         .nav-tree-children {
@@ -2021,8 +2152,9 @@
 
         .nav-icon {
             margin-right: 6px;
-            font-size: 10px;
-            opacity: 0.8;
+            font-size: 11px;
+            opacity: 0.9;
+            flex-shrink: 0;
         }
 
         .nav-tree-item.level-0 .nav-icon {
@@ -3049,146 +3181,133 @@
             }
 
             // Функция для создания структуры навигации по байерам
-            function createBuyersNavigationStructure(data, targetPrefix) {
-                let html = '';
+        function createBuyersNavigationStructure(data, targetPrefix) {
+            let html = '';
 
-                Object.keys(data).forEach((buyerName, buyerIndex) => {
-                    const buyerData = data[buyerName];
-                    const cleanBuyerName = cleanName(buyerName, buyerIndex, 'buyer');
-                    const buyerId = `${targetPrefix}_buyer_${cleanBuyerName}`;
+            // Получаем период пользователя для расчетов
+            const userStartDate = document.getElementById("periodStart").value;
+            const userEndDate = document.getElementById("periodEnd").value;
 
-                    console.log(`🔍 NAV: Creating buyer link for ${targetPrefix}:`, buyerName, '→', buyerId);
+            Object.keys(data).forEach((buyerName, buyerIndex) => {
+                const buyerData = data[buyerName];
+                const cleanBuyerName = cleanName(buyerName, buyerIndex, 'buyer');
+                const buyerId = `${targetPrefix}_buyer_${cleanBuyerName}`;
 
-                    html += `
-                        <div class="nav-tree-item level-0" onclick="navigateToElement('${buyerId}')">
-                            <i class="fas fa-user-tie nav-icon"></i>
-                            ${escapeHtml(buyerName)}
-                            <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('${targetPrefix}_buyer_${buyerIndex}')">▸</span>
-                        </div>
-                        <div class="nav-tree-children collapsed" id="${targetPrefix}_buyer_${buyerIndex}_children">
-                    `;
+                console.log(`🔍 NAV: Creating buyer link for ${targetPrefix}:`, buyerName, '→', buyerId);
 
-                    Object.keys(buyerData.campaigns || {}).forEach((campaignName, campaignIndex) => {
-                        const campaignData = buyerData.campaigns[campaignName];
-                        const cleanCampaignName = cleanName(campaignName, campaignIndex, 'campaign');
-                        const campaignId = `${targetPrefix}_campaign_${cleanBuyerName}_${cleanCampaignName}_${campaignIndex}`;
-
-                        console.log(`🔍 NAV: Creating campaign link for ${targetPrefix}:`, campaignName, '→', campaignId);
-
-                        html += `
-                            <div class="nav-tree-item level-1" onclick="navigateToElement('${campaignId}')">
-                                <i class="fas fa-tv nav-icon"></i>
-                                ${escapeHtml(campaignName)}
-                                <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('${targetPrefix}_campaign_${buyerIndex}_${campaignIndex}')">▸</span>
-                            </div>
-                            <div class="nav-tree-children collapsed" id="${targetPrefix}_campaign_${buyerIndex}_${campaignIndex}_children">
-                        `;
-
-                        Object.keys(campaignData.groups || {}).forEach((groupName, groupIndex) => {
-                            const groupData = campaignData.groups[groupName];
-                            const cleanGroupName = cleanName(groupName, groupIndex, 'group');
-                            const groupId = `${targetPrefix}_group_${cleanBuyerName}_${cleanCampaignName}_${cleanGroupName}_${groupIndex}`;
-
-                            console.log(`🔍 NAV: Creating group link for ${targetPrefix}:`, groupName, '→', groupId);
-
-                            html += `
-                                <div class="nav-tree-item level-2" onclick="navigateToElement('${groupId}')">
-                                    <i class="fas fa-folder nav-icon"></i>
-                                    ${escapeHtml(groupName)}
-                                    <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('${targetPrefix}_group_${buyerIndex}_${campaignIndex}_${groupIndex}')">▸</span>
-                                </div>
-                                <div class="nav-tree-children collapsed" id="${targetPrefix}_group_${buyerIndex}_${campaignIndex}_${groupIndex}_children">
-                            `;
-
-                            Object.keys(groupData.ads || {}).forEach((adName, adIndex) => {
-                                const cleanAdName = cleanName(adName, adIndex, 'ad');
-                                const adId = `${targetPrefix}_ad_${cleanBuyerName}_${cleanCampaignName}_${cleanGroupName}_${cleanAdName}_${adIndex}`;
-
-                                console.log(`🔍 NAV: Creating ad link for ${targetPrefix}:`, adName, '→', adId);
-
-                                html += `
-                                    <div class="nav-tree-item level-3" onclick="navigateToElement('${adId}')">
-                                        <i class="fas fa-rectangle-ad nav-icon"></i>
-                                        ${escapeHtml(adName)}
-                                    </div>
-                                `;
-                            });
-
-                            html += '</div>';
-                        });
-
-                        html += '</div>';
-                    });
-
-                    html += '</div>';
-                });
-
-                return html;
-            }
-
-            // Функция для создания структуры навигации календаря
-            function createCalendarNavigationStructure(calendarData) {
-                let html = '';
-
-                if (!calendarData || Object.keys(calendarData).length === 0) {
-                    return '<div class="nav-placeholder"><i class="fas fa-calendar-times"></i><span>Нет данных календаря</span></div>';
+                // Расчет метрик для байера
+                let buyerPeriodMetrics = { avgCPL: "0,00", totalLeads: 0, totalSpend: "0,00" };
+                if (buyerData.buyerData && buyerData.buyerData.data) {
+                    buyerPeriodMetrics = calculateAggregatedMetrics(buyerData.buyerData.data, 0, buyerData.buyerData.data.dates.length - 1, userStartDate, userEndDate);
                 }
 
-                Object.keys(calendarData).forEach((trackerName, trackerIndex) => {
-                    const trackerData = calendarData[trackerName];
-                    const cleanTrackerName = cleanName(trackerName, trackerIndex, 'tracker');
+                html += `
+                    <div class="nav-tree-item level-0" onclick="navigateToElement('${buyerId}')">
+                        <div class="nav-item-content">
+                            <div class="nav-item-header">
+                                <i class="fas fa-user-tie nav-icon"></i>
+                                <span class="nav-item-name">${escapeHtml(buyerName)}</span>
+                            </div>
+                            <div class="nav-item-metrics">
+                                <span class="nav-metric">Лиды: ${buyerPeriodMetrics.totalLeads}</span>
+                                <span class="nav-metric">CPL: ${buyerPeriodMetrics.avgCPL}</span>
+                                <span class="nav-metric">Расх.: ${buyerPeriodMetrics.totalSpend}</span>
+                            </div>
+                        </div>
+                        <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('${targetPrefix}_buyer_${buyerIndex}')">▸</span>
+                    </div>
+                    <div class="nav-tree-children collapsed" id="${targetPrefix}_buyer_${buyerIndex}_children">
+                `;
 
-                    console.log(`🔍 CALENDAR NAV: Creating tracker:`, trackerName);
+                Object.keys(buyerData.campaigns || {}).forEach((campaignName, campaignIndex) => {
+                    const campaignData = buyerData.campaigns[campaignName];
+                    const cleanCampaignName = cleanName(campaignName, campaignIndex, 'campaign');
+                    const campaignId = `${targetPrefix}_campaign_${cleanBuyerName}_${cleanCampaignName}_${campaignIndex}`;
+
+                    console.log(`🔍 NAV: Creating campaign link for ${targetPrefix}:`, campaignName, '→', campaignId);
+
+                    // Расчет метрик для кампании
+                    let campaignPeriodMetrics = { avgCPL: "0,00", totalLeads: 0, totalSpend: "0,00" };
+                    if (campaignData.campaignData && campaignData.campaignData.data) {
+                        campaignPeriodMetrics = calculateAggregatedMetrics(campaignData.campaignData.data, 0, campaignData.campaignData.data.dates.length - 1, userStartDate, userEndDate);
+                    }
 
                     html += `
-                        <div class="nav-tree-item level-0" onclick="navigateToCalendarElement('${escapeHtml(trackerName)}', 'tracker')">
-                            <i class="fas fa-chart-line nav-icon"></i>
-                            ${escapeHtml(trackerName)}
-                            <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('calendar_tracker_${trackerIndex}')">▸</span>
+                        <div class="nav-tree-item level-1" onclick="navigateToElement('${campaignId}')">
+                            <div class="nav-item-content">
+                                <div class="nav-item-header">
+                                    <i class="fas fa-tv nav-icon"></i>
+                                    <span class="nav-item-name">${escapeHtml(campaignName)}</span>
+                                </div>
+                                <div class="nav-item-metrics">
+                                    <span class="nav-metric">Лиды: ${campaignPeriodMetrics.totalLeads}</span>
+                                    <span class="nav-metric">CPL: ${campaignPeriodMetrics.avgCPL}</span>
+                                    <span class="nav-metric">Расх.: ${campaignPeriodMetrics.totalSpend}</span>
+                                </div>
+                            </div>
+                            <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('${targetPrefix}_campaign_${buyerIndex}_${campaignIndex}')">▸</span>
                         </div>
-                        <div class="nav-tree-children collapsed" id="calendar_tracker_${trackerIndex}_children">
+                        <div class="nav-tree-children collapsed" id="${targetPrefix}_campaign_${buyerIndex}_${campaignIndex}_children">
                     `;
 
-                    Object.keys(trackerData.campaigns || {}).forEach((campaignName, campaignIndex) => {
-                        const campaignData = trackerData.campaigns[campaignName];
+                    Object.keys(campaignData.groups || {}).forEach((groupName, groupIndex) => {
+                        const groupData = campaignData.groups[groupName];
+                        const cleanGroupName = cleanName(groupName, groupIndex, 'group');
+                        const groupId = `${targetPrefix}_group_${cleanBuyerName}_${cleanCampaignName}_${cleanGroupName}_${groupIndex}`;
 
-                        console.log(`🔍 CALENDAR NAV: Creating campaign:`, campaignName);
+                        console.log(`🔍 NAV: Creating group link for ${targetPrefix}:`, groupName, '→', groupId);
+
+                        // Расчет метрик для группы
+                        let groupPeriodMetrics = { avgCPL: "0,00", totalLeads: 0, totalSpend: "0,00" };
+                        if (groupData.groupData && groupData.groupData.data) {
+                            groupPeriodMetrics = calculateAggregatedMetrics(groupData.groupData.data, 0, groupData.groupData.data.dates.length - 1, userStartDate, userEndDate);
+                        }
 
                         html += `
-                            <div class="nav-tree-item level-1" onclick="navigateToCalendarElement('${escapeHtml(campaignName)}', 'campaign')">
-                                <i class="fas fa-tv nav-icon"></i>
-                                ${escapeHtml(campaignName)}
-                                <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('calendar_campaign_${trackerIndex}_${campaignIndex}')">▸</span>
+                            <div class="nav-tree-item level-2" onclick="navigateToElement('${groupId}')">
+                                <div class="nav-item-content">
+                                    <div class="nav-item-header">
+                                        <i class="fas fa-folder nav-icon"></i>
+                                        <span class="nav-item-name">${escapeHtml(groupName)}</span>
+                                    </div>
+                                    <div class="nav-item-metrics">
+                                        <span class="nav-metric">Лиды: ${groupPeriodMetrics.totalLeads}</span>
+                                        <span class="nav-metric">CPL: ${groupPeriodMetrics.avgCPL}</span>
+                                        <span class="nav-metric">Расх.: ${groupPeriodMetrics.totalSpend}</span>
+                                    </div>
+                                </div>
+                                <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('${targetPrefix}_group_${buyerIndex}_${campaignIndex}_${groupIndex}')">▸</span>
                             </div>
-                            <div class="nav-tree-children collapsed" id="calendar_campaign_${trackerIndex}_${campaignIndex}_children">
+                            <div class="nav-tree-children collapsed" id="${targetPrefix}_group_${buyerIndex}_${campaignIndex}_${groupIndex}_children">
                         `;
 
-                        Object.keys(campaignData.groups || {}).forEach((groupName, groupIndex) => {
-                            const groupData = campaignData.groups[groupName];
+                        Object.keys(groupData.ads || {}).forEach((adName, adIndex) => {
+                            const cleanAdName = cleanName(adName, adIndex, 'ad');
+                            const adId = `${targetPrefix}_ad_${cleanBuyerName}_${cleanCampaignName}_${cleanGroupName}_${cleanAdName}_${adIndex}`;
 
-                            console.log(`🔍 CALENDAR NAV: Creating group:`, groupName);
+                            console.log(`🔍 NAV: Creating ad link for ${targetPrefix}:`, adName, '→', adId);
+
+                            // Расчет метрик для объявления
+                            let adPeriodMetrics = { avgCPL: "0,00", totalLeads: 0, totalSpend: "0,00" };
+                            if (groupData.ads && groupData.ads[adName] && groupData.ads[adName].data) {
+                                adPeriodMetrics = calculateAggregatedMetrics(groupData.ads[adName].data, 0, groupData.ads[adName].data.dates.length - 1, userStartDate, userEndDate);
+                            }
 
                             html += `
-                                <div class="nav-tree-item level-2" onclick="navigateToCalendarElement('${escapeHtml(groupName)}', 'group')">
-                                    <i class="fas fa-folder nav-icon"></i>
-                                    ${escapeHtml(groupName)}
-                                    <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('calendar_group_${trackerIndex}_${campaignIndex}_${groupIndex}')">▸</span>
-                                </div>
-                                <div class="nav-tree-children collapsed" id="calendar_group_${trackerIndex}_${campaignIndex}_${groupIndex}_children">
-                            `;
-
-                            Object.keys(groupData.ads || {}).forEach((adName, adIndex) => {
-                                console.log(`🔍 CALENDAR NAV: Creating ad:`, adName);
-
-                                html += `
-                                    <div class="nav-tree-item level-3" onclick="navigateToCalendarElement('${escapeHtml(adName)}', 'ad')">
-                                        <i class="fas fa-rectangle-ad nav-icon"></i>
-                                        ${escapeHtml(adName)}
+                                <div class="nav-tree-item level-3" onclick="navigateToElement('${adId}')">
+                                    <div class="nav-item-content">
+                                        <div class="nav-item-header">
+                                            <i class="fas fa-rectangle-ad nav-icon"></i>
+                                            <span class="nav-item-name">${escapeHtml(adName)}</span>
+                                        </div>
+                                        <div class="nav-item-metrics">
+                                            <span class="nav-metric">Лиды: ${adPeriodMetrics.totalLeads}</span>
+                                            <span class="nav-metric">CPL: ${adPeriodMetrics.avgCPL}</span>
+                                            <span class="nav-metric">Расх.: ${adPeriodMetrics.totalSpend}</span>
+                                        </div>
                                     </div>
-                                `;
-                            });
-
-                            html += '</div>';
+                                </div>
+                            `;
                         });
 
                         html += '</div>';
@@ -3197,8 +3316,172 @@
                     html += '</div>';
                 });
 
-                return html;
+                html += '</div>';
+            });
+
+            return html;
+        }
+
+            // Функция для создания структуры навигации календаря
+        function createCalendarNavigationStructure(calendarData) {
+            let html = '';
+
+            if (!calendarData || Object.keys(calendarData).length === 0) {
+                return '<div class="nav-placeholder"><i class="fas fa-calendar-times"></i><span>Нет данных календаря</span></div>';
             }
+
+            // Получаем период пользователя для расчетов
+            const userStartDate = document.getElementById("periodStart").value;
+            const userEndDate = document.getElementById("periodEnd").value;
+
+            Object.keys(calendarData).forEach((trackerName, trackerIndex) => {
+                const trackerData = calendarData[trackerName];
+                const cleanTrackerName = cleanName(trackerName, trackerIndex, 'tracker');
+
+                console.log(`🔍 CALENDAR NAV: Creating tracker:`, trackerName);
+
+                // Расчет метрик для трекера
+                const trackerDatesData = {
+                    dates: trackerData.dates,
+                    leadsDay: [],
+                    spendDay: []
+                };
+
+                // Собираем данные трекера по всем кампаниям
+                for (let dateIndex = 0; dateIndex < trackerData.dates.length; dateIndex++) {
+                    let dayLeads = 0, daySpend = 0;
+                    Object.values(trackerData.campaigns || {}).forEach(campaignData => {
+                        dayLeads += campaignData.leads[dateIndex] || 0;
+                        daySpend += campaignData.spend[dateIndex] || 0;
+                    });
+                    trackerDatesData.leadsDay.push(dayLeads);
+                    trackerDatesData.spendDay.push(daySpend);
+                }
+
+                const trackerPeriodMetrics = calculateAggregatedMetrics(trackerDatesData, 0, trackerDatesData.dates.length - 1, userStartDate, userEndDate);
+
+                html += `
+                    <div class="nav-tree-item level-0" onclick="navigateToCalendarElement('${escapeHtml(trackerName)}', 'tracker')">
+                        <div class="nav-item-content">
+                            <div class="nav-item-header">
+                                <i class="fas fa-chart-line nav-icon"></i>
+                                <span class="nav-item-name">${escapeHtml(trackerName)}</span>
+                            </div>
+                            <div class="nav-item-metrics">
+                                <span class="nav-metric">Лиды: ${trackerPeriodMetrics.totalLeads}</span>
+                                <span class="nav-metric">CPL: ${trackerPeriodMetrics.avgCPL}</span>
+                                <span class="nav-metric">Расх.: ${trackerPeriodMetrics.totalSpend}</span>
+                            </div>
+                        </div>
+                        <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('calendar_tracker_${trackerIndex}')">▸</span>
+                    </div>
+                    <div class="nav-tree-children collapsed" id="calendar_tracker_${trackerIndex}_children">
+                `;
+
+                Object.keys(trackerData.campaigns || {}).forEach((campaignName, campaignIndex) => {
+                    const campaignData = trackerData.campaigns[campaignName];
+
+                    console.log(`🔍 CALENDAR NAV: Creating campaign:`, campaignName);
+
+                    // Расчет метрик для кампании
+                    const campaignDatesData = {
+                        dates: campaignData.dates,
+                        leadsDay: campaignData.leads,
+                        spendDay: campaignData.spend
+                    };
+
+                    const campaignPeriodMetrics = calculateAggregatedMetrics(campaignDatesData, 0, campaignDatesData.dates.length - 1, userStartDate, userEndDate);
+
+                    html += `
+                        <div class="nav-tree-item level-1" onclick="navigateToCalendarElement('${escapeHtml(campaignName)}', 'campaign')">
+                            <div class="nav-item-content">
+                                <div class="nav-item-header">
+                                    <i class="fas fa-tv nav-icon"></i>
+                                    <span class="nav-item-name">${escapeHtml(campaignName)}</span>
+                                </div>
+                                <div class="nav-item-metrics">
+                                    <span class="nav-metric">Лиды: ${campaignPeriodMetrics.totalLeads}</span>
+                                    <span class="nav-metric">CPL: ${campaignPeriodMetrics.avgCPL}</span>
+                                    <span class="nav-metric">Расх.: ${campaignPeriodMetrics.totalSpend}</span>
+                                </div>
+                            </div>
+                            <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('calendar_campaign_${trackerIndex}_${campaignIndex}')">▸</span>
+                        </div>
+                        <div class="nav-tree-children collapsed" id="calendar_campaign_${trackerIndex}_${campaignIndex}_children">
+                    `;
+
+                    Object.keys(campaignData.groups || {}).forEach((groupName, groupIndex) => {
+                        const groupData = campaignData.groups[groupName];
+
+                        console.log(`🔍 CALENDAR NAV: Creating group:`, groupName);
+
+                        // Расчет метрик для группы
+                        const groupDatesData = {
+                            dates: groupData.dates,
+                            leadsDay: groupData.leads,
+                            spendDay: groupData.spend
+                        };
+
+                        const groupPeriodMetrics = calculateAggregatedMetrics(groupDatesData, 0, groupDatesData.dates.length - 1, userStartDate, userEndDate);
+
+                        html += `
+                            <div class="nav-tree-item level-2" onclick="navigateToCalendarElement('${escapeHtml(groupName)}', 'group')">
+                                <div class="nav-item-content">
+                                    <div class="nav-item-header">
+                                        <i class="fas fa-folder nav-icon"></i>
+                                        <span class="nav-item-name">${escapeHtml(groupName)}</span>
+                                    </div>
+                                    <div class="nav-item-metrics">
+                                        <span class="nav-metric">Лиды: ${groupPeriodMetrics.totalLeads}</span>
+                                        <span class="nav-metric">CPL: ${groupPeriodMetrics.avgCPL}</span>
+                                        <span class="nav-metric">Расх.: ${groupPeriodMetrics.totalSpend}</span>
+                                    </div>
+                                </div>
+                                <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('calendar_group_${trackerIndex}_${campaignIndex}_${groupIndex}')">▸</span>
+                            </div>
+                            <div class="nav-tree-children collapsed" id="calendar_group_${trackerIndex}_${campaignIndex}_${groupIndex}_children">
+                        `;
+
+                        Object.keys(groupData.ads || {}).forEach((adName, adIndex) => {
+                            console.log(`🔍 CALENDAR NAV: Creating ad:`, adName);
+
+                            // Расчет метрик для объявления
+                            const adDatesData = {
+                                dates: groupData.ads[adName].dates,
+                                leadsDay: groupData.ads[adName].leads,
+                                spendDay: groupData.ads[adName].spend
+                            };
+
+                            const adPeriodMetrics = calculateAggregatedMetrics(adDatesData, 0, adDatesData.dates.length - 1, userStartDate, userEndDate);
+
+                            html += `
+                                <div class="nav-tree-item level-3" onclick="navigateToCalendarElement('${escapeHtml(adName)}', 'ad')">
+                                    <div class="nav-item-content">
+                                        <div class="nav-item-header">
+                                            <i class="fas fa-rectangle-ad nav-icon"></i>
+                                            <span class="nav-item-name">${escapeHtml(adName)}</span>
+                                        </div>
+                                        <div class="nav-item-metrics">
+                                            <span class="nav-metric">Лиды: ${adPeriodMetrics.totalLeads}</span>
+                                            <span class="nav-metric">CPL: ${adPeriodMetrics.avgCPL}</span>
+                                            <span class="nav-metric">Расх.: ${adPeriodMetrics.totalSpend}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+
+                        html += '</div>';
+                    });
+
+                    html += '</div>';
+                });
+
+                html += '</div>';
+            });
+
+            return html;
+        }
 
             // Создаем полную структуру с блоками
             let html = `
@@ -6235,6 +6518,44 @@
                 element.style.boxShadow = '';
                 element.style.border = '';
             }, 3000);
+        }
+
+        // Calendar navigation by path function
+        function navigateToCalendarElementByPath(elementPath) {
+            console.log('🚀 CALENDAR NAVIGATION BY PATH:', elementPath);
+            
+            // Сначала скроллимся к секции Календарь метрик
+            const calendarSection = document.querySelector('.calendar-metrics-section');
+            if (!calendarSection) {
+                console.log('❌ Calendar metrics section not found');
+                return;
+            }
+
+            // Скроллимся к секции календаря
+            calendarSection.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+                inline: 'nearest'
+            });
+
+            // Ждем завершения скролла и ищем элемент по пути
+            setTimeout(() => {
+                const targetRow = document.querySelector(`[data-id="${elementPath}"]`);
+                
+                if (targetRow) {
+                    console.log('✅ Found target row by path:', targetRow);
+                    
+                    // Раскрываем всю цепочку до этого элемента
+                    expandCalendarToTargetByPath(targetRow, elementPath);
+
+                    // Подсвечиваем строку
+                    setTimeout(() => {
+                        highlightCalendarElement(targetRow);
+                    }, 1000);
+                } else {
+                    console.log('❌ Calendar element not found by path:', elementPath);
+                }
+            }, 500);
         }
 
         // Make calendar navigation globally available
