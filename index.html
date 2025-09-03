@@ -3715,13 +3715,13 @@
                 }
             }
 
-            // Расчет средних значений
-            const avgCPL = cplValues.length > 0 ? (cplValues.reduce((a, b) => a + b, 0) / cplValues.length) : 0;
-            const avgConversion = conversionValues.length > 0 ? (conversionValues.reduce((a, b) => a + b, 0) / conversionValues.length) : 0;
-            const avgCTR = ctrValues.length > 0 ? (ctrValues.reduce((a, b) => a + b, 0) / ctrValues.length) : 0;
-            const avgCPM = cpmValues.length > 0 ? (cpmValues.reduce((a, b) => a + b, 0) / cpmValues.length) : 0;
-            const avgCPC = cpcValues.length > 0 ? (cpcValues.reduce((a, b) => a + b, 0) / cpcValues.length) : 0;
-            const avgWatchTime = watchTimeValues.length > 0 ? (watchTimeValues.reduce((a, b) => a + b, 0) / watchTimeValues.length) : 0;
+            // Расчет средних значений и формул
+        const avgCPL = totalLeads > 0 ? (totalSpend / totalLeads) : 0;
+        const avgConversion = totalClicks > 0 ? (totalLeads / totalClicks) * 100 : 0;
+        const avgCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+        const avgCPM = totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0;
+        const avgCPC = totalClicks > 0 ? (totalSpend / totalClicks) : 0;
+        const avgWatchTime = watchTimeValues.length > 0 ? (watchTimeValues.reduce((a, b) => a + b, 0) / watchTimeValues.length) : 0;
 
             // Собираем байеров и аккаунты за период
             const periodBuyers = new Set();
@@ -3778,21 +3778,21 @@
             }
 
             return {
-                avgCPL: avgCPL.toFixed(2).replace('.', ','),
-                totalLeads: totalLeads,
-                totalSpend: totalSpend.toFixed(2).replace('.', ','),
-                avgConversion: avgConversion.toFixed(2).replace('.', ',') + '%',
-                avgCTR: avgCTR.toFixed(2).replace('.', ',') + '%',
-                totalImpressions: totalImpressions,
-                avgCPM: avgCPM.toFixed(2).replace('.', ','),
-                totalClicks: totalClicks,
-                avgCPC: avgCPC.toFixed(2).replace('.', ','),
-                avgWatchTime: avgWatchTime.toFixed(2).replace('.', ','),
-                maxCPL: maxCPLValue.toFixed(2).replace('.', ','),
-                rating: rating,
-                buyers: Array.from(periodBuyers).join('\n'),
-                accounts: Array.from(periodAccounts).join('\n')
-            };
+            avgCPL: avgCPL.toFixed(2).replace('.', ','),
+            totalLeads: totalLeads,
+            totalSpend: totalSpend.toFixed(2).replace('.', ','),
+            avgConversion: avgConversion.toFixed(2).replace('.', ',') + '%',
+            avgCTR: avgCTR.toFixed(2).replace('.', ',') + '%',
+            totalImpressions: totalImpressions,
+            avgCPM: avgCPM.toFixed(2).replace('.', ','),
+            totalClicks: totalClicks,
+            avgCPC: avgCPC.toFixed(2).replace('.', ','),
+            avgWatchTime: avgWatchTime.toFixed(2).replace('.', ','),
+            maxCPL: maxCPLValue.toFixed(2).replace('.', ','),
+            rating: rating,
+            buyers: Array.from(periodBuyers).join('\n'),
+            accounts: Array.from(periodAccounts).join('\n')
+        };
         }
 
         // Функция для получения индексов последних 7 активных дней
