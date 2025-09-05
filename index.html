@@ -4340,7 +4340,7 @@
                     }
                 }
 
-                // Аккаунты (если есть в данных)
+                // Аккаунты (из поля source_tracker)
                 if (data.accounts) {
                     const accountsStr = data.accounts[i] || "";
                     if (accountsStr && accountsStr.trim() !== "") {
@@ -4611,7 +4611,7 @@
                         case 10:
                             value = data.buyers ? data.buyers[i] : "";
                             break;
-                        case 11:
+                        case 11: // Аккаунты
                             value = data.accounts ? data.accounts[i] : "";
                             break;
                         case 12:
