@@ -6391,105 +6391,89 @@
         function navigateToCalendarElement(elementName, elementType, trackerName = null, campaignName = null, groupName = null) {
             console.log('🚀 CALENDAR NAVIGATION for:', elementName, 'type:', elementType, 'tracker:', trackerName);
             
-            // Сначала скроллимся к секции Календарь метрик
-            const calendarSection = document.querySelector('.calendar-metrics-section');
-            if (!calendarSection) {
-                console.log('❌ Calendar metrics section not found');
+            // Сразу ищем элемент без предварительного скролла
+            const calendarTable = document.querySelector('.calendar-table');
+            if (!calendarTable) {
+                console.log('❌ Calendar table not found');
                 return;
             }
 
-            // Скроллимся к секции календаря (быстро)
-            calendarSection.scrollIntoView({
-                behavior: 'auto',
-                block: 'start',
-                inline: 'nearest'
-            });
+            // Ищем строку с учетом иерархии
+            const rows = calendarTable.querySelectorAll('tbody tr');
+            let targetRow = null;
 
-            // Ждем завершения скролла и ищем элемент
-            setTimeout(() => {
-                const calendarTable = document.querySelector('.calendar-table');
-                if (!calendarTable) {
-                    console.log('❌ Calendar table not found');
-                    return;
-                }
-
-                // Ищем строку с учетом иерархии
-                const rows = calendarTable.querySelectorAll('tbody tr');
-                let targetRow = null;
-
-                rows.forEach(row => {
-                    const nameCell = row.querySelector('td:first-child .calendar-name');
-                    if (nameCell) {
-                        const cellText = nameCell.textContent.replace(/^[\u{1F4CA}\u{1F4F1}\u{1F4C1}\u{1F4C4}�📊📱📁📄]\s*/u, '').trim();
-                        
-                        // Если указан трекер, ищем в контексте конкретного трекера
-                        if (trackerName && elementType === 'campaign') {
-                            // Ищем кампанию в нужном трекере
-                            if (cellText === elementName) {
-                                // Проверяем, что это дочерний элемент нужного трекера
-                                const trackerRow = findTrackerRow(trackerName, rows);
-                                if (trackerRow && isChildOfTracker(row, trackerRow)) {
-                                    targetRow = row;
-                                    console.log('✅ Found target campaign in correct tracker:', targetRow);
-                                }
-                            }
-                        } else if (trackerName && campaignName && elementType === 'group') {
-                            // Ищем группу в нужной кампании нужного трекера
-                            if (cellText === elementName) {
-                                const campaignRow = findCampaignInTracker(campaignName, trackerName, rows);
-                                if (campaignRow && isChildOfCampaign(row, campaignRow)) {
-                                    targetRow = row;
-                                    console.log('✅ Found target group in correct campaign:', targetRow);
-                                }
-                            }
-                        } else if (trackerName && campaignName && groupName && elementType === 'ad') {
-                            // Ищем объявление в нужной группе
-                            if (cellText === elementName) {
-                                const groupRow = findGroupInCampaign(groupName, campaignName, trackerName, rows);
-                                if (groupRow && isChildOfGroup(row, groupRow)) {
-                                    targetRow = row;
-                                    console.log('✅ Found target ad in correct group:', targetRow);
-                                }
-                            }
-                        } else {
-                            // Обычный поиск для трекеров
-                            if (cellText === elementName) {
+            rows.forEach(row => {
+                const nameCell = row.querySelector('td:first-child .calendar-name');
+                if (nameCell) {
+                    const cellText = nameCell.textContent.replace(/^[\u{1F4CA}\u{1F4F1}\u{1F4C1}\u{1F4C4}�📊📱📁📄]\s*/u, '').trim();
+                    
+                    // Если указан трекер, ищем в контексте конкретного трекера
+                    if (trackerName && elementType === 'campaign') {
+                        // Ищем кампанию в нужном трекере
+                        if (cellText === elementName) {
+                            // Проверяем, что это дочерний элемент нужного трекера
+                            const trackerRow = findTrackerRow(trackerName, rows);
+                            if (trackerRow && isChildOfTracker(row, trackerRow)) {
                                 targetRow = row;
-                                console.log('✅ Found target row:', targetRow);
+                                console.log('✅ Found target campaign in correct tracker:', targetRow);
                             }
+                        }
+                    } else if (trackerName && campaignName && elementType === 'group') {
+                        // Ищем группу в нужной кампании нужного трекера
+                        if (cellText === elementName) {
+                            const campaignRow = findCampaignInTracker(campaignName, trackerName, rows);
+                            if (campaignRow && isChildOfCampaign(row, campaignRow)) {
+                                targetRow = row;
+                                console.log('✅ Found target group in correct campaign:', targetRow);
+                            }
+                        }
+                    } else if (trackerName && campaignName && groupName && elementType === 'ad') {
+                        // Ищем объявление в нужной группе
+                        if (cellText === elementName) {
+                            const groupRow = findGroupInCampaign(groupName, campaignName, trackerName, rows);
+                            if (groupRow && isChildOfGroup(row, groupRow)) {
+                                targetRow = row;
+                                console.log('✅ Found target ad in correct group:', targetRow);
+                            }
+                        }
+                    } else {
+                        // Обычный поиск для трекеров
+                        if (cellText === elementName) {
+                            targetRow = row;
+                            console.log('✅ Found target row:', targetRow);
                         }
                     }
-                });
-
-                if (targetRow) {
-                    console.log('✅ Found calendar element:', elementName);
-                    
-                    // СНАЧАЛА раскрываем всю цепочку до этого элемента
-                    expandCalendarToTarget(targetRow);
-
-                    // Ждем завершения раскрытия и делаем элемент видимым
-                    setTimeout(() => {
-                        // Убеждаемся что элемент видим
-                        if (targetRow.classList.contains('calendar-child')) {
-                            targetRow.classList.add('visible');
-                        }
-                        
-                        // Скроллимся к элементу
-                        targetRow.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'center',
-                            inline: 'nearest'
-                        });
-
-                        // Подсвечиваем строку
-                        setTimeout(() => {
-                            highlightCalendarElement(targetRow);
-                        }, 300);
-                    }, 1200);
-                } else {
-                    console.log('❌ Calendar element not found:', elementName);
                 }
-            }, 500);
+            });
+
+            if (targetRow) {
+                console.log('✅ Found calendar element:', elementName);
+                
+                // СНАЧАЛА раскрываем всю цепочку до этого элемента
+                expandCalendarToTarget(targetRow);
+
+                // Ждем завершения раскрытия и делаем элемент видимым, затем скроллимся
+                setTimeout(() => {
+                    // Убеждаемся что элемент видим
+                    if (targetRow.classList.contains('calendar-child')) {
+                        targetRow.classList.add('visible');
+                    }
+                    
+                    // Скроллимся к элементу в центр страницы
+                    targetRow.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center',
+                        inline: 'nearest'
+                    });
+
+                    // Подсвечиваем строку
+                    setTimeout(() => {
+                        highlightCalendarElement(targetRow);
+                    }, 300);
+                }, 1200);
+            } else {
+                console.log('❌ Calendar element not found:', elementName);
+            }
         }
 
         // Вспомогательные функции для поиска в иерархии
