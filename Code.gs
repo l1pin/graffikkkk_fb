@@ -791,6 +791,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
         valid_cpa,
         valid,
         cost,
+        cost_from_sources,
         valid_cr,
         clicks_on_link_tracker,
         viewed_tracker,
@@ -955,6 +956,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 siteUrl: [],
                 budget: [],
                 impressions: [],
+                costFromSources: [],
             };
         }
 
@@ -993,29 +995,32 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             // ДАННЫЕ ЛИДОВ И РАСХОДОВ (из tracker)
             const leads = Number(row.valid) || 0;
             const spend = Number(row.cost) || 0;
+            const costFromSources = Number(row.cost_from_sources) || 0;
             const siteClicks = Number(row.clicks_on_link_tracker) || 0;
 
             // ДАННЫЕ FACEBOOK МЕТРИК (из Facebook)
             const hasMetrics = campaignName || groupId; // Есть ли Facebook метрики
 
-            if (leads > 0 || spend > 0) {
+            if (leads > 0 || spend > 0 || costFromSources > 0) {
                 console.log(
-                    `💰 Processing leads/spend for buyer: ${buyerInfo.buyer}, group: ${groupName}, date: ${dateStr}, leads: ${leads}, spend: ${spend}`
+                    `💰 Processing leads/spend/costFromSources for buyer: ${buyerInfo.buyer}, group: ${groupName}, date: ${dateStr}, leads: ${leads}, spend: ${spend}, costFromSources: ${costFromSources}`
                 );
 
                 // Общие данные
-                if (!resultMap[dateStr]) resultMap[dateStr] = { leads: 0, spend: 0 };
+                if (!resultMap[dateStr]) resultMap[dateStr] = { leads: 0, spend: 0, costFromSources: 0 };
                 resultMap[dateStr].leads += leads;
                 resultMap[dateStr].spend += spend;
+                resultMap[dateStr].costFromSources += costFromSources;
 
                 // По байерам
                 if (buyerInfo.buyer) {
                     if (!resultMapByBuyer[buyerInfo.buyer])
                         resultMapByBuyer[buyerInfo.buyer] = {};
                     if (!resultMapByBuyer[buyerInfo.buyer][dateStr])
-                        resultMapByBuyer[buyerInfo.buyer][dateStr] = { leads: 0, spend: 0 };
+                        resultMapByBuyer[buyerInfo.buyer][dateStr] = { leads: 0, spend: 0, costFromSources: 0 };
                     resultMapByBuyer[buyerInfo.buyer][dateStr].leads += leads;
                     resultMapByBuyer[buyerInfo.buyer][dateStr].spend += spend;
+                    resultMapByBuyer[buyerInfo.buyer][dateStr].costFromSources += costFromSources;
                     globalBuyers.add(buyerInfo.buyer);
 
                     if (!buyersByDate[dateStr]) buyersByDate[dateStr] = [];
@@ -1026,9 +1031,10 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 if (groupName) {
                     if (!resultMapByGroup[groupName]) resultMapByGroup[groupName] = {};
                     if (!resultMapByGroup[groupName][dateStr])
-                        resultMapByGroup[groupName][dateStr] = { leads: 0, spend: 0 };
+                        resultMapByGroup[groupName][dateStr] = { leads: 0, spend: 0, costFromSources: 0 };
                     resultMapByGroup[groupName][dateStr].leads += leads;
                     resultMapByGroup[groupName][dateStr].spend += spend;
+                    resultMapByGroup[groupName][dateStr].costFromSources += costFromSources;
                     globalGroups.add(groupName);
 
                     if (!groupsByDate[dateStr]) groupsByDate[dateStr] = [];
@@ -1044,9 +1050,11 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                         resultMapByBuyerCampaign[buyerCampaignKey][dateStr] = {
                             leads: 0,
                             spend: 0,
+                            costFromSources: 0,
                         };
                     resultMapByBuyerCampaign[buyerCampaignKey][dateStr].leads += leads;
                     resultMapByBuyerCampaign[buyerCampaignKey][dateStr].spend += spend;
+                    resultMapByBuyerCampaign[buyerCampaignKey][dateStr].costFromSources += costFromSources;
                 }
 
                 // Байер → Кампания → Группа
@@ -1058,9 +1066,11 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                         resultMapByBuyerCampaignGroup[buyerCampaignGroupKey][dateStr] = {
                             leads: 0,
                             spend: 0,
+                            costFromSources: 0,
                         };
                     resultMapByBuyerCampaignGroup[buyerCampaignGroupKey][dateStr].leads += leads;
                     resultMapByBuyerCampaignGroup[buyerCampaignGroupKey][dateStr].spend += spend;
+                    resultMapByBuyerCampaignGroup[buyerCampaignGroupKey][dateStr].costFromSources += costFromSources;
 
                     // Отслеживаем группы для каждого байера
                     if (!buyerGroupsMap[buyerInfo.buyer])
@@ -1077,9 +1087,11 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                         resultMapByBuyerGroupAd[buyerGroupAdKey][dateStr] = {
                             leads: 0,
                             spend: 0,
+                            costFromSources: 0,
                         };
                     resultMapByBuyerGroupAd[buyerGroupAdKey][dateStr].leads += leads;
                     resultMapByBuyerGroupAd[buyerGroupAdKey][dateStr].spend += spend;
+                    resultMapByBuyerGroupAd[buyerGroupAdKey][dateStr].costFromSources += costFromSources;
                 }
 
                 // Учитываем день для CR только если есть данные о кликах
@@ -1143,6 +1155,9 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     targetObject[dateKey].budget.push(budgetData);
                     targetObject[dateKey].impressions.push(
                         row.showed !== undefined && row.showed !== null ? String(row.showed) : ""
+                    );
+                    targetObject[dateKey].costFromSources.push(
+                        costFromSources !== undefined && costFromSources !== null ? String(costFromSources) : ""
                     );
                     console.log(
                         "🔍 Added budget to metrics:",
@@ -1316,10 +1331,10 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     "yyyy-MM-dd"
                 );
                 const rec = resultMapBySegment[segmentName]
-                    ? resultMapBySegment[segmentName][dateKey] || { leads: 0, spend: 0 }
-                    : { leads: 0, spend: 0 };
+                    ? resultMapBySegment[segmentName][dateKey] || { leads: 0, spend: 0, costFromSources: 0 }
+                    : { leads: 0, spend: 0, costFromSources: 0 };
 
-                if (rec.spend > 0) {
+                if (rec.spend > 0 || rec.costFromSources > 0) {
                     if (!segmentMinDate) segmentMinDate = new Date(checkDate);
                     segmentMaxDate = new Date(checkDate);
                 }
@@ -1350,6 +1365,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 cplDay: [],
                 leadsDay: [],
                 spendDay: [],
+                costFromSourcesDay: [],
                 conversionDay: [],
                 maxCPL: [],
                 cplCumulative: [],
@@ -1391,10 +1407,11 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 segmentData.dates.push(dateDisplay);
 
                 const rec = resultMapBySegment[segmentName]
-                    ? resultMapBySegment[segmentName][dateKey] || { leads: 0, spend: 0 }
-                    : { leads: 0, spend: 0 };
+                    ? resultMapBySegment[segmentName][dateKey] || { leads: 0, spend: 0, costFromSources: 0 }
+                    : { leads: 0, spend: 0, costFromSources: 0 };
                 const dayLeads = rec.leads;
                 const daySpend = rec.spend;
+                const dayCostFromSources = rec.costFromSources || 0;
                 const dayCpl = dayLeads > 0 ? daySpend / dayLeads : 0;
 
                 const fbDataSegment =
@@ -1404,10 +1421,11 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                         createFacebookMetricsObject()
                         : createFacebookMetricsObject();
 
-                if (dayLeads === 0 && daySpend === 0) {
+                if (dayLeads === 0 && daySpend === 0 && dayCostFromSources === 0) {
                     segmentData.cplDay.push(0);
                     segmentData.leadsDay.push(0);
                     segmentData.spendDay.push(0);
+                    segmentData.costFromSourcesDay.push(0);
                     segmentData.conversionDay.push("0.00%");
                     segmentData.maxCPL.push(displayMaxCPL);
                     segmentData.ratings.push("");
@@ -1450,6 +1468,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 segmentData.cplDay.push(dayCpl);
                 segmentData.leadsDay.push(dayLeads);
                 segmentData.spendDay.push(daySpend);
+                segmentData.costFromSourcesDay.push(dayCostFromSources);
                 segmentData.conversionDay.push(segmentDayConversionText);
                 segmentData.maxCPL.push(displayMaxCPL);
 
@@ -1575,6 +1594,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 cplDay: [],
                 leadsDay: [],
                 spendDay: [],
+                costFromSourcesDay: [],
                 conversionDay: [],
                 maxCPL: [],
                 cplCumulative: [],
@@ -1608,6 +1628,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     newSegmentData.cplDay.push(0);
                     newSegmentData.leadsDay.push(0);
                     newSegmentData.spendDay.push(0);
+                    newSegmentData.costFromSourcesDay.push(0);
                     newSegmentData.conversionDay.push("0.00%");
                     newSegmentData.maxCPL.push(segmentData.maxCPL[range.startIndex] || 0);
                     newSegmentData.cplCumulative.push(0);
@@ -1638,6 +1659,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                         newSegmentData.cplDay.push(segmentData.cplDay[i]);
                         newSegmentData.leadsDay.push(segmentData.leadsDay[i]);
                         newSegmentData.spendDay.push(segmentData.spendDay[i]);
+                        newSegmentData.costFromSourcesDay.push(segmentData.costFromSourcesDay[i]);
                         newSegmentData.conversionDay.push(segmentData.conversionDay[i]);
                         newSegmentData.maxCPL.push(segmentData.maxCPL[i]);
                         newSegmentData.cplCumulative.push(segmentData.cplCumulative[i]);
@@ -1752,6 +1774,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             cplDay: [],
             leadsDay: [],
             spendDay: [],
+            costFromSourcesDay: [],
             conversionDay: [],
             maxCPL: [],
             cplCumulative: [],
@@ -1788,14 +1811,16 @@ function buildChartForArticle(article, periodStart, periodEnd) {
 
             generalData.dates.push(dateDisplay);
 
-            const rec = resultMap[dateKey] || { leads: 0, spend: 0 };
+            const rec = resultMap[dateKey] || { leads: 0, spend: 0, costFromSources: 0 };
             const dayLeads = rec.leads;
             const daySpend = rec.spend;
+            const dayCostFromSources = rec.costFromSources || 0;
 
-            if (dayLeads === 0 && daySpend === 0) {
+            if (dayLeads === 0 && daySpend === 0 && dayCostFromSources === 0) {
                 generalData.cplDay.push(0);
                 generalData.leadsDay.push(0);
                 generalData.spendDay.push(0);
+                generalData.costFromSourcesDay.push(0);
                 generalData.conversionDay.push("0.00%");
                 generalData.maxCPL.push(displayMaxCPL);
                 generalData.groups.push("");
@@ -1838,6 +1863,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             generalData.cplDay.push(dayCpl);
             generalData.leadsDay.push(dayLeads);
             generalData.spendDay.push(daySpend);
+            generalData.costFromSourcesDay.push(dayCostFromSources);
             generalData.conversionDay.push(dayConversionText);
             generalData.maxCPL.push(displayMaxCPL);
 
@@ -1996,32 +2022,33 @@ function buildChartForArticle(article, periodStart, periodEnd) {
 
         // Создаем новые массивы с диапазонами
         const newGeneralData = {
-            dates: [],
-            ratings: [],
-            cplDay: [],
-            leadsDay: [],
-            spendDay: [],
-            conversionDay: [],
-            maxCPL: [],
-            cplCumulative: [],
-            cplCumulativeColors: [],
-            cplCumulativeArrows: [],
-            groups: [],
-            buyers: [],
-            accounts: [],
-            freq: [],
-            ctr: [],
-            cpm: [],
-            linkClicks: [],
-            cpc: [],
-            avgWatchTime: [],
-            videoName: [],
-            siteUrl: [],
-            budget: [],
-            impressions: [],
-            columnSpans: [],
-            columnClasses: [],
-        };
+                dates: [],
+                ratings: [],
+                cplDay: [],
+                leadsDay: [],
+                spendDay: [],
+                costFromSourcesDay: [],
+                conversionDay: [],
+                maxCPL: [],
+                cplCumulative: [],
+                cplCumulativeColors: [],
+                cplCumulativeArrows: [],
+                groups: [],
+                buyers: [],
+                accounts: [],
+                freq: [],
+                ctr: [],
+                cpm: [],
+                linkClicks: [],
+                cpc: [],
+                avgWatchTime: [],
+                videoName: [],
+                siteUrl: [],
+                budget: [],
+                impressions: [],
+                columnSpans: [],
+                columnClasses: [],
+            };
 
         dateRanges.forEach((range) => {
             if (range.isZeroRange && range.startIndex !== range.endIndex) {
@@ -2034,6 +2061,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 newGeneralData.cplDay.push(0);
                 newGeneralData.leadsDay.push(0);
                 newGeneralData.spendDay.push(0);
+                newGeneralData.costFromSourcesDay.push(0);
                 newGeneralData.conversionDay.push("0.00%");
                 newGeneralData.maxCPL.push(generalData.maxCPL[range.startIndex]);
                 newGeneralData.cplCumulative.push(0);
@@ -2064,6 +2092,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     newGeneralData.cplDay.push(generalData.cplDay[i]);
                     newGeneralData.leadsDay.push(generalData.leadsDay[i]);
                     newGeneralData.spendDay.push(generalData.spendDay[i]);
+                    newGeneralData.costFromSourcesDay.push(generalData.costFromSourcesDay[i]);
                     newGeneralData.conversionDay.push(generalData.conversionDay[i]);
                     newGeneralData.maxCPL.push(generalData.maxCPL[i]);
                     newGeneralData.cplCumulative.push(generalData.cplCumulative[i]);
