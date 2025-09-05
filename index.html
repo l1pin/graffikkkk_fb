@@ -4221,20 +4221,17 @@
                     if (!isNaN(convValue)) conversionValues.push(convValue);
                 }
 
-                // CTR - вычисляем среднее за день
-                const ctrStr = data.ctr ? data.ctr[i] : "";
-                if (ctrStr && ctrStr.trim() !== "") {
-                    const ctrLines = ctrStr.split('\n').filter(line => line.trim() !== "");
-                    const dailyCtrValues = [];
-                    ctrLines.forEach(line => {
-                        const ctrValue = parseFloat(line.replace(',', '.'));
-                        if (!isNaN(ctrValue)) dailyCtrValues.push(ctrValue);
-                    });
-                    if (dailyCtrValues.length > 0) {
-                        const dailyAvgCtr = dailyCtrValues.reduce((sum, val) => sum + val, 0) / dailyCtrValues.length;
-                        ctrValues.push(dailyAvgCtr);
+                // Frequency - используем уже обработанное среднее значение
+                const freqStr = data.freq ? data.freq[i] : "";
+                if (freqStr && freqStr.trim() !== "") {
+                    const freqValue = parseFloat(freqStr.replace(',', '.'));
+                    if (!isNaN(freqValue)) {
+                        // Frequency уже среднее, просто добавляем
                     }
                 }
+
+                // CTR рассчитывается из кликов и показов, не нужно отдельно обрабатывать
+                // CTR = (totalClicks / totalImpressions) * 100 будет рассчитан в конце
 
                 // Показы - суммируем за день
                 const impressionsStr = data.impressions ? data.impressions[i] : "";
@@ -4246,20 +4243,8 @@
                     });
                 }
 
-                // CPM - вычисляем среднее за день
-                const cpmStr = data.cpm ? data.cpm[i] : "";
-                if (cpmStr && cpmStr.trim() !== "") {
-                    const cpmLines = cpmStr.split('\n').filter(line => line.trim() !== "");
-                    const dailyCpmValues = [];
-                    cpmLines.forEach(line => {
-                        const cpmValue = parseFloat(line.replace(',', '.'));
-                        if (!isNaN(cpmValue)) dailyCpmValues.push(cpmValue);
-                    });
-                    if (dailyCpmValues.length > 0) {
-                        const dailyAvgCpm = dailyCpmValues.reduce((sum, val) => sum + val, 0) / dailyCpmValues.length;
-                        cpmValues.push(dailyAvgCpm);
-                    }
-                }
+                // CPM рассчитывается из расхода и показов, не нужно отдельно обрабатывать
+                // CPM = (totalSpend / totalImpressions) * 1000 будет рассчитан в конце
 
                 // Клики - суммируем за день
                 const clicksStr = data.linkClicks ? data.linkClicks[i] : "";
@@ -4271,20 +4256,8 @@
                     });
                 }
 
-                // CPC - вычисляем среднее за день
-                const cpcStr = data.cpc ? data.cpc[i] : "";
-                if (cpcStr && cpcStr.trim() !== "") {
-                    const cpcLines = cpcStr.split('\n').filter(line => line.trim() !== "");
-                    const dailyCpcValues = [];
-                    cpcLines.forEach(line => {
-                        const cpcValue = parseFloat(line.replace(',', '.'));
-                        if (!isNaN(cpcValue)) dailyCpcValues.push(cpcValue);
-                    });
-                    if (dailyCpcValues.length > 0) {
-                        const dailyAvgCpc = dailyCpcValues.reduce((sum, val) => sum + val, 0) / dailyCpcValues.length;
-                        cpcValues.push(dailyAvgCpc);
-                    }
-                }
+                // CPC рассчитывается из расхода и кликов, не нужно отдельно обрабатывать
+                // CPC = totalSpend / totalClicks будет рассчитан в конце
 
                 // Время просмотра - вычисляем среднее за день
                 const watchTimeStr = data.avgWatchTime ? data.avgWatchTime[i] : "";
@@ -4612,27 +4585,76 @@
                             value = data.buyers ? data.buyers[i] : "";
                             break;
                         case 11: // Аккаунты
-                            value = data.accounts ? data.accounts[i] : "";
+                            const accountsValue = data.accounts ? data.accounts[i] : "";
+                            if (accountsValue && accountsValue.trim() !== "") {
+                                // Убираем дубли аккаунтов
+                                const uniqueAccounts = [...new Set(accountsValue.split('\n').filter(acc => acc.trim() !== ""))];
+                                value = uniqueAccounts.join('\n');
+                            } else {
+                                value = "";
+                            }
                             break;
-                        case 12:
+                        case 12: // Частота (Frequency) - среднее значение
                             value = data.freq ? data.freq[i] : "";
                             break;
-                        case 13:
-                            value = data.ctr ? data.ctr[i] : "";
+                        case 13: // CTR (целевая страница) - расчет по формуле
+                            const clicksForCTR = data.linkClicks ? data.linkClicks[i] : "";
+                            const impressionsForCTR = data.impressions ? data.impressions[i] : "";
+                            
+                            if (clicksForCTR && impressionsForCTR && clicksForCTR !== "" && impressionsForCTR !== "") {
+                                const clicks = Number(clicksForCTR) || 0;
+                                const impressions = Number(impressionsForCTR) || 0;
+                                if (impressions > 0) {
+                                    const ctr = (clicks / impressions) * 100;
+                                    value = ctr.toFixed(2).replace(".", ",") + "%";
+                                } else {
+                                    value = "";
+                                }
+                            } else {
+                                value = "";
+                            }
                             break;
-                        case 14:
-                            value = data.cpm ? data.cpm[i] : "";
+                        case 14: // CPM - расчет по формуле
+                            const spendForCPM = data.spendDay ? data.spendDay[i] : 0;
+                            const impressionsForCPM = data.impressions ? data.impressions[i] : "";
+                            
+                            if (spendForCPM > 0 && impressionsForCPM && impressionsForCPM !== "") {
+                                const spend = Number(spendForCPM) || 0;
+                                const impressions = Number(impressionsForCPM) || 0;
+                                if (impressions > 0) {
+                                    const cpm = (spend / impressions) * 1000;
+                                    value = cpm.toFixed(2).replace(".", ",");
+                                } else {
+                                    value = "";
+                                }
+                            } else {
+                                value = "";
+                            }
                             break;
-                        case 15:
-                            value = data.impressions[i];
+                        case 15: // Показы - сумма за день
+                            value = data.impressions ? data.impressions[i] || "" : "";
                             break;
-                        case 16:
+                        case 16: // Клики (переход) - сумма за день
                             value = data.linkClicks ? data.linkClicks[i] : "";
                             break;
-                        case 17:
-                            value = data.cpc ? data.cpc[i] : "";
+                        case 17: // CPC - расчет по формуле
+                            const spendForCPC = data.spendDay ? data.spendDay[i] : 0;
+                            const clicksForCPC = data.linkClicks ? data.linkClicks[i] : "";
+                            
+                            if (spendForCPC > 0 && clicksForCPC && clicksForCPC !== "") {
+                                const spend = Number(spendForCPC) || 0;
+                                const clicks = Number(clicksForCPC) || 0;
+                                if (clicks > 0) {
+                                    const cpc = spend / clicks;
+                                    value = cpc.toFixed(2).replace(".", ",");
+                                } else {
+                                    value = "";
+                                }
+                            } else {
+                                value = "";
+                            }
                             break;
-                        case 18:
+                        case 18: // Среднее время воспроизведения видео - среднее значение за день
                             value = data.avgWatchTime ? data.avgWatchTime[i] : "";
                             break;
                         case 19:
@@ -4643,7 +4665,7 @@
                             const urlValue = data.siteUrl ? data.siteUrl[i] : "";
                             value = makeUrlsClickable(urlValue);
                             break;
-                        case 21:
+                        case 21: // Бюджет группы объявлений - сумма за день
                             value = data.budget ? data.budget[i] : "";
                             break;
                     }
@@ -5840,25 +5862,67 @@
                                 const buyerGroupValue = data.groups ? data.groups[i] : "";
                                 value = makeGroupsClickable(buyerGroupValue, `buyer_groups_${i}`);
                                 break;
-                            case 10:
+                            case 10: // Частота (Frequency) - среднее значение
                                 value = data.freq ? data.freq[i] : "";
                                 break;
-                            case 11:
-                                value = data.ctr ? data.ctr[i] : "";
+                            case 11: // CTR (целевая страница) - расчет по формуле
+                                const buyerClicksForCTR = data.linkClicks ? data.linkClicks[i] : "";
+                                const buyerImpressionsForCTR = data.impressions ? data.impressions[i] : "";
+                                
+                                if (buyerClicksForCTR && buyerImpressionsForCTR && buyerClicksForCTR !== "" && buyerImpressionsForCTR !== "") {
+                                    const clicks = Number(buyerClicksForCTR) || 0;
+                                    const impressions = Number(buyerImpressionsForCTR) || 0;
+                                    if (impressions > 0) {
+                                        const ctr = (clicks / impressions) * 100;
+                                        value = ctr.toFixed(2).replace(".", ",") + "%";
+                                    } else {
+                                        value = "";
+                                    }
+                                } else {
+                                    value = "";
+                                }
                                 break;
-                            case 12:
-                                value = data.cpm ? data.cpm[i] : "";
+                            case 12: // CPM - расчет по формуле
+                                const buyerSpendForCPM = data.spendDay ? data.spendDay[i] : 0;
+                                const buyerImpressionsForCPM = data.impressions ? data.impressions[i] : "";
+                                
+                                if (buyerSpendForCPM > 0 && buyerImpressionsForCPM && buyerImpressionsForCPM !== "") {
+                                    const spend = Number(buyerSpendForCPM) || 0;
+                                    const impressions = Number(buyerImpressionsForCPM) || 0;
+                                    if (impressions > 0) {
+                                        const cpm = (spend / impressions) * 1000;
+                                        value = cpm.toFixed(2).replace(".", ",");
+                                    } else {
+                                        value = "";
+                                    }
+                                } else {
+                                    value = "";
+                                }
                                 break;
-                            case 13:
-                                value = data.impressions[i];
+                            case 13: // Показы - сумма за день
+                                value = data.impressions ? data.impressions[i] || "" : "";
                                 break;
-                            case 14:
+                            case 14: // Клики (переход) - сумма за день
                                 value = data.linkClicks ? data.linkClicks[i] : "";
                                 break;
-                            case 15:
-                                value = data.cpc ? data.cpc[i] : "";
+                            case 15: // CPC - расчет по формуле
+                                const buyerSpendForCPC = data.spendDay ? data.spendDay[i] : 0;
+                                const buyerClicksForCPC = data.linkClicks ? data.linkClicks[i] : "";
+                                
+                                if (buyerSpendForCPC > 0 && buyerClicksForCPC && buyerClicksForCPC !== "") {
+                                    const spend = Number(buyerSpendForCPC) || 0;
+                                    const clicks = Number(buyerClicksForCPC) || 0;
+                                    if (clicks > 0) {
+                                        const cpc = spend / clicks;
+                                        value = cpc.toFixed(2).replace(".", ",");
+                                    } else {
+                                        value = "";
+                                    }
+                                } else {
+                                    value = "";
+                                }
                                 break;
-                            case 16:
+                            case 16: // Среднее время воспроизведения видео - среднее значение за день
                                 value = data.avgWatchTime ? data.avgWatchTime[i] : "";
                                 break;
                             case 17:
@@ -5869,7 +5933,7 @@
                                 const urlValue = data.siteUrl ? data.siteUrl[i] : "";
                                 value = makeUrlsClickable(urlValue);
                                 break;
-                            case 19:
+                            case 19: // Бюджет группы объявлений - сумма за день
                                 value = data.budget ? data.budget[i] : "";
                                 break;
                         }
@@ -5921,25 +5985,67 @@
                                     }
                                 }
                                 break;
-                            case 9:
+                            case 9: // Частота (Frequency) - среднее значение
                                 value = data.freq ? data.freq[i] : "";
                                 break;
-                            case 10:
-                                value = data.ctr ? data.ctr[i] : "";
+                            case 10: // CTR (целевая страница) - расчет по формуле
+                                const segmentClicksForCTR = data.linkClicks ? data.linkClicks[i] : "";
+                                const segmentImpressionsForCTR = data.impressions ? data.impressions[i] : "";
+                                
+                                if (segmentClicksForCTR && segmentImpressionsForCTR && segmentClicksForCTR !== "" && segmentImpressionsForCTR !== "") {
+                                    const clicks = Number(segmentClicksForCTR) || 0;
+                                    const impressions = Number(segmentImpressionsForCTR) || 0;
+                                    if (impressions > 0) {
+                                        const ctr = (clicks / impressions) * 100;
+                                        value = ctr.toFixed(2).replace(".", ",") + "%";
+                                    } else {
+                                        value = "";
+                                    }
+                                } else {
+                                    value = "";
+                                }
                                 break;
-                            case 11:
-                                value = data.cpm ? data.cpm[i] : "";
+                            case 11: // CPM - расчет по формуле
+                                const segmentSpendForCPM = data.spendDay ? data.spendDay[i] : 0;
+                                const segmentImpressionsForCPM = data.impressions ? data.impressions[i] : "";
+                                
+                                if (segmentSpendForCPM > 0 && segmentImpressionsForCPM && segmentImpressionsForCPM !== "") {
+                                    const spend = Number(segmentSpendForCPM) || 0;
+                                    const impressions = Number(segmentImpressionsForCPM) || 0;
+                                    if (impressions > 0) {
+                                        const cpm = (spend / impressions) * 1000;
+                                        value = cpm.toFixed(2).replace(".", ",");
+                                    } else {
+                                        value = "";
+                                    }
+                                } else {
+                                    value = "";
+                                }
                                 break;
-                            case 12:
-                                value = data.impressions[i];
+                            case 12: // Показы - сумма за день
+                                value = data.impressions ? data.impressions[i] || "" : "";
                                 break;
-                            case 13:
+                            case 13: // Клики (переход) - сумма за день
                                 value = data.linkClicks ? data.linkClicks[i] : "";
                                 break;
-                            case 14:
-                                value = data.cpc ? data.cpc[i] : "";
+                            case 14: // CPC - расчет по формуле
+                                const segmentSpendForCPC = data.spendDay ? data.spendDay[i] : 0;
+                                const segmentClicksForCPC = data.linkClicks ? data.linkClicks[i] : "";
+                                
+                                if (segmentSpendForCPC > 0 && segmentClicksForCPC && segmentClicksForCPC !== "") {
+                                    const spend = Number(segmentSpendForCPC) || 0;
+                                    const clicks = Number(segmentClicksForCPC) || 0;
+                                    if (clicks > 0) {
+                                        const cpc = spend / clicks;
+                                        value = cpc.toFixed(2).replace(".", ",");
+                                    } else {
+                                        value = "";
+                                    }
+                                } else {
+                                    value = "";
+                                }
                                 break;
-                            case 15:
+                            case 15: // Среднее время воспроизведения видео - среднее значение за день
                                 value = data.avgWatchTime ? data.avgWatchTime[i] : "";
                                 break;
                             case 16:
@@ -5950,7 +6056,7 @@
                                 const urlValue = data.siteUrl ? data.siteUrl[i] : "";
                                 value = makeUrlsClickable(urlValue);
                                 break;
-                            case 18:
+                            case 18: // Бюджет группы объявлений - сумма за день
                                 value = data.budget ? data.budget[i] : "";
                                 break;
                         }
