@@ -1439,15 +1439,18 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                         segmentData.groups.push("");
                     }
 
-                    segmentData.freq.push("");
-                    segmentData.ctr.push("");
-                    segmentData.cpm.push("");
-                    segmentData.linkClicks.push("");
-                    segmentData.cpc.push("");
-                    segmentData.avgWatchTime.push("");
-                    segmentData.videoName.push("");
-                    segmentData.siteUrl.push("");
-                    segmentData.budget.push("");
+                    // ОБРАБАТЫВАЕМ Facebook метрики даже для неактивных дней
+                    segmentData.freq.push(processDayValues(fbDataSegment.freq, 11));
+                    segmentData.ctr.push(processDayValues(fbDataSegment.ctr, 12));
+                    segmentData.cpm.push(processDayValues(fbDataSegment.cpm, 13));
+                    segmentData.linkClicks.push(processDayValues(fbDataSegment.linkClicks, 14));
+                    segmentData.cpc.push(processDayValues(fbDataSegment.cpc, 15));
+                    segmentData.avgWatchTime.push(processDayValues(fbDataSegment.avgWatchTime, 16));
+                    segmentData.videoName.push(processDayValues(fbDataSegment.videoName, 17));
+                    segmentData.siteUrl.push(processDayValues(fbDataSegment.siteUrl, 18));
+                    const budgetValue = processDayValues(fbDataSegment.budget || [], 19);
+                    segmentData.budget.push(budgetValue);
+                    segmentData.impressions.push(processDayValues(fbDataSegment.impressions || [], 20));
 
                     aggCostSegment = 0;
                     aggLeadsSegment = 0;
@@ -1859,6 +1862,20 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             const daySpend = rec.spend;
             const dayCostFromSources = rec.costFromSources || 0;
 
+            // ВСЕГДА обрабатываем Facebook метрики для каждого дня, даже неактивного
+            const fbData = fbDataMap[dateKey] || {
+                freq: [],
+                ctr: [],
+                cpm: [],
+                linkClicks: [],
+                cpc: [],
+                avgWatchTime: [],
+                videoName: [],
+                siteUrl: [],
+                budget: [],
+                impressions: []
+            };
+
             if (dayLeads === 0 && daySpend === 0) {
                 generalData.cplDay.push(0);
                 generalData.leadsDay.push(0);
@@ -1871,17 +1888,17 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 generalData.accounts.push("");
                 generalData.ratings.push("");
 
-                generalData.freq.push("");
-                generalData.ctr.push("");
-                generalData.cpm.push("");
-                generalData.linkClicks.push("");
-                generalData.cpc.push("");
-                generalData.avgWatchTime.push("");
-                generalData.videoName.push("");
-                generalData.siteUrl.push("");
-                generalData.budget.push("");
-                generalData.impressions.push("");
-                console.log("🔍 Added empty budget for zero day");
+                // ОБРАБАТЫВАЕМ Facebook метрики даже для неактивных дней
+                generalData.freq.push(processDayValues(fbData.freq, 11));
+                generalData.ctr.push(processDayValues(fbData.ctr, 12));
+                generalData.cpm.push(processDayValues(fbData.cpm, 13));
+                generalData.linkClicks.push(processDayValues(fbData.linkClicks, 14));
+                generalData.cpc.push(processDayValues(fbData.cpc, 15));
+                generalData.avgWatchTime.push(processDayValues(fbData.avgWatchTime, 16));
+                generalData.videoName.push(processDayValues(fbData.videoName, 17));
+                generalData.siteUrl.push(processDayValues(fbData.siteUrl, 18));
+                generalData.budget.push(processDayValues(fbData.budget, 19));
+                generalData.impressions.push(processDayValues(fbData.impressions, 20));
 
                 aggCost = 0;
                 aggLeads = 0;
