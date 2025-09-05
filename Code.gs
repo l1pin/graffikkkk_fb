@@ -331,7 +331,8 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 case 12:
                     return num.toFixed(2).replace(".", ",") + "%";
                 case 14:
-                    return String(Math.floor(num));
+                case 20:
+                    return String(Math.round(num));
                 default:
                     return num.toFixed(2).replace(".", ",");
             }
@@ -382,6 +383,14 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                         )
                     )
                 );
+            } else if (rowIndex === 20) {
+                // Показы - убираем пустые и округляем до целых
+                valuesToConvert = arr.filter(
+                    (v) => v !== undefined && v !== null && v !== ""
+                ).map(v => {
+                    const num = Number(v);
+                    return isNaN(num) ? v : Math.round(num);
+                });
             } else {
                 // Числовые поля - оставляем все значения
                 valuesToConvert = arr.filter(
@@ -788,7 +797,8 @@ function buildChartForArticle(article, periodStart, periodEnd) {
         cpc_tracker,
         fraud,
         fraud_cpa,
-        adv_group_budjet
+        adv_group_budjet,
+        showed
       FROM \`ads_collection\`
       WHERE \`source\` = 'facebook' 
         AND (\`campaign_name\` LIKE '${article}%' OR \`campaign_name_tracker\` LIKE '${article}%')${dateFilter}
@@ -944,6 +954,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 videoName: [],
                 siteUrl: [],
                 budget: [],
+                impressions: [],
             };
         }
 
@@ -1130,6 +1141,9 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                             ? String(row.adv_group_budjet)
                             : "";
                     targetObject[dateKey].budget.push(budgetData);
+                    targetObject[dateKey].impressions.push(
+                        row.showed !== undefined && row.showed !== null ? String(row.showed) : ""
+                    );
                     console.log(
                         "🔍 Added budget to metrics:",
                         budgetData,
@@ -1351,6 +1365,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 videoName: [],
                 siteUrl: [],
                 budget: [],
+                impressions: [],
             };
 
             let activeDaysSegment = 0,
@@ -1482,6 +1497,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     "Raw budget data:",
                     fbDataSegment.budget
                 );
+                segmentData.impressions.push(processDayValues(fbDataSegment.impressions || [], 20));
 
                 if (dayLeads > 0 && dayCpl <= displayMaxCPL) {
                     daysInNormSegment++;
@@ -1574,6 +1590,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 videoName: [],
                 siteUrl: [],
                 budget: [],
+                impressions: [],
                 columnSpans: [],
                 columnClasses: [],
             };
@@ -1606,6 +1623,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     newSegmentData.videoName.push("");
                     newSegmentData.siteUrl.push("");
                     newSegmentData.budget.push("");
+                    newSegmentData.impressions.push("");
                 } else {
                     for (let i = range.startIndex; i <= range.endIndex; i++) {
                         newSegmentData.dates.push(segmentData.dates[i]);
@@ -1639,6 +1657,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                         newSegmentData.videoName.push(segmentData.videoName[i]);
                         newSegmentData.siteUrl.push(segmentData.siteUrl[i]);
                         newSegmentData.budget.push(segmentData.budget[i]);
+                        newSegmentData.impressions.push(segmentData.impressions[i]);
                     }
                 }
             });
@@ -1750,6 +1769,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             videoName: [],
             siteUrl: [],
             budget: [],
+            impressions: [],
             columnSpans: [],
             columnClasses: [],
         };
@@ -1792,6 +1812,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 generalData.videoName.push("");
                 generalData.siteUrl.push("");
                 generalData.budget.push("");
+                generalData.impressions.push("");
                 console.log("🔍 Added empty budget for zero day");
 
                 aggCost = 0;
@@ -1927,6 +1948,12 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 "value:",
                 budgetValue
             );
+            generalData.impressions.push(
+                processDayValues(
+                    fbDataMap[dateKey] ? fbDataMap[dateKey].impressions : [],
+                    20
+                )
+            );
 
             let rating;
             if (dayLeads === 0 && daySpend > 0) {
@@ -1991,6 +2018,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             videoName: [],
             siteUrl: [],
             budget: [],
+            impressions: [],
             columnSpans: [],
             columnClasses: [],
         };
@@ -2023,6 +2051,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 newGeneralData.videoName.push("");
                 newGeneralData.siteUrl.push("");
                 newGeneralData.budget.push("");
+                newGeneralData.impressions.push("");
             } else {
                 for (let i = range.startIndex; i <= range.endIndex; i++) {
                     newGeneralData.dates.push(generalData.dates[i]);
@@ -2056,6 +2085,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     newGeneralData.videoName.push(generalData.videoName[i]);
                     newGeneralData.siteUrl.push(generalData.siteUrl[i]);
                     newGeneralData.budget.push(generalData.budget[i]);
+                    newGeneralData.impressions.push(generalData.impressions[i]);
                 }
             }
         });
