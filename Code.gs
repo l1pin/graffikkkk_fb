@@ -799,7 +799,8 @@ function buildChartForArticle(article, periodStart, periodEnd) {
         fraud,
         fraud_cpa,
         adv_group_budjet,
-        showed
+        showed,
+        source_tracker
       FROM \`ads_collection\`
       WHERE \`source\` = 'facebook' 
         AND (\`campaign_name\` LIKE '${article}%' OR \`campaign_name_tracker\` LIKE '${article}%')${dateFilter}
@@ -1226,11 +1227,12 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 }
             }
 
-            // По аккаунтам
-            if (buyerInfo.account) {
-                globalAccounts.add(buyerInfo.account);
+            // По аккаунтам (из поля source_tracker)
+            const sourceTracker = String(row.source_tracker || "").trim();
+            if (sourceTracker && sourceTracker !== "") {
+                globalAccounts.add(sourceTracker);
                 if (!accountsByDate[dateStr]) accountsByDate[dateStr] = [];
-                accountsByDate[dateStr].push(buyerInfo.account);
+                accountsByDate[dateStr].push(sourceTracker);
             }
         });
 
