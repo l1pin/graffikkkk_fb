@@ -1423,7 +1423,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                         createFacebookMetricsObject()
                         : createFacebookMetricsObject();
 
-                if (dayLeads === 0 && daySpend === 0 && dayCostFromSources === 0) {
+                if (dayLeads === 0 && daySpend === 0) {
                     segmentData.cplDay.push(0);
                     segmentData.leadsDay.push(0);
                     segmentData.spendDay.push(0);
@@ -1688,6 +1688,47 @@ function buildChartForArticle(article, periodStart, periodEnd) {
 
             Object.assign(segmentData, newSegmentData);
 
+            // Обрезаем период сегмента - убираем дни с нулевым расходом в начале и конце
+            function trimSegmentPeriodBySpend(data) {
+                let firstActiveIndex = -1;
+                let lastActiveIndex = -1;
+                
+                // Ищем первый день с расходом > 0
+                for (let i = 0; i < data.spendDay.length; i++) {
+                    if (data.spendDay[i] > 0) {
+                        firstActiveIndex = i;
+                        break;
+                    }
+                }
+                
+                // Ищем последний день с расходом > 0
+                for (let i = data.spendDay.length - 1; i >= 0; i--) {
+                    if (data.spendDay[i] > 0) {
+                        lastActiveIndex = i;
+                        break;
+                    }
+                }
+                
+                if (firstActiveIndex === -1 || lastActiveIndex === -1) {
+                    return data; // Нет активных дней
+                }
+                
+                // Обрезаем все массивы данных
+                const trimmedData = {};
+                Object.keys(data).forEach(key => {
+                    if (Array.isArray(data[key])) {
+                        trimmedData[key] = data[key].slice(firstActiveIndex, lastActiveIndex + 1);
+                    } else {
+                        trimmedData[key] = data[key];
+                    }
+                });
+                
+                return trimmedData;
+            }
+            
+            // Применяем обрезку к данным сегмента
+            Object.assign(segmentData, trimSegmentPeriodBySpend(segmentData));
+
             console.log(
                 `✅ Processed segment ${segmentName}: ${activeDaysSegment} active days, ${segmentVideos.size} videos, ${segmentSites.size} sites`
             );
@@ -1818,7 +1859,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             const daySpend = rec.spend;
             const dayCostFromSources = rec.costFromSources || 0;
 
-            if (dayLeads === 0 && daySpend === 0 && dayCostFromSources === 0) {
+            if (dayLeads === 0 && daySpend === 0) {
                 generalData.cplDay.push(0);
                 generalData.leadsDay.push(0);
                 generalData.spendDay.push(0);
