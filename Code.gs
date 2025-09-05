@@ -398,9 +398,54 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 );
             }
 
-            return valuesToConvert
-                .map((v) => formatValueByRow(v, rowIndex))
-                .join("\n");
+            if (rowIndex === 11) {
+            // Для Frequency вычисляем среднее значение исключая нули
+            if (valuesToConvert.length === 0) return "";
+            const numValues = valuesToConvert.filter(v => !isNaN(Number(v))).map(v => Number(v)).filter(v => v > 0);
+            if (numValues.length === 0) return "";
+            const avgValue = numValues.reduce((sum, val) => sum + val, 0) / numValues.length;
+            return formatValueByRow(avgValue, rowIndex);
+        }
+        
+        if (rowIndex === 14) {
+            // Для Кликов (переход) вычисляем сумму за день
+            if (valuesToConvert.length === 0) return "";
+            const numValues = valuesToConvert.filter(v => !isNaN(Number(v))).map(v => Number(v));
+            if (numValues.length === 0) return "";
+            const sumValue = numValues.reduce((sum, val) => sum + val, 0);
+            return formatValueByRow(Math.round(sumValue), rowIndex);
+        }
+        
+        if (rowIndex === 16) {
+            // Для Среднего времени воспроизведения видео вычисляем среднее значение исключая нули
+            if (valuesToConvert.length === 0) return "";
+            const numValues = valuesToConvert.filter(v => !isNaN(Number(v))).map(v => Number(v)).filter(v => v > 0);
+            if (numValues.length === 0) return "";
+            const avgValue = numValues.reduce((sum, val) => sum + val, 0) / numValues.length;
+            return formatValueByRow(avgValue, rowIndex);
+        }
+        
+        if (rowIndex === 19) {
+            // Для Бюджета группы объявлений вычисляем сумму за день
+            if (valuesToConvert.length === 0) return "";
+            const numValues = valuesToConvert.filter(v => !isNaN(Number(v))).map(v => Number(v));
+            if (numValues.length === 0) return "";
+            const sumValue = numValues.reduce((sum, val) => sum + val, 0);
+            return formatValueByRow(sumValue, rowIndex);
+        }
+        
+        if (rowIndex === 20) {
+            // Для Показов вычисляем сумму за день
+            if (valuesToConvert.length === 0) return "";
+            const numValues = valuesToConvert.filter(v => !isNaN(Number(v))).map(v => Number(v));
+            if (numValues.length === 0) return "";
+            const sumValue = numValues.reduce((sum, val) => sum + val, 0);
+            return formatValueByRow(Math.round(sumValue), rowIndex);
+        }
+        
+        return valuesToConvert
+            .map((v) => formatValueByRow(v, rowIndex))
+            .join("\n");
         }
 
         function calculateRating(cpl, ratingThreshold) {
