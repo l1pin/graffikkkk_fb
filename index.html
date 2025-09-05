@@ -31,7 +31,7 @@
 
         /* Navigation Sidebar */
         .navigation-sidebar {
-            width: 400px;
+            width: 440px;
             background: #ffffff;
             position: fixed;
             height: 100vh;
@@ -171,9 +171,9 @@
         /* Main Content */
         .main-content {
             flex: 1;
-            margin-left: 680px;
+            margin-left: 720px;
             padding: 24px 32px;
-            width: calc(100% - 680px);
+            width: calc(100% - 720px);
             overflow-x: hidden;
             min-height: 100vh;
         }
@@ -1992,10 +1992,10 @@
 
         .nav-metric {
             background: #1e293b;
-            padding: 3px 7px;
+            padding: 4px 7px;
             border-radius: 5px;
-            font-size: 9px;
-            font-weight: 600;
+            font-size: 12px;
+            font-weight: 700;
             color: white;
             border: 1px solid #334155;
             white-space: nowrap;
@@ -3393,7 +3393,7 @@
                     const campaignPeriodMetrics = calculateAggregatedMetrics(campaignDatesData, 0, campaignDatesData.dates.length - 1, userStartDate, userEndDate);
 
                     html += `
-                        <div class="nav-tree-item level-1" onclick="navigateToCalendarElement('${escapeHtml(campaignName)}', 'campaign')">
+                        <div class="nav-tree-item level-1" onclick="navigateToCalendarElement('${escapeHtml(campaignName)}', 'campaign', '${escapeHtml(trackerName)}')">
                             <div class="nav-item-content">
                                 <div class="nav-item-header">
                                     <i class="fas fa-tv nav-icon"></i>
@@ -3425,7 +3425,7 @@
                         const groupPeriodMetrics = calculateAggregatedMetrics(groupDatesData, 0, groupDatesData.dates.length - 1, userStartDate, userEndDate);
 
                         html += `
-                            <div class="nav-tree-item level-2" onclick="navigateToCalendarElement('${escapeHtml(groupName)}', 'group')">
+                            <div class="nav-tree-item level-2" onclick="navigateToCalendarElement('${escapeHtml(groupName)}', 'group', '${escapeHtml(trackerName)}', '${escapeHtml(campaignName)}')">
                                 <div class="nav-item-content">
                                     <div class="nav-item-header">
                                         <i class="fas fa-folder nav-icon"></i>
@@ -3455,7 +3455,7 @@
                             const adPeriodMetrics = calculateAggregatedMetrics(adDatesData, 0, adDatesData.dates.length - 1, userStartDate, userEndDate);
 
                             html += `
-                                <div class="nav-tree-item level-3" onclick="navigateToCalendarElement('${escapeHtml(adName)}', 'ad')">
+                                <div class="nav-tree-item level-3" onclick="navigateToCalendarElement('${escapeHtml(adName)}', 'ad', '${escapeHtml(trackerName)}', '${escapeHtml(campaignName)}', '${escapeHtml(groupName)}')">
                                     <div class="nav-item-content">
                                         <div class="nav-item-header">
                                             <i class="fas fa-rectangle-ad nav-icon"></i>
@@ -6388,8 +6388,8 @@
         // Make block navigation globally available
         window.toggleNavBlock = toggleNavBlock;
         // Calendar navigation function
-        function navigateToCalendarElement(elementName, elementType) {
-            console.log('🚀 CALENDAR NAVIGATION for:', elementName, 'type:', elementType);
+        function navigateToCalendarElement(elementName, elementType, trackerName = null, campaignName = null, groupName = null) {
+            console.log('🚀 CALENDAR NAVIGATION for:', elementName, 'type:', elementType, 'tracker:', trackerName);
             
             // Сначала скроллимся к секции Календарь метрик
             const calendarSection = document.querySelector('.calendar-metrics-section');
@@ -6398,9 +6398,9 @@
                 return;
             }
 
-            // Скроллимся к секции календаря
+            // Скроллимся к секции календаря (быстро)
             calendarSection.scrollIntoView({
-                behavior: 'smooth',
+                behavior: 'auto',
                 block: 'start',
                 inline: 'nearest'
             });
@@ -6413,19 +6413,50 @@
                     return;
                 }
 
-                // Ищем строку с соответствующим названием
+                // Ищем строку с учетом иерархии
                 const rows = calendarTable.querySelectorAll('tbody tr');
                 let targetRow = null;
 
                 rows.forEach(row => {
                     const nameCell = row.querySelector('td:first-child .calendar-name');
                     if (nameCell) {
-                        // Убираем эмодзи и пробелы для сравнения (включая некорректно отображаемые символы)
                         const cellText = nameCell.textContent.replace(/^[\u{1F4CA}\u{1F4F1}\u{1F4C1}\u{1F4C4}�📊📱📁📄]\s*/u, '').trim();
-                        console.log('🔍 Comparing calendar:', cellText, '===', elementName, '?', cellText === elementName);
-                        if (cellText === elementName) {
-                            targetRow = row;
-                            console.log('✅ Found target row:', targetRow);
+                        
+                        // Если указан трекер, ищем в контексте конкретного трекера
+                        if (trackerName && elementType === 'campaign') {
+                            // Ищем кампанию в нужном трекере
+                            if (cellText === elementName) {
+                                // Проверяем, что это дочерний элемент нужного трекера
+                                const trackerRow = findTrackerRow(trackerName, rows);
+                                if (trackerRow && isChildOfTracker(row, trackerRow)) {
+                                    targetRow = row;
+                                    console.log('✅ Found target campaign in correct tracker:', targetRow);
+                                }
+                            }
+                        } else if (trackerName && campaignName && elementType === 'group') {
+                            // Ищем группу в нужной кампании нужного трекера
+                            if (cellText === elementName) {
+                                const campaignRow = findCampaignInTracker(campaignName, trackerName, rows);
+                                if (campaignRow && isChildOfCampaign(row, campaignRow)) {
+                                    targetRow = row;
+                                    console.log('✅ Found target group in correct campaign:', targetRow);
+                                }
+                            }
+                        } else if (trackerName && campaignName && groupName && elementType === 'ad') {
+                            // Ищем объявление в нужной группе
+                            if (cellText === elementName) {
+                                const groupRow = findGroupInCampaign(groupName, campaignName, trackerName, rows);
+                                if (groupRow && isChildOfGroup(row, groupRow)) {
+                                    targetRow = row;
+                                    console.log('✅ Found target ad in correct group:', targetRow);
+                                }
+                            }
+                        } else {
+                            // Обычный поиск для трекеров
+                            if (cellText === elementName) {
+                                targetRow = row;
+                                console.log('✅ Found target row:', targetRow);
+                            }
                         }
                     }
                 });
@@ -6433,17 +6464,93 @@
                 if (targetRow) {
                     console.log('✅ Found calendar element:', elementName);
                     
-                    // Раскрываем всю цепочку до этого элемента
+                    // СНАЧАЛА раскрываем всю цепочку до этого элемента
                     expandCalendarToTarget(targetRow);
 
-                    // Подсвечиваем строку
+                    // Ждем завершения раскрытия и делаем элемент видимым
                     setTimeout(() => {
-                        highlightCalendarElement(targetRow);
-                    }, 800);
+                        // Убеждаемся что элемент видим
+                        if (targetRow.classList.contains('calendar-child')) {
+                            targetRow.classList.add('visible');
+                        }
+                        
+                        // Скроллимся к элементу
+                        targetRow.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center',
+                            inline: 'nearest'
+                        });
+
+                        // Подсвечиваем строку
+                        setTimeout(() => {
+                            highlightCalendarElement(targetRow);
+                        }, 300);
+                    }, 1200);
                 } else {
                     console.log('❌ Calendar element not found:', elementName);
                 }
             }, 500);
+        }
+
+        // Вспомогательные функции для поиска в иерархии
+        function findTrackerRow(trackerName, rows) {
+            for (let row of rows) {
+                const nameCell = row.querySelector('td:first-child .calendar-name');
+                if (nameCell) {
+                    const cellText = nameCell.textContent.replace(/^[\u{1F4CA}\u{1F4F1}\u{1F4C1}\u{1F4C4}�📊📱📁📄]\s*/u, '').trim();
+                    if (cellText === trackerName && row.classList.contains('lvl0')) {
+                        return row;
+                    }
+                }
+            }
+            return null;
+        }
+
+        function findCampaignInTracker(campaignName, trackerName, rows) {
+            const trackerRow = findTrackerRow(trackerName, rows);
+            if (!trackerRow) return null;
+            
+            for (let row of rows) {
+                const nameCell = row.querySelector('td:first-child .calendar-name');
+                if (nameCell) {
+                    const cellText = nameCell.textContent.replace(/^[\u{1F4CA}\u{1F4F1}\u{1F4C1}\u{1F4C4}�📊📱📁📄]\s*/u, '').trim();
+                    if (cellText === campaignName && row.classList.contains('lvl1') && isChildOfTracker(row, trackerRow)) {
+                        return row;
+                    }
+                }
+            }
+            return null;
+        }
+
+        function findGroupInCampaign(groupName, campaignName, trackerName, rows) {
+            const campaignRow = findCampaignInTracker(campaignName, trackerName, rows);
+            if (!campaignRow) return null;
+            
+            for (let row of rows) {
+                const nameCell = row.querySelector('td:first-child .calendar-name');
+                if (nameCell) {
+                    const cellText = nameCell.textContent.replace(/^[\u{1F4CA}\u{1F4F1}\u{1F4C1}\u{1F4C4}�📊📱📁📄]\s*/u, '').trim();
+                    if (cellText === groupName && row.classList.contains('lvl2') && isChildOfCampaign(row, campaignRow)) {
+                        return row;
+                    }
+                }
+            }
+            return null;
+        }
+
+        function isChildOfTracker(childRow, trackerRow) {
+            const trackerDataId = trackerRow.dataset.id;
+            return childRow.classList.contains(`child-of-${trackerDataId}`);
+        }
+
+        function isChildOfCampaign(childRow, campaignRow) {
+            const campaignDataId = campaignRow.dataset.id;
+            return childRow.classList.contains(`child-of-${campaignDataId}`);
+        }
+
+        function isChildOfGroup(childRow, groupRow) {
+            const groupDataId = groupRow.dataset.id;
+            return childRow.classList.contains(`child-of-${groupDataId}`);
         }
 
         // Expand calendar hierarchy to target element
