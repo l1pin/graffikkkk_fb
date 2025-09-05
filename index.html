@@ -4199,7 +4199,7 @@
                 console.log('🔍 Processing day:', data.dates[i], 'leads:', dayLeads, 'spend:', daySpend, 'costFromSources:', dayCostFromSources, 'active:', (dayLeads > 0 || daySpend > 0 || dayCostFromSources > 0));
                 
                 // Если используется пользовательский период, учитываем только активные дни
-                if (useUserPeriod && dayLeads === 0 && daySpend === 0 && dayCostFromSources === 0) {
+                if (useUserPeriod && dayLeads === 0 && daySpend === 0) {
                     console.log('⏩ Skipping inactive day:', data.dates[i]);
                     continue; // Пропускаем неактивные дни в пользовательском периоде
                 }
