@@ -4178,7 +4178,7 @@
                 if (impressionsStr && impressionsStr.trim() !== "") {
                     const impLines = impressionsStr.split('\n').filter(line => line.trim() !== "");
                     impLines.forEach(line => {
-                        const impValue = parseInt(line);
+                        const impValue = Math.round(Number(line));
                         if (!isNaN(impValue)) totalImpressions += impValue;
                     });
                 }
@@ -4337,29 +4337,10 @@
             console.log("📋 Отображаем общую таблицу с данными:", data);
 
             const table = document.getElementById("generalTable");
-            // Добавляем показы в данные для расчетов
-            data.impressions = [];
-            for (let i = 0; i < data.dates.length; i++) {
-                const daySpendForImpressions = data.spendDay ? data.spendDay[i] : 0;
-                const cpmValues = data.cpm ? data.cpm[i] : "";
-                if (cpmValues && cpmValues.trim() !== "" && daySpendForImpressions > 0) {
-                    const cpmLines = cpmValues.split('\n').filter(line => line.trim() !== "");
-                    if (cpmLines.length > 0) {
-                        const impressionsArray = [];
-                        cpmLines.forEach(cpmLine => {
-                            const cpmValue = parseFloat(cpmLine.replace(',', '.'));
-                            if (!isNaN(cpmValue) && cpmValue > 0) {
-                                const impressions = Math.round((daySpendForImpressions / cpmValue) * 1000);
-                                impressionsArray.push(impressions.toString());
-                            } else {
-                                impressionsArray.push("");
-                            }
-                        });
-                        data.impressions.push(impressionsArray.join('\n'));
-                    } else {
-                        data.impressions.push("");
-                    }
-                } else {
+            // Показы берем из базы данных (поле showed)
+            if (!data.impressions) {
+                data.impressions = [];
+                for (let i = 0; i < data.dates.length; i++) {
                     data.impressions.push("");
                 }
             }
@@ -5426,29 +5407,10 @@
 
             console.log("✅ Таблица найдена:", table);
 
-            // Добавляем показы в данные для расчетов
-            data.impressions = [];
-            for (let i = 0; i < data.dates.length; i++) {
-                const daySpendForImpressions = data.spendDay ? data.spendDay[i] : 0;
-                const cpmValues = data.cpm ? data.cpm[i] : "";
-                if (cpmValues && cpmValues.trim() !== "" && daySpendForImpressions > 0) {
-                    const cpmLines = cpmValues.split('\n').filter(line => line.trim() !== "");
-                    if (cpmLines.length > 0) {
-                        const impressionsArray = [];
-                        cpmLines.forEach(cpmLine => {
-                            const cpmValue = parseFloat(cpmLine.replace(',', '.'));
-                            if (!isNaN(cpmValue) && cpmValue > 0) {
-                                const impressions = Math.round((daySpendForImpressions / cpmValue) * 1000);
-                                impressionsArray.push(impressions.toString());
-                            } else {
-                                impressionsArray.push("");
-                            }
-                        });
-                        data.impressions.push(impressionsArray.join('\n'));
-                    } else {
-                        data.impressions.push("");
-                    }
-                } else {
+            // Показы берем из базы данных (поле showed)
+            if (!data.impressions) {
+                data.impressions = [];
+                for (let i = 0; i < data.dates.length; i++) {
                     data.impressions.push("");
                 }
             }
