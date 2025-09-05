@@ -6469,8 +6469,8 @@
                     // Подсвечиваем строку
                     setTimeout(() => {
                         highlightCalendarElement(targetRow);
-                    }, 300);
-                }, 1200);
+                    }, 200);
+                }, 600);
             } else {
                 console.log('❌ Calendar element not found:', elementName);
             }
@@ -6592,7 +6592,7 @@
                 setTimeout(() => {
                     console.log('⚡ Expanding calendar level', index, 'toggle:', toggle);
                     toggle.click();
-                }, index * 300); // Увеличили задержку для надежности
+                }, index * 150); // Уменьшили задержку для быстрой навигации
             });
         }
 
