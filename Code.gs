@@ -914,6 +914,9 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             console.log("🔍 No date filter applied - showing all dates");
         }
 
+        // Глобальная переменная для хранения исходных данных
+        let globalRawDataForChannels = null;
+
         // ОБЪЕДИНЕННЫЙ SQL запрос для получения всех данных одним запросом
         const combinedSql = `
       SELECT 
@@ -979,6 +982,8 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             }
 
             console.log("✅ Данные успешно получены:", allData.length, "записей");
+            // Сохраняем исходные данные для каналов трафика
+        globalRawDataForChannels = allData;
         } catch (error) {
             console.log("❌ Ошибка при получении данных:", error);
             if (error.message.includes("📊")) {
@@ -2704,6 +2709,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             generalData: generalData,
             buyerGroupsData: buyerGroupsData,
             calendarData: calendarData,
+            rawData: globalRawDataForChannels,
             generalMetrics: {
                 activeDays: activeDays,
                 daysInNorm: daysInNorm,
