@@ -907,25 +907,27 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             const groupId = String(row.adv_group_id || "").trim();
             const groupName = String(row.adv_group_name || "").trim();
 
+            // СТРОГАЯ ПРОВЕРКА: tracker должен содержать артикул
             if (trackerName && trackerName.includes(article)) {
                 const campaignInfo = parseCampaignName(trackerName);
-                if (campaignInfo.buyer) {
-                    // Создаем маппинг от campaign_name к buyer info
-                    if (campaignName) {
+                if (campaignInfo.buyer && campaignInfo.article === article) {
+                    // Создаем маппинг от campaign_name к buyer info ТОЛЬКО если кампания содержит артикул
+                    if (campaignName && campaignName.includes(article)) {
                         campaignToBuyerMap[campaignName] = campaignInfo;
                         console.log(
-                            `🔗 Mapped campaign "${campaignName}" to buyer "${campaignInfo.buyer}"`
+                            `🔗 Mapped campaign "${campaignName}" to buyer "${campaignInfo.buyer}" for article "${article}"`
                         );
                     }
 
-                    // Создаем маппинг от adv_group_id к buyer info (с названием группы)
-                    if (groupId && groupName) {
+                    // Создаем маппинг от adv_group_id к buyer info ТОЛЬКО для групп правильной кампании
+                    if (groupId && groupName && campaignName && campaignName.includes(article)) {
                         adGroupToBuyerMap[groupId] = {
                             ...campaignInfo,
                             groupName: groupName,
+                            campaignName: campaignName, // Добавляем название кампании для дополнительной проверки
                         };
                         console.log(
-                            `🔗 Mapped group_id "${groupId}" (${groupName}) to buyer "${campaignInfo.buyer}"`
+                            `🔗 Mapped group_id "${groupId}" (${groupName}) to buyer "${campaignInfo.buyer}" via campaign "${campaignName}" for article "${article}"`
                         );
                     }
                 }
@@ -1026,17 +1028,39 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 "yyyy-MM-dd"
             );
 
-            // Определяем buyer info - ПРИОРИТЕТ tracker данным
+            // Определяем buyer info - СТРОГАЯ ПРОВЕРКА НА ПРИНАДЛЕЖНОСТЬ К АРТИКУЛУ
             let buyerInfo = null;
+            
+            // ПРИОРИТЕТ 1: Tracker данные с артикулом
             if (trackerName && trackerName.includes(article)) {
                 buyerInfo = parseCampaignName(trackerName);
-            } else if (campaignName && campaignToBuyerMap[campaignName]) {
+                console.log(`🔍 Found buyer from tracker: ${trackerName} -> ${buyerInfo.buyer}`);
+            } 
+            // ПРИОРИТЕТ 2: Campaign mapping, но только если кампания содержит артикул
+            else if (campaignName && campaignName.includes(article) && campaignToBuyerMap[campaignName]) {
                 buyerInfo = campaignToBuyerMap[campaignName];
-            } else if (groupId && adGroupToBuyerMap[groupId]) {
+                console.log(`🔍 Found buyer from campaign: ${campaignName} -> ${buyerInfo.buyer}`);
+            } 
+            // ПРИОРИТЕТ 3: Group mapping, но только если группа связана с правильной кампанией
+            else if (groupId && adGroupToBuyerMap[groupId] && 
+                     (campaignName.includes(article) || trackerName.includes(article))) {
                 buyerInfo = adGroupToBuyerMap[groupId];
+                console.log(`🔍 Found buyer from group: ${groupName} -> ${buyerInfo.buyer}`);
             }
 
-            if (!buyerInfo || buyerInfo.article !== article) return;
+            // СТРОГАЯ ПРОВЕРКА: buyer info должен существовать И артикул должен совпадать
+            if (!buyerInfo || buyerInfo.article !== article) {
+                if (trackerName.includes(article) || campaignName.includes(article)) {
+                    console.log(`❌ REJECTED: buyerInfo=${buyerInfo?.buyer}, article mismatch for: tracker=${trackerName}, campaign=${campaignName}, group=${groupName}`);
+                }
+                return;
+            }
+            
+            // ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: если есть tracker, он должен содержать артикул
+            if (trackerName && !trackerName.includes(article)) {
+                console.log(`❌ REJECTED: tracker doesn't contain article: ${trackerName}`);
+                return;
+            }
 
             // ДАННЫЕ ЛИДОВ И РАСХОДОВ (из tracker)
             const leads = Number(row.valid) || 0;
@@ -1103,25 +1127,35 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     resultMapByBuyerCampaign[buyerCampaignKey][dateStr].costFromSources += costFromSources;
                 }
 
-                // Байер → Кампания → Группа
+                // Байер → Кампания → Группа (С ДОПОЛНИТЕЛЬНОЙ ВАЛИДАЦИЕЙ)
                 if (buyerInfo.buyer && campaignName && groupName) {
-                    const buyerCampaignGroupKey = `${buyerInfo.buyer}:::${campaignName}:::${groupName}`;
-                    if (!resultMapByBuyerCampaignGroup[buyerCampaignGroupKey])
-                        resultMapByBuyerCampaignGroup[buyerCampaignGroupKey] = {};
-                    if (!resultMapByBuyerCampaignGroup[buyerCampaignGroupKey][dateStr])
-                        resultMapByBuyerCampaignGroup[buyerCampaignGroupKey][dateStr] = {
-                            leads: 0,
-                            spend: 0,
-                            costFromSources: 0,
-                        };
-                    resultMapByBuyerCampaignGroup[buyerCampaignGroupKey][dateStr].leads += leads;
-                    resultMapByBuyerCampaignGroup[buyerCampaignGroupKey][dateStr].spend += spend;
-                    resultMapByBuyerCampaignGroup[buyerCampaignGroupKey][dateStr].costFromSources += costFromSources;
+                    // ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: кампания должна содержать артикул
+                    const campaignContainsArticle = campaignName.includes(article);
+                    const trackerContainsArticle = trackerName && trackerName.includes(article);
+                    
+                    if (campaignContainsArticle || trackerContainsArticle) {
+                        const buyerCampaignGroupKey = `${buyerInfo.buyer}:::${campaignName}:::${groupName}`;
+                        if (!resultMapByBuyerCampaignGroup[buyerCampaignGroupKey])
+                            resultMapByBuyerCampaignGroup[buyerCampaignGroupKey] = {};
+                        if (!resultMapByBuyerCampaignGroup[buyerCampaignGroupKey][dateStr])
+                            resultMapByBuyerCampaignGroup[buyerCampaignGroupKey][dateStr] = {
+                                leads: 0,
+                                spend: 0,
+                                costFromSources: 0,
+                            };
+                        resultMapByBuyerCampaignGroup[buyerCampaignGroupKey][dateStr].leads += leads;
+                        resultMapByBuyerCampaignGroup[buyerCampaignGroupKey][dateStr].spend += spend;
+                        resultMapByBuyerCampaignGroup[buyerCampaignGroupKey][dateStr].costFromSources += costFromSources;
 
-                    // Отслеживаем группы для каждого байера
-                    if (!buyerGroupsMap[buyerInfo.buyer])
-                        buyerGroupsMap[buyerInfo.buyer] = new Set();
-                    buyerGroupsMap[buyerInfo.buyer].add(groupName);
+                        // Отслеживаем группы для каждого байера
+                        if (!buyerGroupsMap[buyerInfo.buyer])
+                            buyerGroupsMap[buyerInfo.buyer] = new Set();
+                        buyerGroupsMap[buyerInfo.buyer].add(groupName);
+                        
+                        console.log(`✅ Added group "${groupName}" to buyer "${buyerInfo.buyer}" for article "${article}"`);
+                    } else {
+                        console.log(`❌ REJECTED group "${groupName}" for buyer "${buyerInfo.buyer}" - campaign "${campaignName}" doesn't contain article "${article}"`);
+                    }
                 }
 
                 // Байер → Группа → Объявление
@@ -2274,17 +2308,25 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             }
         });
 
-        // Создаем иерархическую структуру
+        // Создаем иерархическую структуру - ТОЛЬКО ДЛЯ АКТИВНЫХ ЭЛЕМЕНТОВ
         Array.from(globalBuyers).forEach((buyerName) => {
             console.log(`👤 Processing buyer: ${buyerName}`);
 
+            const buyerData = processSegment(
+                buyerName,
+                resultMapByBuyer,
+                fbDataMapByBuyer,
+                "buyer"
+            );
+
+            // ФИЛЬТРАЦИЯ: Пропускаем байеров без активности в выбранном периоде
+            if (!buyerData || (buyerData && buyerData.metrics && buyerData.metrics.activeDays === 0)) {
+                console.log(`⏩ Skipping buyer ${buyerName} - no activity in selected period`);
+                return;
+            }
+
             buyerGroupsData[buyerName] = {
-                buyerData: processSegment(
-                    buyerName,
-                    resultMapByBuyer,
-                    fbDataMapByBuyer,
-                    "buyer"
-                ),
+                buyerData: buyerData,
                 campaigns: {},
             };
 
@@ -2300,6 +2342,12 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                         fbDataMapByBuyerCampaign,
                         "campaign"
                     );
+
+                    // ФИЛЬТРАЦИЯ: Пропускаем кампании без активности в выбранном периоде
+                    if (!campaignData || (campaignData && campaignData.metrics && campaignData.metrics.activeDays === 0)) {
+                        console.log(`⏩ Skipping campaign ${campaignName} - no activity in selected period`);
+                        return;
+                    }
 
                     buyerGroupsData[buyerName].campaigns[campaignName] = {
                         campaignData: campaignData,
@@ -2318,6 +2366,12 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                                 fbDataMapByBuyerCampaignGroup,
                                 "group"
                             );
+
+                            // ФИЛЬТРАЦИЯ: Пропускаем группы без активности в выбранном периоде
+                            if (!groupData || (groupData && groupData.metrics && groupData.metrics.activeDays === 0)) {
+                                console.log(`⏩ Skipping group ${groupName} - no activity in selected period`);
+                                return;
+                            }
 
                             buyerGroupsData[buyerName].campaigns[campaignName].groups[groupName] = {
                                 groupData: groupData,
@@ -2338,12 +2392,39 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                                         "ad"
                                     );
 
+                                    // ФИЛЬТРАЦИЯ: Пропускаем объявления без активности в выбранном периоде
+                                    if (!adData || (adData && adData.metrics && adData.metrics.activeDays === 0)) {
+                                        console.log(`⏩ Skipping ad ${advName} - no activity in selected period`);
+                                        return;
+                                    }
+
                                     buyerGroupsData[buyerName].campaigns[campaignName].groups[groupName].ads[advName] = adData;
                                 });
                             }
                         });
                     }
                 });
+            }
+        });
+
+        console.log("🌲 Buyer-group hierarchy created with ACTIVE ELEMENTS ONLY:", Object.keys(buyerGroupsData).length, "buyers");
+        
+        // Дополнительная очистка пустых кампаний после фильтрации
+        Object.keys(buyerGroupsData).forEach((buyerName) => {
+            const buyer = buyerGroupsData[buyerName];
+            Object.keys(buyer.campaigns).forEach((campaignName) => {
+                const campaign = buyer.campaigns[campaignName];
+                // Если в кампании нет активных групп, удаляем кампанию
+                if (Object.keys(campaign.groups).length === 0) {
+                    delete buyer.campaigns[campaignName];
+                    console.log(`🗑️ Removed empty campaign: ${campaignName} from buyer: ${buyerName}`);
+                }
+            });
+            
+            // Если у байера нет активных кампаний, удаляем байера
+            if (Object.keys(buyer.campaigns).length === 0) {
+                delete buyerGroupsData[buyerName];
+                console.log(`🗑️ Removed empty buyer: ${buyerName}`);
             }
         });
 
