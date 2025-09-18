@@ -7179,8 +7179,8 @@
                     calculateAggregatedMetrics(buyerData.buyerData.data, Math.min(...buyerLast7DaysIndices), Math.max(...buyerLast7DaysIndices)) : 
                     { avgCPL: "0,00", totalLeads: 0, totalSpend: "0,00" };
 
-                // Извлекаем уникальные аккаунты из данных байера
-                const buyerAccounts = extractAccountsFromData(buyerData.buyerData.data, buyerName);
+                // Извлекаем уникальные аккаунты из общих данных по соответствию с байером
+                const buyerAccounts = extractAccountsFromData(data.generalData, buyerName);
                 console.log(`🔍 Extracted accounts for ${buyerName}:`, buyerAccounts);
 
                 html += `
@@ -7241,7 +7241,7 @@
 
                 // Добавляем строки для каждого аккаунта
                 buyerAccounts.forEach((accountName) => {
-                    const accountData = filterDataByAccount(buyerData.buyerData.data, accountName, allDates, buyerName);
+                    const accountData = filterDataByAccount(data.generalData, accountName, allDates, buyerName);
                     console.log(`🔍 Account data for ${accountName}:`, accountData);
 
                     // Расчет метрик для аккаунта
@@ -7378,35 +7378,40 @@
         }
 
         // Helper functions for channels
-        function extractAccountsFromData(data, buyerName) {
+        function extractAccountsFromData(generalData, buyerName) {
             const accounts = new Set();
             
             console.log('🔍 Extracting accounts for buyer:', buyerName);
-            console.log('🔍 Data:', data);
             
-            // Проверяем поле accounts в данных
-            if (data.accounts && Array.isArray(data.accounts)) {
-                console.log('🔍 Found accounts array:', data.accounts);
-                data.accounts.forEach((dayAccounts, index) => {
+            // Проходим по всем дням и ищем аккаунты этого байера
+            if (generalData.accounts && Array.isArray(generalData.accounts)) {
+                
+                for (let i = 0; i < generalData.accounts.length; i++) {
+                    const dayAccounts = generalData.accounts[i] || "";
+                    
                     if (dayAccounts && dayAccounts.trim() !== "") {
-                        console.log(`🔍 Day ${index} accounts:`, dayAccounts);
+                        console.log(`🔍 Day ${i} accounts:`, dayAccounts);
                         const accountLines = dayAccounts.split('\n').filter(acc => acc.trim() !== "");
+                        
                         accountLines.forEach(account => {
                             const accountStr = account.trim();
-                            // Формат: "Facebook VL39 | Денис Л."
-                            // Нужно проверить, принадлежит ли аккаунт данному байеру
+                            // Проверяем что аккаунт принадлежит нашему байеру
+                            // Формат: "Facebook VL44 | Taras K."
                             if (accountStr.includes(' | ') && accountStr.endsWith(' | ' + buyerName)) {
-                                const accountName = accountStr.split(' | ')[0].trim();
-                                accounts.add(accountName);
-                                console.log('✅ Added account for buyer:', accountName, 'for buyer:', buyerName);
+                                // Берем полное название аккаунта
+                                accounts.add(accountStr);
+                                console.log('✅ Added account:', accountStr, 'for buyer:', buyerName);
                             }
                         });
                     }
-                });
+                }
+            } else {
+                console.log('❌ No accounts arrays found in general data');
             }
             
-            console.log('🔍 Final extracted accounts for buyer', buyerName + ':', Array.from(accounts));
-            return Array.from(accounts);
+            const result = Array.from(accounts);
+            console.log('🔍 Final extracted accounts for buyer', buyerName + ':', result);
+            return result;
         }
 
         function filterDataByAccount(data, targetAccount, allDates, buyerName) {
@@ -7421,9 +7426,8 @@
             
             console.log(`🔍 Filtering data for account: ${targetAccount}, buyer: ${buyerName}`);
             
-            // Формируем полное название аккаунта как оно хранится в данных
-            const fullAccountName = targetAccount + ' | ' + buyerName;
-            console.log('🔍 Looking for full account name:', fullAccountName);
+            // targetAccount уже содержит полный формат: "Facebook VL44 | Taras K."
+            console.log('🔍 Looking for account:', targetAccount);
             
             // Проходим по всем датам из общего периода
             allDates.forEach(date => {
@@ -7431,35 +7435,22 @@
                 if (dataIndex >= 0) {
                     const dayAccounts = data.accounts ? data.accounts[dataIndex] : "";
                     
-                    // Проверяем, есть ли полное название аккаунта в этом дне
-                    if (dayAccounts && dayAccounts.includes(fullAccountName)) {
-                        console.log(`✅ Found account ${fullAccountName} on date ${date}`);
+                    // Проверяем, есть ли аккаунт в этом дне
+                    if (dayAccounts && dayAccounts.includes(targetAccount)) {
+                        console.log(`✅ Found account ${targetAccount} on date ${date}`);
                         filteredData.dates.push(date);
                         
-                        // Разделяем данные пропорционально количеству аккаунтов данного байера в этот день
+                        // Считаем количество аккаунтов этого байера в этот день
                         const accountsInDay = dayAccounts.split('\n').filter(acc => acc.trim() !== "");
-                        const buyerAccountsInDay = accountsInDay.filter(acc => acc.includes(' | ' + buyerName));
-                        const accountsOfThisBuyer = buyerAccountsInDay.filter(acc => acc.includes(targetAccount + ' | '));
+                        const buyerAccountsInDay = accountsInDay.filter(acc => acc.includes(` | ${buyerName}`));
+                        const accountWeight = 1 / buyerAccountsInDay.length; // Делим между аккаунтами байера
                         
-                        let accountWeight = 1;
-                        if (buyerAccountsInDay.length > 0) {
-                            accountWeight = accountsOfThisBuyer.length / buyerAccountsInDay.length;
-                        }
-                        
-                        // Получаем долю данных байера в общем объеме
-                        const allBuyersInDay = [...new Set(accountsInDay.map(acc => {
-                            const parts = acc.split(' | ');
-                            return parts.length > 1 ? parts[1] : '';
-                        }).filter(buyer => buyer !== ''))];
-                        
-                        const buyerWeight = buyerAccountsInDay.length / accountsInDay.length;
-                        
-                        const dayLeads = (data.leadsDay[dataIndex] || 0) * buyerWeight * accountWeight;
-                        const daySpend = (data.spendDay[dataIndex] || 0) * buyerWeight * accountWeight;
+                        const dayLeads = (data.leadsDay[dataIndex] || 0) * accountWeight;
+                        const daySpend = (data.spendDay[dataIndex] || 0) * accountWeight;
                         
                         filteredData.leadsDay.push(Math.round(dayLeads));
                         filteredData.spendDay.push(daySpend);
-                        filteredData.costFromSourcesDay.push(data.costFromSourcesDay ? (data.costFromSourcesDay[dataIndex] || 0) * buyerWeight * accountWeight : 0);
+                        filteredData.costFromSourcesDay.push(data.costFromSourcesDay ? (data.costFromSourcesDay[dataIndex] || 0) * accountWeight : 0);
                         filteredData.conversionDay.push(data.conversionDay ? data.conversionDay[dataIndex] || "0.00%" : "0.00%");
                         filteredData.accounts.push(targetAccount);
                     } else {
@@ -7472,7 +7463,7 @@
                         filteredData.accounts.push("");
                     }
                 } else {
-                    // Если даты нет в данных байера, добавляем нули
+                    // Если даты нет в данных, добавляем нули
                     filteredData.dates.push(date);
                     filteredData.leadsDay.push(0);
                     filteredData.spendDay.push(0);
