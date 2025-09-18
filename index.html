@@ -2789,6 +2789,65 @@
             document.getElementById("results").style.display = "block";
         }
 
+        // Functions for calendar navigation to buyer analytics
+        function navigateFromCalendarToGroup(groupName, element) {
+            event.stopPropagation(); // Предотвращаем всплытие события
+            
+            // Находим имя байера из родительского трекера
+            const buyerName = findBuyerNameFromCalendarElement(element);
+            if (buyerName) {
+                console.log('🚀 Navigating to group:', groupName, 'for buyer:', buyerName);
+                navigateToBuyerAnalytics(buyerName, 'group', groupName);
+            } else {
+                console.log('❌ Could not find buyer name for group navigation');
+            }
+        }
+
+        function navigateFromCalendarToAd(adName, element) {
+            event.stopPropagation(); // Предотвращаем всплытие события
+            
+            // Находим имя байера из родительского трекера
+            const buyerName = findBuyerNameFromCalendarElement(element);
+            if (buyerName) {
+                console.log('🚀 Navigating to ad:', adName, 'for buyer:', buyerName);
+                navigateToBuyerAnalytics(buyerName, 'ad', adName);
+            } else {
+                console.log('❌ Could not find buyer name for ad navigation');
+            }
+        }
+
+        function findBuyerNameFromCalendarElement(element) {
+            // Поднимаемся по DOM до строки трекера (lvl0)
+            let currentRow = element.closest('tr');
+            while (currentRow) {
+                if (currentRow.classList.contains('lvl0')) {
+                    return currentRow.dataset.buyer;
+                }
+                // Переходим к предыдущей строке
+                currentRow = currentRow.previousElementSibling;
+                if (!currentRow || currentRow.classList.contains('lvl0')) {
+                    break;
+                }
+            }
+            
+            // Альтернативный поиск: ищем ближайшую строку lvl0 выше
+            currentRow = element.closest('tr');
+            const allRows = Array.from(currentRow.closest('tbody').querySelectorAll('tr'));
+            const currentIndex = allRows.indexOf(currentRow);
+            
+            for (let i = currentIndex - 1; i >= 0; i--) {
+                if (allRows[i].classList.contains('lvl0')) {
+                    return allRows[i].dataset.buyer;
+                }
+            }
+            
+            return null;
+        }
+
+        // Make navigation functions globally available
+        window.navigateFromCalendarToGroup = navigateFromCalendarToGroup;
+        window.navigateFromCalendarToAd = navigateFromCalendarToAd;
+
         function displayCalendarMetrics(calendarData) {
             const container = document.getElementById('calendarMetricsContainer');
 
@@ -2897,8 +2956,11 @@
                     calculateAggregatedMetrics(trackerDatesData, Math.min(...last7DaysIndices), Math.max(...last7DaysIndices)) : 
                     { avgCPL: "0,00", totalLeads: 0, totalSpend: "0,00" };
 
+                // Извлекаем имя байера из названия трекера
+                const buyerName = extractBuyerFromTracker(trackerName);
+
                 html += `
-            <tr class="lvl0" data-id="${trackerId}">
+            <tr class="lvl0" data-id="${trackerId}" data-buyer="${escapeHtml(buyerName || '')}">
               <td>
                 <div class="calendar-row">
                   <div class="calendar-toggle" data-target="${trackerId}">▾</div>
@@ -3023,16 +3085,16 @@
                             { avgCPL: "0,00", totalLeads: 0, totalSpend: "0,00" };
 
                         html += `
-                <tr class="lvl2 calendar-child child-of-${campaignId}" data-id="${groupId}">
-                  <td>
-                    <div class="calendar-row">
-                      <div class="calendar-toggle" data-target="${groupId}">▾</div>
-                      <div class="calendar-info">
-                        <div class="calendar-name">📁 ${escapeHtml(groupName)}</div>
-                        <div class="calendar-alias">${Object.keys(groupData.ads || {}).length} ${Object.keys(groupData.ads || {}).length === 1 ? 'объявление' : Object.keys(groupData.ads || {}).length < 5 ? 'объявления' : 'объявлений'}</div>
-                      </div>
+              <tr class="lvl2 calendar-child child-of-${campaignId}" data-id="${groupId}">
+                <td>
+                  <div class="calendar-row">
+                    <div class="calendar-toggle" data-target="${groupId}">▾</div>
+                    <div class="calendar-info">
+                      <div class="calendar-name clickable-calendar-group" style="cursor: pointer; color: #1a73e8; text-decoration: underline;" onclick="navigateFromCalendarToGroup('${escapeHtml(groupName)}', this)" title="Перейти к группе в детальной аналитике">📁 ${escapeHtml(groupName)}</div>
+                      <div class="calendar-alias">${Object.keys(groupData.ads || {}).length} ${Object.keys(groupData.ads || {}).length === 1 ? 'объявление' : Object.keys(groupData.ads || {}).length < 5 ? 'объявления' : 'объявлений'}</div>
                     </div>
-                  </td>
+                  </div>
+                </td>
                   <td style="padding: 0;">
                     <div class="calendar-cell" style="background-color: #1b2335 !important; border-color: #334155 !important; color: white !important; margin: 2px;">
                       <div class="calendar-metric" style="color: white !important;">Лиды: ${groupPeriodMetrics.totalLeads}</div>
@@ -3087,7 +3149,7 @@
                       <div class="calendar-row">
                         <div style="width:22px;height:22px;"></div>
                         <div class="calendar-info">
-                          <div class="calendar-name">📄 ${escapeHtml(adName)}</div>
+                          <div class="calendar-name clickable-calendar-ad" style="cursor: pointer; color: #7c3aed; text-decoration: underline;" onclick="navigateFromCalendarToAd('${escapeHtml(adName)}', this)" title="Перейти к объявлению в детальной аналитике">📄 ${escapeHtml(adName)}</div>
                           <div class="calendar-alias">объявление</div>
                         </div>
                       </div>
@@ -6827,12 +6889,152 @@
             }, 500);
         }
 
+        // Extract buyer name from tracker name
+        function extractBuyerFromTracker(trackerName) {
+            // Формат: "A00032 - Заколка для волосся lazy bird | Владимир Д. | Facebook Novii Akk2.1"
+            const parts = trackerName.split(' | ');
+            if (parts.length >= 2) {
+                return parts[1].trim(); // "Владимир Д."
+            }
+            return null;
+        }
+
+        // Navigate to buyer analytics element
+        function navigateToBuyerAnalytics(buyerName, elementType, elementName) {
+            console.log('🚀 NAVIGATE TO BUYER ANALYTICS:', buyerName, elementType, elementName);
+
+            // Ищем соответствующий элемент в детальной аналитике
+            const buyerSection = findBuyerSection(buyerName);
+            if (!buyerSection) {
+                console.log('❌ Buyer section not found:', buyerName);
+                return;
+            }
+
+            // Определяем целевой элемент в зависимости от типа
+            let targetElement = null;
+            if (elementType === 'group') {
+                targetElement = findGroupInBuyerSection(buyerSection, elementName);
+            } else if (elementType === 'ad') {
+                targetElement = findAdInBuyerSection(buyerSection, elementName);
+            }
+
+            if (targetElement) {
+                console.log('✅ Found target element in buyer analytics');
+                
+                // Раскрываем путь к элементу
+                expandPathToBuyerElement(targetElement);
+                
+                // Прокручиваем к элементу и раскрываем его тоже
+                setTimeout(() => {
+                    // Сначала раскрываем сам целевой элемент
+                    console.log('⚡ Expanding target element itself');
+                    targetElement.click();
+                    
+                    // Затем прокручиваем к началу элемента
+                    setTimeout(() => {
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start',
+                            inline: 'nearest'
+                        });
+
+                        // Подсвечиваем элемент
+                        setTimeout(() => {
+                            highlightElement(targetElement);
+                        }, 300);
+                    }, 200);
+                }, 800);
+            } else {
+                console.log('❌ Target element not found in buyer analytics');
+            }
+        }
+
+        function findBuyerSection(buyerName) {
+            // Ищем секцию байера по onclick атрибуту
+            const buyerHeaders = document.querySelectorAll('.buyer-header-enhanced');
+            for (let header of buyerHeaders) {
+                const titleElement = header.querySelector('h2');
+                if (titleElement && titleElement.textContent.includes(buyerName)) {
+                    return header;
+                }
+            }
+            return null;
+        }
+
+        function findGroupInBuyerSection(buyerSection, groupName) {
+            // Ищем группу объявлений в секции байера
+            const buyerContent = buyerSection.nextElementSibling;
+            if (!buyerContent) return null;
+
+            const groupHeaders = buyerContent.querySelectorAll('.nested-group-header-enhanced');
+            for (let header of groupHeaders) {
+                const titleElement = header.querySelector('h3');
+                if (titleElement && titleElement.textContent.includes(groupName)) {
+                    return header;
+                }
+            }
+            return null;
+        }
+
+        function findAdInBuyerSection(buyerSection, adName) {
+            // Ищем объявление в секции байера
+            const buyerContent = buyerSection.nextElementSibling;
+            if (!buyerContent) return null;
+
+            const adHeaders = buyerContent.querySelectorAll('.nested-group-header-enhanced');
+            for (let header of adHeaders) {
+                const titleElement = header.querySelector('h3');
+                if (titleElement && titleElement.textContent.includes(adName)) {
+                    return header;
+                }
+            }
+            return null;
+        }
+
+        function expandPathToBuyerElement(targetElement) {
+            console.log('🔓 EXPANDING PATH TO BUYER ELEMENT');
+
+            // Находим всех родителей которых нужно раскрыть
+            let currentElement = targetElement;
+            const elementsToExpand = [];
+
+            while (currentElement) {
+                // Ищем родительский content элемент
+                const parentContent = currentElement.closest('.buyer-content-area, .nested-group-content-enhanced');
+                if (parentContent && parentContent.classList.contains('collapsed')) {
+                    // Находим соответствующий header
+                    const parentHeader = parentContent.previousElementSibling;
+                    if (parentHeader) {
+                        elementsToExpand.unshift(parentHeader);
+                    }
+                }
+
+                // Переходим к следующему родителю
+                currentElement = parentContent ? parentContent.parentElement : null;
+
+                // Защита от бесконечного цикла
+                if (elementsToExpand.length > 10) break;
+            }
+
+            console.log('🔓 Found', elementsToExpand.length, 'elements to expand');
+
+            // Раскрываем элементы последовательно
+            elementsToExpand.forEach((header, index) => {
+                setTimeout(() => {
+                    console.log('⚡ Expanding buyer level', index);
+                    header.click();
+                }, index * 200);
+            });
+        }
+
         // Make calendar navigation globally available
         window.navigateToCalendarElement = navigateToCalendarElement;
         window.expandCalendarToTarget = expandCalendarToTarget;
         window.highlightCalendarElement = highlightCalendarElement;
         window.toggleNavTree = toggleNavTree;
         window.navigateToElement = navigateToElement;
+        window.extractBuyerFromTracker = extractBuyerFromTracker;
+        window.navigateToBuyerAnalytics = navigateToBuyerAnalytics;
     </script>
 </body>
 
