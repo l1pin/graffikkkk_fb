@@ -7295,17 +7295,17 @@
                                 </div>
                             </td>
                             <td style="padding: 0;">
-                                <div class="calendar-cell ${accountStatus}" style="margin: 2px;">
-                                    <div class="calendar-metric">Лиды: ${accountPeriodMetrics.totalLeads}</div>
-                                    <div class="calendar-metric">CPL: ${accountPeriodMetrics.avgCPL}</div>
-                                    <div class="calendar-metric">Расх.: ${accountPeriodMetrics.totalSpend}</div>
+                                <div class="calendar-cell" style="background-color: #1b2335 !important; border-color: #334155 !important; color: white !important; margin: 2px;">
+                                    <div class="calendar-metric" style="color: white !important;">Лиды: ${accountPeriodMetrics.totalLeads}</div>
+                                    <div class="calendar-metric" style="color: white !important;">CPL: ${accountPeriodMetrics.avgCPL}</div>
+                                    <div class="calendar-metric" style="color: white !important;">Расх.: ${accountPeriodMetrics.totalSpend}</div>
                                 </div>
                             </td>
                             <td style="padding: 0;">
-                                <div class="calendar-cell ${getChannelStatus(accountLast7DaysMetrics.totalLeads, parseFloat(accountLast7DaysMetrics.totalSpend.replace(',', '.')), maxCPLThreshold)}" style="margin: 2px;">
-                                    <div class="calendar-metric">Лиды: ${accountLast7DaysMetrics.totalLeads}</div>
-                                    <div class="calendar-metric">CPL: ${accountLast7DaysMetrics.avgCPL}</div>
-                                    <div class="calendar-metric">Расх.: ${accountLast7DaysMetrics.totalSpend}</div>
+                                <div class="calendar-cell" style="background-color: #232a3b !important; border-color: #334155 !important; color: white !important; margin: 2px;">
+                                    <div class="calendar-metric" style="color: white !important;">Лиды: ${accountLast7DaysMetrics.totalLeads}</div>
+                                    <div class="calendar-metric" style="color: white !important;">CPL: ${accountLast7DaysMetrics.avgCPL}</div>
+                                    <div class="calendar-metric" style="color: white !important;">Расх.: ${accountLast7DaysMetrics.totalSpend}</div>
                                 </div>
                             </td>
                             ${allDates.map(date => {
