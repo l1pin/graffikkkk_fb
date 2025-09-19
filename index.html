@@ -7129,6 +7129,9 @@
         function displayChannelsTable(data) {
             const container = document.getElementById('channelsTableContainer');
 
+            console.log("🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥");
+            console.log("🔥                    НАЧАЛО БЛОКА: КАНАЛЫ ТРАФИКА                    🔥");
+            console.log("🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥");
             console.log("🚀 DisplayChannelsTable called with data:", data);
             console.log("🔍 Data keys:", Object.keys(data || {}));
             console.log("🔍 buyerGroupsData:", data?.buyerGroupsData);
@@ -7183,7 +7186,15 @@
                 const buyerData = data.buyerGroupsData[buyerName];
                 const buyerId = `channels_buyer_${rowIndex++}`;
 
+                console.log("📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊");
+                console.log(`📊                    ОБРАБОТКА БАЙЕРА: ${buyerName}                    📊`);
+                console.log("📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊📊");
                 console.log(`🔍 Processing buyer: ${buyerName}`, buyerData);
+                console.log(`🔍 BuyerData structure:`, {
+                    hasBuyerData: !!buyerData.buyerData,
+                    hasData: !!(buyerData.buyerData && buyerData.buyerData.data),
+                    dataKeys: buyerData.buyerData && buyerData.buyerData.data ? Object.keys(buyerData.buyerData.data) : 'NO DATA'
+                });
 
                 if (!buyerData.buyerData || !buyerData.buyerData.data) {
                     console.log(`❌ No buyerData.data for buyer: ${buyerName}`);
@@ -7200,8 +7211,18 @@
                 console.log(`📊 Buyer ${buyerName} metrics:`, buyerPeriodMetrics);
 
                 // Извлекаем аккаунты из данных байера
-                const buyerAccounts = extractUniqueAccountsFromBuyerData(buyerData.buyerData.data);
-                console.log(`🔑 Accounts for ${buyerName}:`, buyerAccounts);
+                console.log("🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑");
+                console.log(`🔑                ИЗВЛЕЧЕНИЕ АККАУНТОВ ДЛЯ: ${buyerName}                🔑`);
+                console.log("🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑");
+                console.log(`🔑 Input buyerData.data for ${buyerName}:`, buyerData.buyerData.data);
+                console.log(`🔑 Input buyerData.data.accounts for ${buyerName}:`, buyerData.buyerData.data.accounts);
+                console.log(`🔑 Input buyerData.data.dates length for ${buyerName}:`, buyerData.buyerData.data.dates ? buyerData.buyerData.data.dates.length : 'NO DATES');
+                
+                const buyerAccounts = extractUniqueAccountsFromBuyerData(buyerData.buyerData.data, buyerName);
+                
+                console.log(`🔑 РЕЗУЛЬТАТ - Accounts for ${buyerName}:`, buyerAccounts);
+                console.log(`🔑 РЕЗУЛЬТАТ - Количество аккаунтов для ${buyerName}:`, buyerAccounts.length);
+                console.log("🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑🔑");
 
                 html += `
                     <tr class="lvl0" data-id="${buyerId}">
@@ -7259,11 +7280,16 @@
                 `;
 
                 // Добавляем строки для каждого аккаунта
-                console.log(`🔑 Adding ${buyerAccounts.length} accounts for buyer ${buyerName}:`, buyerAccounts);
-                buyerAccounts.forEach((accountName) => {
-                    console.log(`🔍 Processing account: ${accountName} for buyer: ${buyerName}`);
+                console.log("🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦");
+                console.log(`🏦              ОБРАБОТКА АККАУНТОВ ДЛЯ: ${buyerName}              🏦`);
+                console.log("🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦🏦");
+                console.log(`🏦 Количество аккаунтов для обработки: ${buyerAccounts.length}`);
+                console.log(`🏦 Список аккаунтов:`, buyerAccounts);
+                
+                buyerAccounts.forEach((accountName, accountIndex) => {
+                    console.log(`🏦 ⚡ [${accountIndex + 1}/${buyerAccounts.length}] Processing account: "${accountName}" for buyer: "${buyerName}"`);
                     
-                    const accountData = filterBuyerDataByAccount(buyerData.buyerData.data, accountName, allDates);
+                    const accountData = filterBuyerDataByAccount(buyerData.buyerData.data, accountName, allDates, buyerName);
                     console.log(`📊 Account data for ${accountName}:`, accountData);
 
                     // Расчет метрик для аккаунта
@@ -7352,6 +7378,10 @@
                 });
                 console.log(`🔧 Force-showing ${accountRowsAfter.length} account rows`);
             }, 100);
+            
+            console.log("🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥");
+            console.log("🔥                     КОНЕЦ БЛОКА: КАНАЛЫ ТРАФИКА                     🔥");
+            console.log("🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥");
         }
 
         function getChannelStatus(leads, spend, maxCPLThreshold = 3.5) {
@@ -7650,85 +7680,140 @@
 
         
 
-        function extractUniqueAccountsFromBuyerData(buyerData) {
-            const accounts = new Set();
-            
-            if (buyerData.accounts && Array.isArray(buyerData.accounts)) {
-                buyerData.accounts.forEach(dayAccounts => {
-                    if (dayAccounts && dayAccounts.trim() !== "") {
-                        const accountLines = dayAccounts.split('\n').filter(acc => acc.trim() !== "");
-                        accountLines.forEach(account => {
-                            if (account.trim() !== "") {
-                                accounts.add(account.trim());
-                            }
-                        });
+        function extractUniqueAccountsFromBuyerData(buyerData, buyerName) {
+    const accounts = new Set();
+    
+    console.log('🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬');
+    console.log(`🔬            ФУНКЦИЯ extractUniqueAccountsFromBuyerData для: ${buyerName}            🔬`);
+    console.log('🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬');
+    console.log('🔬 Input buyerData:', buyerData);
+    console.log('🔬 Input buyerName:', buyerName);
+    console.log('🔬 buyerData.accounts exists:', !!(buyerData.accounts));
+    console.log('🔬 buyerData.accounts isArray:', Array.isArray(buyerData.accounts));
+    console.log('🔬 buyerData.accounts:', buyerData.accounts);
+    
+    // Пытаемся извлечь аккаунты из поля accounts байера
+    if (buyerData.accounts && Array.isArray(buyerData.accounts)) {
+        console.log('🔍 Found accounts array, length:', buyerData.accounts.length);
+        
+        buyerData.accounts.forEach((dayAccounts, index) => {
+            if (dayAccounts && dayAccounts.trim() !== "") {
+                console.log(`🔍 Day ${index} accounts:`, dayAccounts);
+                const accountLines = dayAccounts.split('\n').filter(acc => acc.trim() !== "");
+                accountLines.forEach(account => {
+                    const accountStr = account.trim();
+                    if (accountStr !== "") {
+                        accounts.add(accountStr);
+                        console.log('✅ Added account:', accountStr);
                     }
                 });
             }
-            
-            return Array.from(accounts);
-        }
-
-        function filterBuyerDataByAccount(buyerData, targetAccount, allDates) {
-            const filteredData = {
-                dates: [],
-                leadsDay: [],
-                spendDay: [],
-                costFromSourcesDay: [],
-                conversionDay: [],
-                accounts: []
-            };
-            
-            console.log(`🔍 Filtering buyer data for account: ${targetAccount}`);
-            console.log(`🔍 Buyer data dates:`, buyerData.dates);
-            console.log(`🔍 Buyer data accounts sample:`, buyerData.accounts ? buyerData.accounts.slice(0, 3) : 'No accounts');
-            
-            // Проходим по всем датам из общего периода
-            allDates.forEach(date => {
-                const dataIndex = buyerData.dates.indexOf(date);
-                if (dataIndex >= 0) {
-                    const dayAccounts = buyerData.accounts ? buyerData.accounts[dataIndex] : "";
+        });
+    }
+    
+    // Если не нашли аккаунты в поле accounts, пытаемся найти в общих данных
+    if (accounts.size === 0 && window.globalAnalyticsData && window.globalAnalyticsData.generalData) {
+        console.log('🔍 No accounts found in buyerData, trying generalData');
+        const generalData = window.globalAnalyticsData.generalData;
+        
+        if (generalData.accounts && Array.isArray(generalData.accounts)) {
+            for (let i = 0; i < generalData.accounts.length; i++) {
+                const dayAccounts = generalData.accounts[i] || "";
+                const dayBuyers = generalData.buyers ? generalData.buyers[i] || "" : "";
+                
+                // Проверяем что в этот день был активен наш байер
+                if (dayBuyers.includes(buyerName) && dayAccounts && dayAccounts.trim() !== "") {
+                    console.log(`🔍 Day ${i} general accounts:`, dayAccounts, 'buyers:', dayBuyers);
+                    const accountLines = dayAccounts.split('\n').filter(acc => acc.trim() !== "");
                     
-                    // Проверяем, есть ли аккаунт в этом дне
-                    if (dayAccounts && dayAccounts.includes(targetAccount)) {
-                        console.log(`✅ Found account ${targetAccount} on date ${date}`);
-                        filteredData.dates.push(date);
-                        
-                        // Считаем количество аккаунтов в этот день для этого байера
-                        const accountsInDay = dayAccounts.split('\n').filter(acc => acc.trim() !== "");
-                        const accountWeight = accountsInDay.length > 0 ? (1 / accountsInDay.length) : 1;
-                        
-                        const dayLeads = (buyerData.leadsDay[dataIndex] || 0) * accountWeight;
-                        const daySpend = (buyerData.spendDay[dataIndex] || 0) * accountWeight;
-                        
-                        filteredData.leadsDay.push(Math.round(dayLeads));
-                        filteredData.spendDay.push(daySpend);
-                        filteredData.costFromSourcesDay.push(buyerData.costFromSourcesDay ? (buyerData.costFromSourcesDay[dataIndex] || 0) * accountWeight : 0);
-                        filteredData.conversionDay.push(buyerData.conversionDay ? buyerData.conversionDay[dataIndex] || "0.00%" : "0.00%");
-                        filteredData.accounts.push(targetAccount);
-                    } else {
-                        // Если аккаунта нет в этот день, добавляем нули
-                        filteredData.dates.push(date);
-                        filteredData.leadsDay.push(0);
-                        filteredData.spendDay.push(0);
-                        filteredData.costFromSourcesDay.push(0);
-                        filteredData.conversionDay.push("0.00%");
-                        filteredData.accounts.push("");
-                    }
-                } else {
-                    // Если даты нет в данных, добавляем нули
-                    filteredData.dates.push(date);
-                    filteredData.leadsDay.push(0);
-                    filteredData.spendDay.push(0);
-                    filteredData.costFromSourcesDay.push(0);
-                    filteredData.conversionDay.push("0.00%");
-                    filteredData.accounts.push("");
+                    accountLines.forEach(account => {
+                        const accountStr = account.trim();
+                        if (accountStr !== "") {
+                            accounts.add(accountStr);
+                            console.log('✅ Added general account:', accountStr, 'for buyer:', buyerName);
+                        }
+                    });
                 }
-            });
-            
-            console.log(`🔍 Filtered data for ${targetAccount}:`, filteredData);
-            return filteredData;
+            }
         }
+    }
+    
+    const result = Array.from(accounts);
+    console.log('🔬 ФИНАЛЬНЫЙ РЕЗУЛЬТАТ extractUniqueAccountsFromBuyerData:');
+    console.log('🔬 Buyer:', buyerName);
+    console.log('🔬 Найдено уникальных аккаунтов:', result.length);
+    console.log('🔬 Список аккаунтов:', result);
+    console.log('🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬 КОНЕЦ extractUniqueAccountsFromBuyerData 🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬🔬');
+    return result;
+}
+
+        function filterBuyerDataByAccount(buyerData, targetAccount, allDates, buyerName) {
+    const filteredData = {
+        dates: [],
+        leadsDay: [],
+        spendDay: [],
+        costFromSourcesDay: [],
+        conversionDay: [],
+        accounts: []
+    };
+    
+    console.log(`🔍 Filtering buyer data for account: ${targetAccount}, buyer: ${buyerName}`);
+    console.log(`🔍 Buyer data dates:`, buyerData.dates);
+    console.log(`🔍 Buyer data accounts sample:`, buyerData.accounts ? buyerData.accounts.slice(0, 3) : 'No accounts');
+    
+    // Проходим по всем датам из общего периода
+    allDates.forEach(date => {
+        const dataIndex = buyerData.dates.indexOf(date);
+        if (dataIndex >= 0) {
+            const dayAccounts = buyerData.accounts ? buyerData.accounts[dataIndex] : "";
+            
+            // Проверяем, есть ли аккаунт в этом дне (точное совпадение)
+            let accountFound = false;
+            if (dayAccounts && dayAccounts.trim() !== "") {
+                const accountLines = dayAccounts.split('\n').filter(acc => acc.trim() !== "");
+                accountFound = accountLines.some(acc => acc.trim() === targetAccount);
+            }
+            
+            if (accountFound) {
+                console.log(`✅ Found account ${targetAccount} on date ${date}`);
+                filteredData.dates.push(date);
+                
+                // Считаем количество уникальных аккаунтов в этот день
+                const accountsInDay = dayAccounts.split('\n').filter(acc => acc.trim() !== "");
+                const uniqueAccounts = [...new Set(accountsInDay)];
+                const accountWeight = uniqueAccounts.length > 0 ? (1 / uniqueAccounts.length) : 1;
+                
+                const dayLeads = (buyerData.leadsDay[dataIndex] || 0) * accountWeight;
+                const daySpend = (buyerData.spendDay[dataIndex] || 0) * accountWeight;
+                
+                filteredData.leadsDay.push(Math.round(dayLeads));
+                filteredData.spendDay.push(daySpend);
+                filteredData.costFromSourcesDay.push(buyerData.costFromSourcesDay ? (buyerData.costFromSourcesDay[dataIndex] || 0) * accountWeight : 0);
+                filteredData.conversionDay.push(buyerData.conversionDay ? buyerData.conversionDay[dataIndex] || "0.00%" : "0.00%");
+                filteredData.accounts.push(targetAccount);
+            } else {
+                // Если аккаунта нет в этот день, добавляем нули
+                filteredData.dates.push(date);
+                filteredData.leadsDay.push(0);
+                filteredData.spendDay.push(0);
+                filteredData.costFromSourcesDay.push(0);
+                filteredData.conversionDay.push("0.00%");
+                filteredData.accounts.push("");
+            }
+        } else {
+            // Если даты нет в данных, добавляем нули
+            filteredData.dates.push(date);
+            filteredData.leadsDay.push(0);
+            filteredData.spendDay.push(0);
+            filteredData.costFromSourcesDay.push(0);
+            filteredData.conversionDay.push("0.00%");
+            filteredData.accounts.push("");
+        }
+    });
+    
+    console.log(`🔍 Filtered data for ${targetAccount}:`, filteredData);
+    return filteredData;
+}
 
         function displayChannelsTableFallback(data) {
             console.log("🔄 Using fallback channels display with buyerGroupsData");
