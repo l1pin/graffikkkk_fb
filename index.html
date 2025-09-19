@@ -2460,9 +2460,9 @@
         <div id="generalSection" class="content-section">
             <!-- Header -->
             <div class="header card">
-                <h1>Аналитика по артикулам</h1>
+                <h1>Общие данные по байерам</h1>
                 <div class="header-subtitle">
-                    Детальный анализ показателей эффективности рекламных кампаний Facebook Ads
+                    Сводная аналитика расходов и результатов всех медиабайеров за выбранный период
                 </div>
 
                 <div class="controls-grid" style="grid-template-columns: 1fr auto;">
@@ -2478,7 +2478,7 @@
                     </div>
 
                     <button id="buildGeneralChart" class="btn-primary" onclick="buildGeneralChart()">
-                        <i class="fas fa-chart-line"></i> Построить анализ
+                        <i class="fas fa-database"></i> Загрузить данные
                     </button>
                 </div>
             </div>
@@ -7663,13 +7663,8 @@
 
             function getCPLStatus(leads, spend) {
                 if (spend === 0 && leads === 0) return 'calendar-muted';
-                if (spend > 0 && leads === 0) return 'calendar-danger';
-                
-                const cpl = leads > 0 ? spend / leads : 0;
-                if (cpl <= 2) return 'calendar-excellent';
-                else if (cpl <= 3.5) return 'calendar-good';
-                else if (cpl <= 5) return 'calendar-warning';
-                else return 'calendar-danger';
+                // Все активные дни (с расходом или лидами) - нейтральный цвет
+                return 'calendar-neutral';
             }
 
             function formatCPL(leads, spend) {
