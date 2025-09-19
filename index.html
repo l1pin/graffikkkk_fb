@@ -3320,6 +3320,9 @@
 
         function displayResults(data) {
             console.log("📊 Отображаем результаты:", data);
+            
+            // Сохраняем данные глобально для переключения навигации
+            window.currentChartData = data;
 
             // Получаем выбранные пользователем даты
             const periodStart = document.getElementById("periodStart").value;
@@ -7425,14 +7428,27 @@
             if (sectionName === 'analytics') {
                 document.getElementById('analyticsSection').classList.add('active');
                 document.querySelector('[onclick="showSection(\'analytics\')"]').classList.add('active');
+                
+                // Переключаем навигацию на аналитические данные
+                if (window.currentChartData) {
+                    // Перестраиваем навигацию для аналитики (Календарь + По байерам)
+                    buildNavigationTree(window.currentChartData.buyerGroupsData || {});
+                } else {
+                    // Показываем пустую навигацию для аналитики
+                    const container = document.getElementById('navigationTree');
+                    container.innerHTML = `
+                        <div class="nav-placeholder">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Загрузите данные для отображения навигации</span>
+                        </div>
+                    `;
+                }
             } else if (sectionName === 'general') {
                 document.getElementById('generalSection').classList.add('active');
                 document.querySelector('[onclick="showSection(\'general\')"]').classList.add('active');
                 
-                // Обновляем навигацию для общих данных
-                if (window.currentGeneralData) {
-                    buildGeneralDataNavigation();
-                }
+                // Переключаем навигацию на общие данные
+                buildGeneralDataNavigation();
             }
         }
 
