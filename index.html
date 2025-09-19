@@ -2305,6 +2305,15 @@
                 padding: 12px;
             }
         }
+
+        /* Content Sections */
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
     </style>
 </head>
 
@@ -2336,17 +2345,23 @@
             <h1><i class="fas fa-chart-line"></i> Facebook Ads</h1>
         </div>
         <nav class="nav-menu">
-            <a href="#" class="nav-item active">
+            <a href="#" class="nav-item active" onclick="showSection('analytics')">
                 <i class="fas fa-chart-bar"></i>
                 Аналитика
+            </a>
+            <a href="#" class="nav-item" onclick="showSection('general')">
+                <i class="fas fa-database"></i>
+                Общие данные
             </a>
         </nav>
     </div>
 
     <!-- Main Content -->
     <div class="main-content">
-        <!-- Header -->
-        <div class="header card">
+        <!-- Analytics Section -->
+        <div id="analyticsSection" class="content-section active">
+            <!-- Header -->
+            <div class="header card">
             <h1>Аналитика по артикулам</h1>
             <div class="header-subtitle">
                 Детальный анализ показателей эффективности рекламных кампаний Facebook
@@ -2438,6 +2453,67 @@
 
             <!-- Buyer-Group Hierarchy -->
             <div id="buyerGroupsContainer"></div>
+        </div>
+        </div>
+
+        <!-- General Data Section -->
+        <div id="generalSection" class="content-section">
+            <!-- Header -->
+            <div class="header card">
+                <h1>Аналитика по артикулам</h1>
+                <div class="header-subtitle">
+                    Детальный анализ показателей эффективности рекламных кампаний Facebook Ads
+                </div>
+
+                <div class="controls-grid" style="grid-template-columns: 1fr auto;">
+                    <div class="period-inputs">
+                        <div class="input-group">
+                            <label class="input-label">Период с</label>
+                            <input type="date" id="generalPeriodStart" class="input-field" />
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">по</label>
+                            <input type="date" id="generalPeriodEnd" class="input-field" />
+                        </div>
+                    </div>
+
+                    <button id="buildGeneralChart" class="btn-primary" onclick="buildGeneralChart()">
+                        <i class="fas fa-chart-line"></i> Построить анализ
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading -->
+            <div class="loading card" id="generalLoading">
+                <div class="spinner"></div>
+                <div class="loading-text">Обработка данных из базы данных...</div>
+            </div>
+
+            <!-- Error -->
+            <div class="error" id="generalError">
+                <div class="error-title">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Произошла ошибка</span>
+                </div>
+                <div class="error-content" id="generalErrorContent"></div>
+            </div>
+
+            <!-- Results -->
+            <div class="results" id="generalResults">
+                <!-- Status Banner -->
+                <div class="status-banner" id="generalStatusBanner"></div>
+
+                <!-- Buyer Account Calendar -->
+                <div class="calendar-metrics-section card">
+                    <div class="chart-header">
+                        <div class="chart-title">
+                            <i class="fas fa-users"></i>
+                            Календарь по байерам и аккаунтам
+                        </div>
+                    </div>
+                    <div id="buyerAccountCalendarContainer"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -7035,6 +7111,419 @@
         window.navigateToElement = navigateToElement;
         window.extractBuyerFromTracker = extractBuyerFromTracker;
         window.navigateToBuyerAnalytics = navigateToBuyerAnalytics;
+    
+    // Section switching functions
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from all nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Show selected section and activate nav item
+            if (sectionName === 'analytics') {
+                document.getElementById('analyticsSection').classList.add('active');
+                document.querySelector('[onclick="showSection(\'analytics\')"]').classList.add('active');
+            } else if (sectionName === 'general') {
+                document.getElementById('generalSection').classList.add('active');
+                document.querySelector('[onclick="showSection(\'general\')"]').classList.add('active');
+            }
+        }
+
+        // General data chart building function
+        function buildGeneralChart() {
+            const periodStart = document.getElementById("generalPeriodStart").value;
+            const periodEnd = document.getElementById("generalPeriodEnd").value;
+
+            console.log("🔍 General data analysis - Start:", periodStart, "End:", periodEnd);
+
+            showGeneralLoading(true);
+            hideGeneralError();
+            hideGeneralResults();
+
+            // Уничтожаем существующие графики
+            const existingCharts = Chart.getChart('generalDataChart');
+            if (existingCharts) {
+                existingCharts.destroy();
+            }
+
+            try {
+                // Вызываем функцию для анализа всех данных без конкретного артикула
+                google.script.run
+                    .withSuccessHandler((result) => {
+                        console.log("✅ General data analysis completed:", result);
+                        handleGeneralSuccess(result);
+                    })
+                    .withFailureHandler((error) => {
+                        console.error("❌ General data analysis error:", error);
+                        handleGeneralError(error);
+                    })
+                    .buildGeneralDataAnalysis(periodStart, periodEnd);
+            } catch (e) {
+                console.error("❌ Error calling Google Apps Script:", e);
+                handleGeneralError("🔌 Google Apps Script недоступен!\n\nПроверьте подключение к интернету и обновите страницу.");
+            }
+        }
+
+        function handleGeneralSuccess(data) {
+            console.log("✅ General data received:", data);
+            showGeneralLoading(false);
+            displayGeneralResults(data);
+        }
+
+        function handleGeneralError(error) {
+            console.error("❌ General data error:", error);
+            showGeneralLoading(false);
+            let userMessage = error.toString();
+            userMessage = userMessage.replace(/^ScriptError:\s*Error:\s*/, "");
+            userMessage = userMessage.replace(/^Error:\s*/, "");
+            showGeneralError(userMessage);
+        }
+
+        function showGeneralLoading(show) {
+            document.getElementById("generalLoading").style.display = show ? "block" : "none";
+            document.getElementById("buildGeneralChart").disabled = show;
+        }
+
+        function showGeneralError(message) {
+            const errorDiv = document.getElementById("generalError");
+            const errorContent = document.getElementById("generalErrorContent");
+            errorContent.textContent = message;
+            errorDiv.style.display = "block";
+        }
+
+        function hideGeneralError() {
+            document.getElementById("generalError").style.display = "none";
+        }
+
+        function hideGeneralResults() {
+            document.getElementById("generalResults").style.display = "none";
+            document.getElementById("generalStatusBanner").classList.remove("show");
+        }
+
+        function showGeneralResults() {
+            document.getElementById("generalResults").style.display = "block";
+        }
+
+        function displayGeneralResults(data) {
+            console.log("📊 Displaying general results:", data);
+            
+            // Показываем баннер статуса
+            const container = document.getElementById("generalStatusBanner");
+            container.innerHTML = `
+                <div class="status-content">
+                    <div class="status-main">
+                        <div class="status-icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <div class="status-info">
+                            <h3>Общие данные</h3>
+                            <p>Анализ по байерам и аккаунтам за выбранный период</p>
+                        </div>
+                    </div>
+                    <div class="article-name">Все байеры</div>
+                </div>
+            `;
+            container.classList.add("show");
+
+            // Отображаем календарь байеров и аккаунтов
+            if (data.buyerAccountData && data.dates) {
+                displayBuyerAccountCalendar(data.buyerAccountData, data.dates);
+            }
+
+            showGeneralResults();
+        }
+
+        // Функции для расчета агрегированных метрик
+        function calculateBuyerPeriodMetrics(buyerData, dates) {
+            let totalLeads = 0, totalSpend = 0;
+            
+            dates.forEach(date => {
+                Object.values(buyerData.accounts).forEach(accountData => {
+                    if (accountData[date]) {
+                        totalLeads += accountData[date].leads;
+                        totalSpend += accountData[date].cost;
+                    }
+                });
+            });
+            
+            const avgCPL = totalLeads > 0 ? (totalSpend / totalLeads).toFixed(2) : "0,00";
+            
+            return {
+                totalLeads: totalLeads,
+                totalSpend: totalSpend.toFixed(2),
+                avgCPL: avgCPL.replace('.', ',')
+            };
+        }
+
+        function calculateBuyerLast7DaysMetrics(buyerData, dates) {
+            let totalLeads = 0, totalSpend = 0;
+            let activeDaysFound = 0;
+            
+            // Берем последние 7 дней с активностью
+            for (let i = dates.length - 1; i >= 0 && activeDaysFound < 7; i--) {
+                const date = dates[i];
+                let dayHasActivity = false;
+                
+                Object.values(buyerData.accounts).forEach(accountData => {
+                    if (accountData[date] && (accountData[date].leads > 0 || accountData[date].cost > 0)) {
+                        totalLeads += accountData[date].leads;
+                        totalSpend += accountData[date].cost;
+                        dayHasActivity = true;
+                    }
+                });
+                
+                if (dayHasActivity) {
+                    activeDaysFound++;
+                }
+            }
+            
+            const avgCPL = totalLeads > 0 ? (totalSpend / totalLeads).toFixed(2) : "0,00";
+            
+            return {
+                totalLeads: totalLeads,
+                totalSpend: totalSpend.toFixed(2),
+                avgCPL: avgCPL.replace('.', ',')
+            };
+        }
+
+        function calculateAccountPeriodMetrics(accountData, dates) {
+            let totalLeads = 0, totalSpend = 0;
+            
+            dates.forEach(date => {
+                if (accountData[date]) {
+                    totalLeads += accountData[date].leads;
+                    totalSpend += accountData[date].cost;
+                }
+            });
+            
+            const avgCPL = totalLeads > 0 ? (totalSpend / totalLeads).toFixed(2) : "0,00";
+            
+            return {
+                totalLeads: totalLeads,
+                totalSpend: totalSpend.toFixed(2),
+                avgCPL: avgCPL.replace('.', ',')
+            };
+        }
+
+        function calculateAccountLast7DaysMetrics(accountData, dates) {
+            let totalLeads = 0, totalSpend = 0;
+            let activeDaysFound = 0;
+            
+            // Берем последние 7 дней с активностью
+            for (let i = dates.length - 1; i >= 0 && activeDaysFound < 7; i--) {
+                const date = dates[i];
+                if (accountData[date] && (accountData[date].leads > 0 || accountData[date].cost > 0)) {
+                    totalLeads += accountData[date].leads;
+                    totalSpend += accountData[date].cost;
+                    activeDaysFound++;
+                }
+            }
+            
+            const avgCPL = totalLeads > 0 ? (totalSpend / totalLeads).toFixed(2) : "0,00";
+            
+            return {
+                totalLeads: totalLeads,
+                totalSpend: totalSpend.toFixed(2),
+                avgCPL: avgCPL.replace('.', ',')
+            };
+        }
+    
+        function displayBuyerAccountCalendar(buyerAccountData, dates) {
+            const container = document.getElementById('buyerAccountCalendarContainer');
+
+            if (!buyerAccountData || Object.keys(buyerAccountData).length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #64748b; padding: 40px;">Нет данных для отображения</div>';
+                return;
+            }
+
+            function getCPLStatus(leads, spend) {
+                if (spend === 0 && leads === 0) return 'calendar-muted';
+                if (spend > 0 && leads === 0) return 'calendar-danger';
+                
+                const cpl = leads > 0 ? spend / leads : 0;
+                if (cpl <= 2) return 'calendar-excellent';
+                else if (cpl <= 3.5) return 'calendar-good';
+                else if (cpl <= 5) return 'calendar-warning';
+                else return 'calendar-danger';
+            }
+
+            function formatCPL(leads, spend) {
+                if (spend === 0 && leads === 0) return '—';
+                if (spend > 0 && leads === 0) return '—';
+                const cpl = leads > 0 ? spend / leads : 0;
+                return cpl > 0 ? cpl.toFixed(2) : '—';
+            }
+
+            function formatValue(value) {
+                return value > 0 ? value.toFixed(2) : '—';
+            }
+
+            let html = `
+                <div class="calendar-container">
+                    <table class="calendar-table">
+                        <thead>
+                            <tr>
+                                <th>Байер / Аккаунт</th>
+                                <th style="background-color: #1b2335 !important; color: white !important; min-width: 120px;">Период</th>
+                                <th style="background-color: #232a3b !important; color: white !important; min-width: 120px;">7дн.</th>
+                                ${dates.map(date => `<th>${date}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+            let rowIndex = 0;
+            Object.keys(buyerAccountData).forEach((buyerName) => {
+                const buyerData = buyerAccountData[buyerName];
+                const buyerId = `buyer_${rowIndex++}`;
+
+                // Рассчитываем агрегированные метрики для байера
+                const buyerPeriodMetrics = calculateBuyerPeriodMetrics(buyerData, dates);
+                const buyerLast7DaysMetrics = calculateBuyerLast7DaysMetrics(buyerData, dates);
+
+                html += `
+                    <tr class="lvl0" data-id="${buyerId}">
+                        <td>
+                            <div class="calendar-row">
+                                <div class="calendar-toggle" data-target="${buyerId}">▾</div>
+                                <div class="calendar-info">
+                                    <div class="calendar-name">👤 ${escapeHtml(buyerName)}</div>
+                                    <div class="calendar-alias">${Object.keys(buyerData.accounts).length} ${Object.keys(buyerData.accounts).length === 1 ? 'аккаунт' : 'аккаунтов'}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding: 0;">
+                            <div class="calendar-cell" style="background-color: #1b2335 !important; border-color: #334155 !important; color: white !important; margin: 2px;">
+                                <div class="calendar-metric" style="color: white !important;">Лиды: ${buyerPeriodMetrics.totalLeads}</div>
+                                <div class="calendar-metric" style="color: white !important;">CPL: ${buyerPeriodMetrics.avgCPL}</div>
+                                <div class="calendar-metric" style="color: white !important;">Расх.: ${buyerPeriodMetrics.totalSpend}</div>
+                            </div>
+                        </td>
+                        <td style="padding: 0;">
+                            <div class="calendar-cell" style="background-color: #232a3b !important; border-color: #334155 !important; color: white !important; margin: 2px;">
+                                <div class="calendar-metric" style="color: white !important;">Лиды: ${buyerLast7DaysMetrics.totalLeads}</div>
+                                <div class="calendar-metric" style="color: white !important;">CPL: ${buyerLast7DaysMetrics.avgCPL}</div>
+                                <div class="calendar-metric" style="color: white !important;">Расх.: ${buyerLast7DaysMetrics.totalSpend}</div>
+                            </div>
+                        </td>
+                        ${dates.map(date => {
+                            let totalLeads = 0, totalSpend = 0;
+                            
+                            Object.values(buyerData.accounts).forEach(accountData => {
+                                if (accountData[date]) {
+                                    totalLeads += accountData[date].leads;
+                                    totalSpend += accountData[date].cost;
+                                }
+                            });
+
+                            return `
+                                <td>
+                                    <div class="calendar-cell ${getCPLStatus(totalLeads, totalSpend)}">
+                                        <div class="calendar-metric">Лиды: ${totalLeads}</div>
+                                        <div class="calendar-metric">CPL: ${formatCPL(totalLeads, totalSpend)}</div>
+                                        <div class="calendar-metric">Расх.: ${formatValue(totalSpend)}</div>
+                                    </div>
+                                </td>
+                            `;
+                        }).join('')}
+                    </tr>`;
+
+                Object.keys(buyerData.accounts).forEach((accountName) => {
+                    const accountData = buyerData.accounts[accountName];
+
+                    // Рассчитываем агрегированные метрики для аккаунта
+                    const accountPeriodMetrics = calculateAccountPeriodMetrics(accountData, dates);
+                    const accountLast7DaysMetrics = calculateAccountLast7DaysMetrics(accountData, dates);
+
+                    html += `
+                        <tr class="lvl1 calendar-child child-of-${buyerId}">
+                            <td>
+                                <div class="calendar-row">
+                                    <div style="width:22px;height:22px;"></div>
+                                    <div class="calendar-info">
+                                        <div class="calendar-name">🔑 ${escapeHtml(accountName)}</div>
+                                        <div class="calendar-alias">аккаунт</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="padding: 0;">
+                                <div class="calendar-cell" style="background-color: #1b2335 !important; border-color: #334155 !important; color: white !important; margin: 2px;">
+                                    <div class="calendar-metric" style="color: white !important;">Лиды: ${accountPeriodMetrics.totalLeads}</div>
+                                    <div class="calendar-metric" style="color: white !important;">CPL: ${accountPeriodMetrics.avgCPL}</div>
+                                    <div class="calendar-metric" style="color: white !important;">Расх.: ${accountPeriodMetrics.totalSpend}</div>
+                                </div>
+                            </td>
+                            <td style="padding: 0;">
+                                <div class="calendar-cell" style="background-color: #232a3b !important; border-color: #334155 !important; color: white !important; margin: 2px;">
+                                    <div class="calendar-metric" style="color: white !important;">Лиды: ${accountLast7DaysMetrics.totalLeads}</div>
+                                    <div class="calendar-metric" style="color: white !important;">CPL: ${accountLast7DaysMetrics.avgCPL}</div>
+                                    <div class="calendar-metric" style="color: white !important;">Расх.: ${accountLast7DaysMetrics.totalSpend}</div>
+                                </div>
+                            </td>
+                            ${dates.map(date => {
+                                const dayData = accountData[date] || { leads: 0, cost: 0 };
+                                const leads = dayData.leads;
+                                const spend = dayData.cost;
+
+                                return `
+                                    <td>
+                                        <div class="calendar-cell ${getCPLStatus(leads, spend)}">
+                                            <div class="calendar-metric">Лиды: ${leads}</div>
+                                            <div class="calendar-metric">CPL: ${formatCPL(leads, spend)}</div>
+                                            <div class="calendar-metric">Расх.: ${formatValue(spend)}</div>
+                                        </div>
+                                    </td>
+                                `;
+                            }).join('')}
+                        </tr>`;
+                });
+            });
+
+            html += `</tbody></table></div>`;
+            container.innerHTML = html;
+
+            // Настраиваем toggles
+            setTimeout(() => {
+                setupBuyerAccountToggles();
+            }, 50);
+        }
+
+        function setupBuyerAccountToggles() {
+            const toggles = document.querySelectorAll('.calendar-toggle');
+
+            function setRowVisibility(parentId, visible) {
+                document.querySelectorAll(`.child-of-${parentId}`).forEach(row => {
+                    if (visible) {
+                        row.classList.add('visible');
+                    } else {
+                        row.classList.remove('visible');
+                    }
+                });
+            }
+
+            toggles.forEach(toggle => {
+                toggle.addEventListener('click', () => {
+                    const targetId = toggle.dataset.target;
+                    const firstChild = document.querySelector(`.child-of-${targetId}`);
+                    const willOpen = firstChild && !firstChild.classList.contains('visible');
+
+                    setRowVisibility(targetId, willOpen);
+                    toggle.textContent = willOpen ? '▾' : '▸';
+                });
+            });
+
+            // По умолчанию сворачиваем все
+            document.querySelectorAll('.calendar-toggle').forEach(toggle => {
+                const targetId = toggle.dataset.target;
+                setRowVisibility(targetId, false);
+                toggle.textContent = '▸';
+            });
+        }
+
     </script>
 </body>
 
