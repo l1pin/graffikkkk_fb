@@ -7129,20 +7129,36 @@
         function displayChannelsTable(data) {
             const container = document.getElementById('channelsTableContainer');
 
-            if (!data || !data.buyerGroupsData || Object.keys(data.buyerGroupsData).length === 0) {
-                container.innerHTML = '<div style="text-align: center; color: #64748b; padding: 40px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;"><i class="fas fa-broadcast-tower" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><p style="font-size: 16px; font-weight: 500; margin: 0;">Нет данных каналов трафика</p></div>';
+            console.log("🚀 DisplayChannelsTable called with data:", data);
+            console.log("🔍 Data keys:", Object.keys(data || {}));
+            console.log("🔍 buyerGroupsData:", data?.buyerGroupsData);
+            console.log("🔍 rawData:", data?.rawData);
+
+            // Проверяем наличие данных
+            if (!data) {
+                console.log("❌ No data provided to displayChannelsTable");
+                container.innerHTML = '<div style="text-align: center; color: #64748b; padding: 40px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;"><i class="fas fa-broadcast-tower" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><p style="font-size: 16px; font-weight: 500; margin: 0;">Нет данных для каналов трафика</p></div>';
                 return;
             }
 
-            // Получаем все даты из общих данных
+            // ВСЕГДА используем buyerGroupsData для каналов трафика
+            if (!data.buyerGroupsData || Object.keys(data.buyerGroupsData).length === 0) {
+                console.log("❌ No buyerGroupsData found");
+                container.innerHTML = '<div style="text-align: center; color: #64748b; padding: 40px;">Нет данных по байерам для каналов трафика</div>';
+                return;
+            }
+
+            console.log("✅ Using buyerGroupsData with buyers:", Object.keys(data.buyerGroupsData));
+
             const allDates = data.generalData ? data.generalData.dates : [];
+            console.log("📅 All dates from generalData:", allDates);
             
             if (allDates.length === 0) {
+                console.log("❌ No dates found in generalData");
                 container.innerHTML = '<div style="text-align: center; color: #64748b; padding: 40px;">Нет данных по датам</div>';
                 return;
             }
 
-            // Получаем правильный порог CPL из сохраненных данных или используем 3.5
             const maxCPLThreshold = window.currentMaxCPL || 3.5;
 
             let html = `
@@ -7159,18 +7175,20 @@
                         <tbody>
             `;
 
+            const userStartDate = document.getElementById("periodStart").value;
+            const userEndDate = document.getElementById("periodEnd").value;
+
             let rowIndex = 0;
             Object.keys(data.buyerGroupsData).forEach((buyerName) => {
                 const buyerData = data.buyerGroupsData[buyerName];
                 const buyerId = `channels_buyer_${rowIndex++}`;
 
-                // Получаем период пользователя для расчетов
-                const userStartDate = document.getElementById("periodStart").value;
-                const userEndDate = document.getElementById("periodEnd").value;
+                console.log(`🔍 Processing buyer: ${buyerName}`, buyerData);
 
-                if (!buyerData.buyerData) return;
-
-                console.log(`🔍 Processing buyer ${buyerName}, accounts data:`, buyerData.buyerData.data.accounts);
+                if (!buyerData.buyerData || !buyerData.buyerData.data) {
+                    console.log(`❌ No buyerData.data for buyer: ${buyerName}`);
+                    return;
+                }
 
                 // Расчет агрегированных метрик для байера
                 const buyerPeriodMetrics = calculateAggregatedMetrics(buyerData.buyerData.data, 0, buyerData.buyerData.data.dates.length - 1, userStartDate, userEndDate);
@@ -7179,9 +7197,11 @@
                     calculateAggregatedMetrics(buyerData.buyerData.data, Math.min(...buyerLast7DaysIndices), Math.max(...buyerLast7DaysIndices)) : 
                     { avgCPL: "0,00", totalLeads: 0, totalSpend: "0,00" };
 
-                // Извлекаем уникальные аккаунты из общих данных по соответствию с байером
-                const buyerAccounts = extractAccountsFromData(data.generalData, buyerName);
-                console.log(`🔍 Extracted accounts for ${buyerName}:`, buyerAccounts);
+                console.log(`📊 Buyer ${buyerName} metrics:`, buyerPeriodMetrics);
+
+                // Извлекаем аккаунты из данных байера
+                const buyerAccounts = extractUniqueAccountsFromBuyerData(buyerData.buyerData.data);
+                console.log(`🔑 Accounts for ${buyerName}:`, buyerAccounts);
 
                 html += `
                     <tr class="lvl0" data-id="${buyerId}">
@@ -7209,7 +7229,6 @@
                             </div>
                         </td>
                         ${allDates.map(date => {
-                            // Находим индекс даты в данных байера
                             const dateIndex = buyerData.buyerData.data.dates.indexOf(date);
                             let totalLeads = 0, totalSpend = 0;
 
@@ -7240,9 +7259,12 @@
                 `;
 
                 // Добавляем строки для каждого аккаунта
+                console.log(`🔑 Adding ${buyerAccounts.length} accounts for buyer ${buyerName}:`, buyerAccounts);
                 buyerAccounts.forEach((accountName) => {
-                    const accountData = filterDataByAccount(data.generalData, accountName, allDates, buyerName);
-                    console.log(`🔍 Account data for ${accountName}:`, accountData);
+                    console.log(`🔍 Processing account: ${accountName} for buyer: ${buyerName}`);
+                    
+                    const accountData = filterBuyerDataByAccount(buyerData.buyerData.data, accountName, allDates);
+                    console.log(`📊 Account data for ${accountName}:`, accountData);
 
                     // Расчет метрик для аккаунта
                     const accountPeriodMetrics = calculateAggregatedMetrics(accountData, 0, accountData.dates.length - 1, userStartDate, userEndDate);
@@ -7279,7 +7301,6 @@
                                 </div>
                             </td>
                             ${allDates.map(date => {
-                                // Находим данные аккаунта для этой даты
                                 const dateIndex = accountData.dates.indexOf(date);
                                 let accountDayLeads = 0, accountDaySpend = 0;
 
@@ -7314,9 +7335,23 @@
             html += `</tbody></table></div>`;
             container.innerHTML = html;
 
+            console.log("✅ Channels table HTML created, checking structure:");
             setTimeout(() => {
+                const allRows = container.querySelectorAll('tr');
+                const buyerRows = container.querySelectorAll('.lvl0');
+                const accountRows = container.querySelectorAll('.lvl1');
+                console.log(`📊 Total rows: ${allRows.length}, Buyer rows: ${buyerRows.length}, Account rows: ${accountRows.length}`);
+                
                 setupChannelsToggles();
-            }, 50);
+                
+                // Принудительно показываем все аккаунты
+                const accountRowsAfter = container.querySelectorAll('.lvl1');
+                accountRowsAfter.forEach(row => {
+                    row.style.display = 'table-row';
+                    row.style.visibility = 'visible';
+                });
+                console.log(`🔧 Force-showing ${accountRowsAfter.length} account rows`);
+            }, 100);
         }
 
         function getChannelStatus(leads, spend, maxCPLThreshold = 3.5) {
@@ -7346,38 +7381,534 @@
         }
 
         function setupChannelsToggles() {
+            console.log("🔧 Setting up channels toggles");
             const toggles = document.querySelectorAll('#channelsTableContainer .calendar-toggle');
+            console.log("🔧 Found toggles:", toggles.length);
 
             function setChannelRowVisibility(parentId, visible) {
-                document.querySelectorAll(`#channelsTableContainer .child-of-${parentId}`).forEach(row => {
+                const childRows = document.querySelectorAll(`#channelsTableContainer .child-of-${parentId}`);
+                console.log(`🔧 Setting visibility for ${parentId}: ${visible}, found ${childRows.length} children`);
+                
+                childRows.forEach(row => {
                     if (visible) {
+                        row.style.display = 'table-row';
                         row.classList.add('visible');
                     } else {
+                        row.style.display = 'none';
                         row.classList.remove('visible');
                     }
                 });
             }
 
             toggles.forEach(toggle => {
-                toggle.addEventListener('click', () => {
+                toggle.addEventListener('click', (e) => {
+                    e.preventDefault();
                     const targetId = toggle.dataset.target;
                     const firstChild = document.querySelector(`#channelsTableContainer .child-of-${targetId}`);
-                    const willOpen = firstChild && !firstChild.classList.contains('visible');
+                    const willOpen = !firstChild || firstChild.style.display === 'none';
 
+                    console.log(`🔧 Toggle clicked for ${targetId}, willOpen: ${willOpen}`);
                     setChannelRowVisibility(targetId, willOpen);
                     toggle.textContent = willOpen ? '▾' : '▸';
                 });
             });
 
             // По умолчанию раскрываем всех байеров
+            console.log("🔧 Auto-expanding all buyers");
             toggles.forEach(toggle => {
                 const targetId = toggle.dataset.target;
+                console.log(`🔧 Auto-expanding ${targetId}`);
                 setChannelRowVisibility(targetId, true);
                 toggle.textContent = '▾';
             });
         }
 
         // Helper functions for channels
+        function buildChannelsFromRawData(rawRows, article) {
+            console.log("🏗️ Building channels from raw data:", rawRows.length, "rows");
+            
+            const structure = {
+                buyers: {},
+                allDates: new Set()
+            };
+
+            rawRows.forEach((row) => {
+                const trackerName = String(row.campaign_name_tracker || "").trim();
+                const sourceTracker = String(row.source_tracker || "").trim();
+                const dateObj = new Date(row.adv_date);
+                const leads = Number(row.valid) || 0;
+                const spend = Number(row.cost) || 0;
+
+                // Проверяем что tracker содержит артикул
+                if (!trackerName.includes(article) || !sourceTracker) return;
+
+                if (isNaN(dateObj.getTime())) return;
+
+                // Извлекаем байера из tracker (формат: "A00032 - Товар | Денис Л. | Facebook VL39 Romen 1.9")
+                const buyerInfo = parseCampaignName(trackerName);
+                if (!buyerInfo || !buyerInfo.buyer || buyerInfo.article !== article) return;
+
+                const buyerName = buyerInfo.buyer;
+                const dateStr = Utilities.formatDate(dateObj, "Europe/Kiev", "dd.MM.yyyy");
+                const accountName = sourceTracker; // source_tracker = название аккаунта
+
+                console.log(`🔍 RAW: buyer=${buyerName}, account=${accountName}, date=${dateStr}, leads=${leads}, spend=${spend}`);
+
+                // Добавляем дату в общий список
+                structure.allDates.add(dateStr);
+
+                // Инициализируем структуру байера
+                if (!structure.buyers[buyerName]) {
+                    structure.buyers[buyerName] = {
+                        dates: {},
+                        accounts: {}
+                    };
+                }
+
+                // Инициализируем структуру аккаунта
+                if (!structure.buyers[buyerName].accounts[accountName]) {
+                    structure.buyers[buyerName].accounts[accountName] = {
+                        dates: {}
+                    };
+                }
+
+                // Инициализируем данные за день для байера
+                if (!structure.buyers[buyerName].dates[dateStr]) {
+                    structure.buyers[buyerName].dates[dateStr] = { leads: 0, spend: 0 };
+                }
+
+                // Инициализируем данные за день для аккаунта
+                if (!structure.buyers[buyerName].accounts[accountName].dates[dateStr]) {
+                    structure.buyers[buyerName].accounts[accountName].dates[dateStr] = { leads: 0, spend: 0 };
+                }
+
+                // Добавляем данные
+                structure.buyers[buyerName].dates[dateStr].leads += leads;
+                structure.buyers[buyerName].dates[dateStr].spend += spend;
+                structure.buyers[buyerName].accounts[accountName].dates[dateStr].leads += leads;
+                structure.buyers[buyerName].accounts[accountName].dates[dateStr].spend += spend;
+            });
+
+            // Конвертируем Set в массив для дат
+            structure.allDates = Array.from(structure.allDates).sort((a, b) => {
+                const [dayA, monthA, yearA] = a.split('.').map(Number);
+                const [dayB, monthB, yearB] = b.split('.').map(Number);
+                return yearA - yearB || monthA - monthB || dayA - dayB;
+            });
+
+            console.log("✅ Channels structure from raw data:", structure);
+            return structure;
+        }
+
+        function calculateChannelMetricsFromRaw(channelData, allDates, userStartDate = null, userEndDate = null, last7Days = false) {
+            let totalLeads = 0, totalSpend = 0;
+            let datesInPeriod = [];
+
+            // Определяем период для расчета
+            if (last7Days) {
+                // Берем последние 7 активных дней
+                const activeDatesDesc = allDates.slice().reverse().filter(date => {
+                    const dayData = channelData.dates ? channelData.dates[date] : null;
+                    if (!dayData) {
+                        // Проверяем в аккаунтах
+                        if (channelData.accounts) {
+                            const hasActivity = Object.values(channelData.accounts).some(account => {
+                                const accountDayData = account.dates[date];
+                                return accountDayData && (accountDayData.leads > 0 || accountDayData.spend > 0);
+                            });
+                            return hasActivity;
+                        }
+                        return false;
+                    }
+                    return dayData.leads > 0 || dayData.spend > 0;
+                }).slice(0, 7);
+                datesInPeriod = activeDatesDesc.reverse();
+            } else if (userStartDate && userEndDate) {
+                // Фильтруем по пользовательскому периоду
+                const userStartForComparison = new Date(userStartDate);
+                userStartForComparison.setHours(0, 0, 0, 0);
+                const userEndForComparison = new Date(userEndDate);
+                userEndForComparison.setHours(23, 59, 59, 999);
+
+                datesInPeriod = allDates.filter(dateStr => {
+                    const [day, month, year] = dateStr.split('.');
+                    const currentDateForComparison = new Date(year, month - 1, day);
+                    currentDateForComparison.setHours(12, 0, 0, 0);
+                    
+                    return currentDateForComparison >= userStartForComparison && currentDateForComparison <= userEndForComparison;
+                });
+            } else {
+                // Весь период
+                datesInPeriod = allDates;
+            }
+
+            // Считаем метрики
+            datesInPeriod.forEach(date => {
+                let dayLeads = 0, daySpend = 0;
+
+                if (channelData.dates && channelData.dates[date]) {
+                    // Данные байера
+                    dayLeads = channelData.dates[date].leads || 0;
+                    daySpend = channelData.dates[date].spend || 0;
+                } else if (channelData.accounts) {
+                    // Суммируем по аккаунтам
+                    Object.values(channelData.accounts).forEach(account => {
+                        if (account.dates[date]) {
+                            dayLeads += account.dates[date].leads || 0;
+                            daySpend += account.dates[date].spend || 0;
+                        }
+                    });
+                }
+
+                totalLeads += dayLeads;
+                totalSpend += daySpend;
+            });
+
+            const avgCPL = totalLeads > 0 ? (totalSpend / totalLeads) : 0;
+
+            return {
+                totalLeads: totalLeads,
+                totalSpend: totalSpend.toFixed(2).replace('.', ','),
+                avgCPL: avgCPL.toFixed(2).replace('.', ',')
+            };
+        }
+
+        function buildChannelsStructure(rawRows, article) {
+            console.log("🏗️ Building channels structure from raw data");
+            
+            const structure = {
+                buyers: {},
+                allDates: new Set()
+            };
+
+            rawRows.forEach((row) => {
+                const trackerName = String(row.campaign_name_tracker || "").trim();
+                const sourceTracker = String(row.source_tracker || "").trim();
+                const dateObj = new Date(row.adv_date);
+                const leads = Number(row.valid) || 0;
+                const spend = Number(row.cost) || 0;
+
+                // Проверяем что tracker содержит артикул
+                if (!trackerName.includes(article) || !sourceTracker) return;
+
+                if (isNaN(dateObj.getTime())) return;
+
+                // Извлекаем байера из tracker
+                const buyerInfo = parseCampaignName(trackerName);
+                if (!buyerInfo || !buyerInfo.buyer || buyerInfo.article !== article) return;
+
+                const buyerName = buyerInfo.buyer;
+                const dateStr = Utilities.formatDate(dateObj, "Europe/Kiev", "dd.MM.yyyy");
+
+                console.log(`🔍 Processing: buyer=${buyerName}, account=${sourceTracker}, date=${dateStr}, leads=${leads}, spend=${spend}`);
+
+                // Добавляем дату в общий список
+                structure.allDates.add(dateStr);
+
+                // Инициализируем структуру байера
+                if (!structure.buyers[buyerName]) {
+                    structure.buyers[buyerName] = {
+                        dates: {},
+                        accounts: {}
+                    };
+                }
+
+                // Инициализируем структуру аккаунта
+                if (!structure.buyers[buyerName].accounts[sourceTracker]) {
+                    structure.buyers[buyerName].accounts[sourceTracker] = {
+                        dates: {}
+                    };
+                }
+
+                // Инициализируем данные за день для байера
+                if (!structure.buyers[buyerName].dates[dateStr]) {
+                    structure.buyers[buyerName].dates[dateStr] = { leads: 0, spend: 0 };
+                }
+
+                // Инициализируем данные за день для аккаунта
+                if (!structure.buyers[buyerName].accounts[sourceTracker].dates[dateStr]) {
+                    structure.buyers[buyerName].accounts[sourceTracker].dates[dateStr] = { leads: 0, spend: 0 };
+                }
+
+                // Добавляем данные
+                structure.buyers[buyerName].dates[dateStr].leads += leads;
+                structure.buyers[buyerName].dates[dateStr].spend += spend;
+                structure.buyers[buyerName].accounts[sourceTracker].dates[dateStr].leads += leads;
+                structure.buyers[buyerName].accounts[sourceTracker].dates[dateStr].spend += spend;
+            });
+
+            // Конвертируем Set в массив для дат
+            structure.allDates = Array.from(structure.allDates).sort((a, b) => {
+                const [dayA, monthA, yearA] = a.split('.').map(Number);
+                const [dayB, monthB, yearB] = b.split('.').map(Number);
+                return yearA - yearB || monthA - monthB || dayA - dayB;
+            });
+
+            console.log("✅ Channels structure built:", structure);
+            return structure;
+        }
+
+        
+
+        function extractUniqueAccountsFromBuyerData(buyerData) {
+            const accounts = new Set();
+            
+            if (buyerData.accounts && Array.isArray(buyerData.accounts)) {
+                buyerData.accounts.forEach(dayAccounts => {
+                    if (dayAccounts && dayAccounts.trim() !== "") {
+                        const accountLines = dayAccounts.split('\n').filter(acc => acc.trim() !== "");
+                        accountLines.forEach(account => {
+                            if (account.trim() !== "") {
+                                accounts.add(account.trim());
+                            }
+                        });
+                    }
+                });
+            }
+            
+            return Array.from(accounts);
+        }
+
+        function filterBuyerDataByAccount(buyerData, targetAccount, allDates) {
+            const filteredData = {
+                dates: [],
+                leadsDay: [],
+                spendDay: [],
+                costFromSourcesDay: [],
+                conversionDay: [],
+                accounts: []
+            };
+            
+            console.log(`🔍 Filtering buyer data for account: ${targetAccount}`);
+            console.log(`🔍 Buyer data dates:`, buyerData.dates);
+            console.log(`🔍 Buyer data accounts sample:`, buyerData.accounts ? buyerData.accounts.slice(0, 3) : 'No accounts');
+            
+            // Проходим по всем датам из общего периода
+            allDates.forEach(date => {
+                const dataIndex = buyerData.dates.indexOf(date);
+                if (dataIndex >= 0) {
+                    const dayAccounts = buyerData.accounts ? buyerData.accounts[dataIndex] : "";
+                    
+                    // Проверяем, есть ли аккаунт в этом дне
+                    if (dayAccounts && dayAccounts.includes(targetAccount)) {
+                        console.log(`✅ Found account ${targetAccount} on date ${date}`);
+                        filteredData.dates.push(date);
+                        
+                        // Считаем количество аккаунтов в этот день для этого байера
+                        const accountsInDay = dayAccounts.split('\n').filter(acc => acc.trim() !== "");
+                        const accountWeight = accountsInDay.length > 0 ? (1 / accountsInDay.length) : 1;
+                        
+                        const dayLeads = (buyerData.leadsDay[dataIndex] || 0) * accountWeight;
+                        const daySpend = (buyerData.spendDay[dataIndex] || 0) * accountWeight;
+                        
+                        filteredData.leadsDay.push(Math.round(dayLeads));
+                        filteredData.spendDay.push(daySpend);
+                        filteredData.costFromSourcesDay.push(buyerData.costFromSourcesDay ? (buyerData.costFromSourcesDay[dataIndex] || 0) * accountWeight : 0);
+                        filteredData.conversionDay.push(buyerData.conversionDay ? buyerData.conversionDay[dataIndex] || "0.00%" : "0.00%");
+                        filteredData.accounts.push(targetAccount);
+                    } else {
+                        // Если аккаунта нет в этот день, добавляем нули
+                        filteredData.dates.push(date);
+                        filteredData.leadsDay.push(0);
+                        filteredData.spendDay.push(0);
+                        filteredData.costFromSourcesDay.push(0);
+                        filteredData.conversionDay.push("0.00%");
+                        filteredData.accounts.push("");
+                    }
+                } else {
+                    // Если даты нет в данных, добавляем нули
+                    filteredData.dates.push(date);
+                    filteredData.leadsDay.push(0);
+                    filteredData.spendDay.push(0);
+                    filteredData.costFromSourcesDay.push(0);
+                    filteredData.conversionDay.push("0.00%");
+                    filteredData.accounts.push("");
+                }
+            });
+            
+            console.log(`🔍 Filtered data for ${targetAccount}:`, filteredData);
+            return filteredData;
+        }
+
+        function displayChannelsTableFallback(data) {
+            console.log("🔄 Using fallback channels display with buyerGroupsData");
+            const container = document.getElementById('channelsTableContainer');
+
+            // Простое отображение с использованием buyerGroupsData
+            if (!data.buyerGroupsData || Object.keys(data.buyerGroupsData).length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #64748b; padding: 40px;">Нет данных каналов трафика</div>';
+                return;
+            }
+
+            const allDates = data.generalData ? data.generalData.dates : [];
+            const maxCPLThreshold = window.currentMaxCPL || 3.5;
+
+            let html = `
+                <div class="calendar-container">
+                    <table class="calendar-table">
+                        <thead>
+                            <tr>
+                                <th>Байер</th>
+                                <th style="background-color: #1b2335 !important; color: white !important; min-width: 120px;">Период</th>
+                                <th style="background-color: #232a3b !important; color: white !important; min-width: 120px;">7дн.</th>
+                                ${allDates.map(date => `<th>${date}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            const userStartDate = document.getElementById("periodStart").value;
+            const userEndDate = document.getElementById("periodEnd").value;
+
+            Object.keys(data.buyerGroupsData).forEach((buyerName) => {
+                const buyerData = data.buyerGroupsData[buyerName];
+                if (!buyerData.buyerData) return;
+
+                const buyerPeriodMetrics = calculateAggregatedMetrics(buyerData.buyerData.data, 0, buyerData.buyerData.data.dates.length - 1, userStartDate, userEndDate);
+                const buyerLast7DaysIndices = getLast7ActiveDaysIndices(buyerData.buyerData.data);
+                const buyerLast7DaysMetrics = buyerLast7DaysIndices.length > 0 ? 
+                    calculateAggregatedMetrics(buyerData.buyerData.data, Math.min(...buyerLast7DaysIndices), Math.max(...buyerLast7DaysIndices)) : 
+                    { avgCPL: "0,00", totalLeads: 0, totalSpend: "0,00" };
+
+                html += `
+                    <tr class="lvl0">
+                        <td>
+                            <div class="calendar-row">
+                                <div class="calendar-info">
+                                    <div class="calendar-name">👤 ${escapeHtml(buyerName)}</div>
+                                    <div class="calendar-alias">медиабайер</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding: 0;">
+                            <div class="calendar-cell" style="background-color: #1b2335 !important; border-color: #334155 !important; color: white !important; margin: 2px;">
+                                <div class="calendar-metric" style="color: white !important;">Лиды: ${buyerPeriodMetrics.totalLeads}</div>
+                                <div class="calendar-metric" style="color: white !important;">CPL: ${buyerPeriodMetrics.avgCPL}</div>
+                                <div class="calendar-metric" style="color: white !important;">Расх.: ${buyerPeriodMetrics.totalSpend}</div>
+                            </div>
+                        </td>
+                        <td style="padding: 0;">
+                            <div class="calendar-cell" style="background-color: #232a3b !important; border-color: #334155 !important; color: white !important; margin: 2px;">
+                                <div class="calendar-metric" style="color: white !important;">Лиды: ${buyerLast7DaysMetrics.totalLeads}</div>
+                                <div class="calendar-metric" style="color: white !important;">CPL: ${buyerLast7DaysMetrics.avgCPL}</div>
+                                <div class="calendar-metric" style="color: white !important;">Расх.: ${buyerLast7DaysMetrics.totalSpend}</div>
+                            </div>
+                        </td>
+                        ${allDates.map(date => {
+                            const dateIndex = buyerData.buyerData.data.dates.indexOf(date);
+                            let totalLeads = 0, totalSpend = 0;
+
+                            if (dateIndex >= 0) {
+                                totalLeads = buyerData.buyerData.data.leadsDay[dateIndex] || 0;
+                                totalSpend = buyerData.buyerData.data.spendDay[dateIndex] || 0;
+                            }
+
+                            const dayStatus = getChannelStatus(totalLeads, totalSpend, maxCPLThreshold);
+                            const formatCPL = (leads, spend) => {
+                                if (spend === 0 && leads === 0) return '—';
+                                if (spend > 0 && leads === 0) return '—';
+                                const cpl = leads > 0 ? spend / leads : 0;
+                                return cpl > 0 ? cpl.toFixed(2).replace('.', ',') : '—';
+                            };
+
+                            return `
+                                <td>
+                                    <div class="calendar-cell ${dayStatus}">
+                                        <div class="calendar-metric">Лиды: ${totalLeads}</div>
+                                        <div class="calendar-metric">CPL: ${formatCPL(totalLeads, totalSpend)}</div>
+                                        <div class="calendar-metric">Расх.: ${totalSpend > 0 ? totalSpend.toFixed(2).replace('.', ',') : '—'}</div>
+                                    </div>
+                                </td>
+                            `;
+                        }).join('')}
+                    </tr>
+                `;
+            });
+
+            html += `</tbody></table></div>`;
+            container.innerHTML = html;
+        }
+
+        function calculateChannelMetrics(channelData, allDates, userStartDate = null, userEndDate = null, last7Days = false) {
+            let totalLeads = 0, totalSpend = 0;
+            let activeDays = 0;
+            let datesInPeriod = [];
+
+            // Определяем период для расчета
+            if (last7Days) {
+                // Берем последние 7 активных дней
+                const activeDatesDesc = allDates.slice().reverse().filter(date => {
+                    const dayData = channelData.dates ? channelData.dates[date] : null;
+                    if (!dayData) {
+                        // Проверяем в аккаунтах
+                        if (channelData.accounts) {
+                            const hasActivity = Object.values(channelData.accounts).some(account => {
+                                const accountDayData = account.dates[date];
+                                return accountDayData && (accountDayData.leads > 0 || accountDayData.spend > 0);
+                            });
+                            return hasActivity;
+                        }
+                        return false;
+                    }
+                    return dayData.leads > 0 || dayData.spend > 0;
+                }).slice(0, 7);
+                datesInPeriod = activeDatesDesc.reverse();
+            } else if (userStartDate && userEndDate) {
+                // Фильтруем по пользовательскому периоду
+                const userStartForComparison = new Date(userStartDate);
+                userStartForComparison.setHours(0, 0, 0, 0);
+                const userEndForComparison = new Date(userEndDate);
+                userEndForComparison.setHours(23, 59, 59, 999);
+
+                datesInPeriod = allDates.filter(dateStr => {
+                    const [day, month, year] = dateStr.split('.');
+                    const currentDateForComparison = new Date(year, month - 1, day);
+                    currentDateForComparison.setHours(12, 0, 0, 0);
+                    
+                    return currentDateForComparison >= userStartForComparison && currentDateForComparison <= userEndForComparison;
+                });
+            } else {
+                // Весь период
+                datesInPeriod = allDates;
+            }
+
+            console.log(`🔍 Calculating metrics for period:`, datesInPeriod);
+
+            // Считаем метрики
+            datesInPeriod.forEach(date => {
+                let dayLeads = 0, daySpend = 0;
+
+                if (channelData.dates && channelData.dates[date]) {
+                    // Данные байера
+                    dayLeads = channelData.dates[date].leads || 0;
+                    daySpend = channelData.dates[date].spend || 0;
+                } else if (channelData.accounts) {
+                    // Суммируем по аккаунтам
+                    Object.values(channelData.accounts).forEach(account => {
+                        if (account.dates[date]) {
+                            dayLeads += account.dates[date].leads || 0;
+                            daySpend += account.dates[date].spend || 0;
+                        }
+                    });
+                }
+
+                if (dayLeads > 0 || daySpend > 0) {
+                    totalLeads += dayLeads;
+                    totalSpend += daySpend;
+                    activeDays++;
+                }
+            });
+
+            const avgCPL = totalLeads > 0 ? (totalSpend / totalLeads) : 0;
+
+            return {
+                totalLeads: totalLeads,
+                totalSpend: totalSpend.toFixed(2).replace('.', ','),
+                avgCPL: avgCPL.toFixed(2).replace('.', ','),
+                activeDays: activeDays
+            };
+        }
+
         function extractAccountsFromData(generalData, buyerName) {
             const accounts = new Set();
             
