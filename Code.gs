@@ -1558,6 +1558,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 cplCumulativeColors: [],
                 cplCumulativeArrows: [],
                 groups: [],
+                accounts: [],
                 freq: [],
                 ctr: [],
                 cpm: [],
@@ -1616,11 +1617,13 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     segmentData.maxCPL.push(displayMaxCPL);
                     segmentData.ratings.push("");
 
-                    // Группы для байера (даже для нулевых дней)
+                    // Группы и аккаунты для байера (даже для нулевых дней)
                     if (segmentType === "buyer") {
                         segmentData.groups.push("");
+                        segmentData.accounts.push("");
                     } else {
                         segmentData.groups.push("");
+                        segmentData.accounts.push("");
                     }
 
                     // ОБРАБАТЫВАЕМ Facebook метрики даже для неактивных дней
@@ -1661,7 +1664,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 segmentData.conversionDay.push(segmentDayConversionText);
                 segmentData.maxCPL.push(displayMaxCPL);
 
-                // Группы для байера
+                // Группы и аккаунты для байера
                 if (segmentType === "buyer") {
                     const dayGroupsForBuyer = groupsByDate[dateKey]
                         ? groupsByDate[dateKey].filter((group) => {
@@ -1677,8 +1680,20 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                         )
                     ).reverse();
                     segmentData.groups.push(uniqueGroupsForBuyer.join("\n"));
+                    
+                    // Добавляем аккаунты для байера
+                    const dayAccountsForBuyer = accountsByDate[dateKey] || [];
+                    const uniqueAccountsForBuyer = Array.from(
+                        new Set(
+                            dayAccountsForBuyer.filter(
+                                (acc) => acc !== undefined && acc !== null && acc !== ""
+                            )
+                        )
+                    );
+                    segmentData.accounts.push(uniqueAccountsForBuyer.join("\n"));
                 } else {
                     segmentData.groups.push("");
+                    segmentData.accounts.push("");
                 }
 
                 if (dayLeads > 0 || daySpend > 0) activeDaysSegment++;
@@ -1790,6 +1805,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 cplCumulativeColors: [],
                 cplCumulativeArrows: [],
                 groups: [],
+                accounts: [],
                 freq: [],
                 ctr: [],
                 cpm: [],
@@ -1824,6 +1840,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     newSegmentData.cplCumulativeColors.push("gray");
                     newSegmentData.cplCumulativeArrows.push("");
                     newSegmentData.groups.push("");
+                    newSegmentData.accounts.push("");
                     newSegmentData.freq.push("");
                     newSegmentData.ctr.push("");
                     newSegmentData.cpm.push("");
@@ -1859,6 +1876,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                             segmentData.cplCumulativeArrows[i]
                         );
                         newSegmentData.groups.push(segmentData.groups[i]);
+                        newSegmentData.accounts.push(segmentData.accounts[i]);
                         newSegmentData.freq.push(segmentData.freq[i]);
                         newSegmentData.ctr.push(segmentData.ctr[i]);
                         newSegmentData.cpm.push(segmentData.cpm[i]);
