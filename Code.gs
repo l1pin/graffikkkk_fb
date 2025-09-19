@@ -300,106 +300,6 @@ function openAnalyticsWebApp() {
 }
 
 /**
- * Функция для построения анализа каналов трафика
- */
-function buildChannelsAnalysisData(article, periodStart, periodEnd) {
-    console.log("🚀 Building channels analysis for:", article);
-    
-    try {
-        // Используем ту же логику что и в основной функции, но группируем по байерам и аккаунтам
-        const mainResult = buildChartForArticle(article, periodStart, periodEnd);
-        
-        if (mainResult.error) {
-            return { error: mainResult.error };
-        }
-        
-        // Создаем структуру каналов на основе данных байеров
-        const channelsData = {};
-        
-        // Проходим по данным байеров и их аккаунтам
-        Object.keys(mainResult.buyerGroupsData || {}).forEach(buyerName => {
-            const buyerData = mainResult.buyerGroupsData[buyerName];
-            
-            if (buyerData && buyerData.buyerData) {
-                channelsData[buyerName] = {
-                    data: buyerData.buyerData.data,
-                    accounts: {}
-                };
-                
-                // Извлекаем аккаунты из данных байера
-                const buyerAccounts = extractAccountsFromBuyerData(buyerData.buyerData.data);
-                
-                buyerAccounts.forEach(accountName => {
-                    // Фильтруем данные по аккаунту
-                    const accountData = filterDataByAccount(buyerData.buyerData.data, accountName);
-                    channelsData[buyerName].accounts[accountName] = accountData;
-                });
-            }
-        });
-        
-        return {
-            article: mainResult.article,
-            channelsData: channelsData,
-            generalMetrics: mainResult.generalMetrics
-        };
-        
-    } catch (error) {
-        console.error("❌ Error in buildChannelsAnalysisData:", error);
-        return { error: error.toString() };
-    }
-}
-
-/**
- * Извлечение аккаунтов из данных байера
- */
-function extractAccountsFromBuyerData(buyerData) {
-    const accounts = new Set();
-    
-    if (buyerData.accounts) {
-        buyerData.accounts.forEach(dayAccounts => {
-            if (dayAccounts && dayAccounts.trim() !== "") {
-                const accountLines = dayAccounts.split('\n').filter(acc => acc.trim() !== "");
-                accountLines.forEach(account => {
-                    if (account.trim() !== "") {
-                        accounts.add(account.trim());
-                    }
-                });
-            }
-        });
-    }
-    
-    return Array.from(accounts);
-}
-
-/**
- * Фильтрация данных по конкретному аккаунту
- */
-function filterDataByAccount(buyerData, targetAccount) {
-    const filteredData = {
-        dates: [],
-        leadsDay: [],
-        spendDay: [],
-        costFromSourcesDay: [],
-        conversionDay: []
-    };
-    
-    for (let i = 0; i < buyerData.dates.length; i++) {
-        const dayAccounts = buyerData.accounts ? buyerData.accounts[i] : "";
-        
-        // Проверяем, есть ли целевой аккаунт в этом дне
-        if (dayAccounts && dayAccounts.includes(targetAccount)) {
-            filteredData.dates.push(buyerData.dates[i]);
-            filteredData.leadsDay.push(buyerData.leadsDay[i] || 0);
-            filteredData.spendDay.push(buyerData.spendDay[i] || 0);
-            filteredData.costFromSourcesDay.push(buyerData.costFromSourcesDay ? buyerData.costFromSourcesDay[i] || 0 : 0);
-            filteredData.conversionDay.push(buyerData.conversionDay ? buyerData.conversionDay[i] || "0.00%" : "0.00%");
-        }
-    }
-    
-    return filteredData;
-}
-
-/**
  * Основная функция для построения аналитики - для веб-интерфейса
  */
 function buildChartForArticle(article, periodStart, periodEnd) {
@@ -914,9 +814,6 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             console.log("🔍 No date filter applied - showing all dates");
         }
 
-        // Глобальная переменная для хранения исходных данных
-        let globalRawDataForChannels = null;
-
         // ОБЪЕДИНЕННЫЙ SQL запрос для получения всех данных одним запросом
         const combinedSql = `
       SELECT 
@@ -982,8 +879,6 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             }
 
             console.log("✅ Данные успешно получены:", allData.length, "записей");
-            // Сохраняем исходные данные для каналов трафика
-        globalRawDataForChannels = allData;
         } catch (error) {
             console.log("❌ Ошибка при получении данных:", error);
             if (error.message.includes("📊")) {
@@ -1558,7 +1453,6 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 cplCumulativeColors: [],
                 cplCumulativeArrows: [],
                 groups: [],
-                accounts: [],
                 freq: [],
                 ctr: [],
                 cpm: [],
@@ -1617,13 +1511,11 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     segmentData.maxCPL.push(displayMaxCPL);
                     segmentData.ratings.push("");
 
-                    // Группы и аккаунты для байера (даже для нулевых дней)
+                    // Группы для байера (даже для нулевых дней)
                     if (segmentType === "buyer") {
                         segmentData.groups.push("");
-                        segmentData.accounts.push("");
                     } else {
                         segmentData.groups.push("");
-                        segmentData.accounts.push("");
                     }
 
                     // ОБРАБАТЫВАЕМ Facebook метрики даже для неактивных дней
@@ -1664,7 +1556,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 segmentData.conversionDay.push(segmentDayConversionText);
                 segmentData.maxCPL.push(displayMaxCPL);
 
-                // Группы и аккаунты для байера
+                // Группы для байера
                 if (segmentType === "buyer") {
                     const dayGroupsForBuyer = groupsByDate[dateKey]
                         ? groupsByDate[dateKey].filter((group) => {
@@ -1680,20 +1572,8 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                         )
                     ).reverse();
                     segmentData.groups.push(uniqueGroupsForBuyer.join("\n"));
-                    
-                    // Добавляем аккаунты для байера
-                    const dayAccountsForBuyer = accountsByDate[dateKey] || [];
-                    const uniqueAccountsForBuyer = Array.from(
-                        new Set(
-                            dayAccountsForBuyer.filter(
-                                (acc) => acc !== undefined && acc !== null && acc !== ""
-                            )
-                        )
-                    );
-                    segmentData.accounts.push(uniqueAccountsForBuyer.join("\n"));
                 } else {
                     segmentData.groups.push("");
-                    segmentData.accounts.push("");
                 }
 
                 if (dayLeads > 0 || daySpend > 0) activeDaysSegment++;
@@ -1805,7 +1685,6 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 cplCumulativeColors: [],
                 cplCumulativeArrows: [],
                 groups: [],
-                accounts: [],
                 freq: [],
                 ctr: [],
                 cpm: [],
@@ -1840,7 +1719,6 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     newSegmentData.cplCumulativeColors.push("gray");
                     newSegmentData.cplCumulativeArrows.push("");
                     newSegmentData.groups.push("");
-                    newSegmentData.accounts.push("");
                     newSegmentData.freq.push("");
                     newSegmentData.ctr.push("");
                     newSegmentData.cpm.push("");
@@ -1876,7 +1754,6 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                             segmentData.cplCumulativeArrows[i]
                         );
                         newSegmentData.groups.push(segmentData.groups[i]);
-                        newSegmentData.accounts.push(segmentData.accounts[i]);
                         newSegmentData.freq.push(segmentData.freq[i]);
                         newSegmentData.ctr.push(segmentData.ctr[i]);
                         newSegmentData.cpm.push(segmentData.cpm[i]);
@@ -2727,7 +2604,6 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             generalData: generalData,
             buyerGroupsData: buyerGroupsData,
             calendarData: calendarData,
-            rawData: globalRawDataForChannels,
             generalMetrics: {
                 activeDays: activeDays,
                 daysInNorm: daysInNorm,
