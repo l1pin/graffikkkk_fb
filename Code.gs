@@ -300,6 +300,24 @@ function openAnalyticsWebApp() {
 }
 
 /**
+ * Функция для парсинга результатов из базы данных
+ */
+function parseDbResults(data) {
+    if (!data || data.length < 2) return [];
+
+    const headers = data[0];
+    const rows = data.slice(1);
+
+    return rows.map((row) => {
+        const obj = {};
+        headers.forEach((header, index) => {
+            obj[header] = row[index];
+        });
+        return obj;
+    });
+}
+
+/**
  * Основная функция для построения аналитики - для веб-интерфейса
  */
 function buildChartForArticle(article, periodStart, periodEnd) {
@@ -518,20 +536,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             }
         }
 
-        function parseDbResults(data) {
-            if (!data || data.length < 2) return [];
-
-            const headers = data[0];
-            const rows = data.slice(1);
-
-            return rows.map((row) => {
-                const obj = {};
-                headers.forEach((header, index) => {
-                    obj[header] = row[index];
-                });
-                return obj;
-            });
-        }
+        // parseDbResults теперь вынесена как отдельная функция
 
         if (!article || article.trim() === "") {
             console.log("❌ Пустой артикул");
@@ -2687,4 +2692,155 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             `⚠️ Произошла неожиданная ошибка!\n\nАртикул: ${article}\n\nТехническая информация:\n${error.message}\n\nРекомендации:\n• Обновите страницу и попробуйте снова\n• Проверьте правильность введенных данных\n• Обратитесь к администратору`
         );
     }
+}
+
+/**
+ * Функция для анализа общих данных по байерам и аккаунтам
+ */
+function buildGeneralDataAnalysis(periodStart, periodEnd) {
+    console.log("🔥 =================================");
+    console.log("🔥 НАЧАЛО ФУНКЦИИ buildGeneralDataAnalysis");
+    console.log("🔥 Период с:", periodStart);
+    console.log("🔥 Период до:", periodEnd);
+    console.log("🔥 =================================");
+
+    try {
+        // Строим SQL запрос для получения всех данных
+        let dateFilter = "";
+        if (periodStart && periodEnd) {
+            dateFilter = ` AND \`adv_date\` >= '${periodStart}' AND \`adv_date\` <= '${periodEnd}'`;
+        } else if (periodStart) {
+            const todayStr = Utilities.formatDate(new Date(), "Europe/Kiev", "yyyy-MM-dd");
+            dateFilter = ` AND \`adv_date\` >= '${periodStart}' AND \`adv_date\` <= '${todayStr}'`;
+        } else if (periodEnd) {
+            dateFilter = ` AND \`adv_date\` <= '${periodEnd}'`;
+        }
+
+        const sql = `
+            SELECT 
+                campaign_name_tracker,
+                source_tracker,
+                adv_date,
+                cost,
+                valid
+            FROM \`ads_collection\`
+            WHERE \`source\` = 'facebook'
+                AND \`campaign_name_tracker\` IS NOT NULL 
+                AND \`campaign_name_tracker\` != ''${dateFilter}
+            ORDER BY adv_date
+        `;
+
+        console.log("🔍 SQL запрос:", sql);
+
+        const rawData = getDataBySql(sql);
+        if (!rawData || rawData.length === 0) {
+            throw new Error("📊 Данные не найдены за выбранный период");
+        }
+
+        const allRows = parseDbResults(rawData);
+        console.log("📈 Всего строк из базы:", allRows.length);
+
+        // Парсим байеров и группируем данные
+        const buyerAccountData = {};
+        const allDates = new Set();
+
+        allRows.forEach(row => {
+            const trackerName = String(row.campaign_name_tracker || "").trim();
+            const sourceTracker = String(row.source_tracker || "").trim();
+            const advDate = row.adv_date;
+            const cost = Number(row.cost) || 0;
+            const leads = Number(row.valid) || 0;
+
+            if (!trackerName || !advDate) return;
+
+            // Извлекаем байера из названия трекера
+            const buyerName = extractBuyerFromTrackerName(trackerName);
+            if (!buyerName) return;
+
+            const dateStr = Utilities.formatDate(new Date(advDate), "Europe/Kiev", "dd.MM.yyyy");
+            allDates.add(dateStr);
+
+            // Инициализируем структуру для байера
+            if (!buyerAccountData[buyerName]) {
+                buyerAccountData[buyerName] = {
+                    accounts: {}
+                };
+            }
+
+            // Инициализируем структуру для аккаунта
+            if (!buyerAccountData[buyerName].accounts[sourceTracker]) {
+                buyerAccountData[buyerName].accounts[sourceTracker] = {};
+            }
+
+            // Инициализируем данные для даты
+            if (!buyerAccountData[buyerName].accounts[sourceTracker][dateStr]) {
+                buyerAccountData[buyerName].accounts[sourceTracker][dateStr] = {
+                    cost: 0,
+                    leads: 0
+                };
+            }
+
+            // Добавляем данные
+            buyerAccountData[buyerName].accounts[sourceTracker][dateStr].cost += cost;
+            buyerAccountData[buyerName].accounts[sourceTracker][dateStr].leads += leads;
+        });
+
+        // Сортируем даты
+        const sortedDates = Array.from(allDates).sort((a, b) => {
+            const [dayA, monthA, yearA] = a.split('.').map(Number);
+            const [dayB, monthB, yearB] = b.split('.').map(Number);
+            return yearA - yearB || monthA - monthB || dayA - dayB;
+        });
+
+        console.log("📊 Найдено байеров:", Object.keys(buyerAccountData).length);
+        console.log("📅 Период дат:", sortedDates.length, "дней");
+
+        return {
+            buyerAccountData: buyerAccountData,
+            dates: sortedDates
+        };
+
+    } catch (error) {
+        console.log("❌ Ошибка в buildGeneralDataAnalysis:", error);
+        throw error;
+    }
+}
+
+/**
+ * Извлекает имя байера из названия трекера
+ */
+function extractBuyerFromTrackerName(trackerName) {
+    // Формат: "A00040 - Набір щіток | Андрей Д. | Facebook VL16"
+    const parts = trackerName.split(' | ');
+    if (parts.length >= 2) {
+        let buyerName = parts[1].trim();
+        
+        // Убираем все пробелы
+        buyerName = buyerName.replace(/\s+/g, ' ');
+        
+        // Ищем первую точку или запятую
+        const dotIndex = buyerName.indexOf('.');
+        const commaIndex = buyerName.indexOf(',');
+        
+        let cutIndex = -1;
+        if (dotIndex !== -1 && commaIndex !== -1) {
+            // Если есть и точка и запятая, берем первую из них
+            cutIndex = Math.min(dotIndex, commaIndex);
+        } else if (dotIndex !== -1) {
+            cutIndex = dotIndex;
+        } else if (commaIndex !== -1) {
+            cutIndex = commaIndex;
+        }
+        
+        if (cutIndex !== -1) {
+            // Обрезаем до первой точки/запятой и добавляем точку
+            buyerName = buyerName.substring(0, cutIndex) + '.';
+        } else {
+            // Если нет ни точки ни запятой, добавляем точку в конец
+            buyerName = buyerName + '.';
+        }
+        
+        return buyerName;
+    }
+    return null;
 }
