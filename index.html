@@ -7135,17 +7135,32 @@
             console.log("🚀 DisplayChannelsTable called with data:", data);
 
             // Проверяем наличие данных
-            if (!data || !data.rawData) {
-                console.log("❌ No rawData provided to displayChannelsTable");
+            if (!data) {
+                console.log("❌ No data provided to displayChannelsTable");
                 container.innerHTML = '<div style="text-align: center; color: #64748b; padding: 40px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;"><i class="fas fa-broadcast-tower" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><p style="font-size: 16px; font-weight: 500; margin: 0;">Нет данных для каналов трафика</p></div>';
                 return;
             }
 
-            console.log("🔍 Using rawData with", data.rawData.length, "records");
-
-            // Строим структуру каналов из исходных данных базы
-            const channelsStructure = buildChannelsFromRawData(data.rawData, data.article);
-            console.log("🏗️ Built channels structure:", channelsStructure);
+            // Попробуем использовать rawData, если нет - используем buyerGroupsData
+            let channelsStructure = null;
+            
+            if (data.rawData && data.rawData.length > 0) {
+                console.log("🔍 Using rawData with", data.rawData.length, "records");
+                try {
+                    channelsStructure = buildChannelsFromRawData(data.rawData, data.article);
+                    console.log("🏗️ Built channels structure from rawData:", channelsStructure);
+                } catch (error) {
+                    console.log("❌ Error building from rawData:", error);
+                    channelsStructure = null;
+                }
+            }
+            
+            // Если не удалось построить из rawData, используем buyerGroupsData
+            if (!channelsStructure || !channelsStructure.buyers || Object.keys(channelsStructure.buyers).length === 0) {
+                console.log("🔄 Falling back to buyerGroupsData");
+                displayChannelsTableFallback(data);
+                return;
+            }
 
             if (!channelsStructure.buyers || Object.keys(channelsStructure.buyers).length === 0) {
                 console.log("❌ No buyers found in channels structure");
@@ -7420,12 +7435,24 @@
         function buildChannelsFromRawData(rawRows, article) {
             console.log("🏗️ Building channels from raw data:", rawRows.length, "rows");
             
+            if (!rawRows || rawRows.length === 0) {
+                console.log("❌ No raw rows provided");
+                return { buyers: {}, allDates: [] };
+            }
+            
             const structure = {
                 buyers: {},
                 allDates: new Set()
             };
 
-            const parsedRawData = parseDbResults(rawRows);
+            // Используем parseDbResults если данные в формате массива массивов
+            let parsedRawData;
+            if (Array.isArray(rawRows[0])) {
+                parsedRawData = parseDbResults(rawRows);
+            } else {
+                // Если данные уже в формате объектов
+                parsedRawData = rawRows;
+            }
             console.log("📊 Parsed raw data:", parsedRawData.length, "records");
 
             parsedRawData.forEach((row) => {
@@ -7445,7 +7472,11 @@
                 if (!buyerInfo || !buyerInfo.buyer || buyerInfo.article !== article) return;
 
                 const buyerName = buyerInfo.buyer;
-                const dateStr = Utilities.formatDate(dateObj, "Europe/Kiev", "dd.MM.yyyy");
+                // Форматируем дату
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const year = dateObj.getFullYear();
+                const dateStr = `${day}.${month}.${year}`;
                 const accountName = sourceTracker; // source_tracker = название аккаунта
 
                 console.log(`🔍 RAW: buyer=${buyerName}, account=${accountName}, date=${dateStr}, leads=${leads}, spend=${spend}`);
@@ -8085,8 +8116,101 @@
             return filteredData;
         }
 
-        // Make mode switching globally available
+        // Global parseDbResults function
+        function parseDbResults(data) {
+            if (!data || data.length < 2) return [];
+
+            const headers = data[0];
+            const rows = data.slice(1);
+
+            return rows.map((row) => {
+                const obj = {};
+                headers.forEach((header, index) => {
+                    obj[header] = row[index];
+                });
+                return obj;
+            });
+        }
+
+        // Global parseCampaignName function
+        function parseCampaignName(fullName) {
+            const result = {
+                article: "",
+                productName: "",
+                buyer: "",
+                source: "",
+                account: "",
+            };
+
+            if (!fullName || typeof fullName !== "string") {
+                return result;
+            }
+
+            try {
+                console.log("🔍 Parsing campaign name:", fullName);
+
+                // Ищем артикул в начале (буквы + цифры)
+                const articleMatch = fullName.match(/^([A-Z]+\d+)/);
+                if (articleMatch) {
+                    result.article = articleMatch[1];
+                }
+
+                // Разделяем по " | "
+                const parts = fullName.split(" | ");
+                console.log("📝 Campaign parts:", parts);
+
+                if (parts.length >= 2) {
+                    // ВТОРОЙ элемент - это БАЙЕР (точно!)
+                    result.buyer = parts[1].trim();
+                    console.log("👤 Found buyer:", result.buyer);
+
+                    if (parts.length >= 3) {
+                        // Третий элемент содержит источник + аккаунт
+                        const sourceAccountPart = parts[2].trim();
+
+                        // Парсим источник и аккаунт
+                        // Пример: "TikTok WL1 Akk1.5" -> источник: "TikTok", аккаунт: "WL1"
+                        const sourceMatch = sourceAccountPart.match(
+                            /^(TikTok|Facebook|Instagram|Google)\s*(.*)/i
+                        );
+                        if (sourceMatch) {
+                            result.source = sourceMatch[1];
+                            const accountPart = sourceMatch[2];
+
+                            // Ищем аккаунт (обычно VL + цифры или WL + цифры)
+                            const accountMatch = accountPart.match(/\b(VL\d+|WL\d+|[A-Z]+\d+)\b/);
+                            if (accountMatch) {
+                                result.account = accountMatch[1];
+                            }
+                        } else {
+                            result.source = sourceAccountPart;
+                        }
+                    }
+                }
+
+                // Извлекаем название товара (между артикулом и первым " | ")
+                if (parts.length >= 1) {
+                    const firstPart = parts[0];
+                    const productMatch = firstPart.replace(result.article, "").trim();
+                    if (productMatch.startsWith(" ")) {
+                        result.productName = productMatch
+                            .substring(1)
+                            .replace(/\s*-\s*$/, "")
+                            .trim();
+                    }
+                }
+            } catch (e) {
+                console.log("❌ Ошибка парсинга названия кампании:", fullName, e);
+            }
+
+            console.log("✅ Parsed campaign info:", result);
+            return result;
+        }
+
+        // Make functions globally available
         window.switchMode = switchMode;
+        window.parseDbResults = parseDbResults;
+        window.parseCampaignName = parseCampaignName;
     </script>
 </body>
 
