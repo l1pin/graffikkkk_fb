@@ -5104,8 +5104,18 @@
                             value = makeUrlsClickable(urlValue);
                             break;
                         case 21: // Бюджет группы объявлений - сумма за день
-                            value = data.budget ? data.budget[i] : "";
-                            break;
+                                const budgetValue = data.budget ? data.budget[i] : "";
+                                if (budgetValue && budgetValue.trim() !== "") {
+                                    const budgetNum = parseFloat(budgetValue.replace(',', '.'));
+                                    if (!isNaN(budgetNum)) {
+                                        value = budgetNum.toFixed(2).replace(".", ",");
+                                    } else {
+                                        value = budgetValue;
+                                    }
+                                } else {
+                                    value = "";
+                                }
+                                break;
                     }
 
                     const colClass =
@@ -6372,7 +6382,17 @@
                                 value = makeUrlsClickable(urlValue);
                                 break;
                             case 19: // Бюджет группы объявлений - сумма за день
-                                value = data.budget ? data.budget[i] : "";
+                                const buyerBudgetValue = data.budget ? data.budget[i] : "";
+                                if (buyerBudgetValue && buyerBudgetValue.trim() !== "") {
+                                    const buyerBudgetNum = parseFloat(buyerBudgetValue.replace(',', '.'));
+                                    if (!isNaN(buyerBudgetNum)) {
+                                        value = buyerBudgetNum.toFixed(2).replace(".", ",");
+                                    } else {
+                                        value = buyerBudgetValue;
+                                    }
+                                } else {
+                                    value = "";
+                                }
                                 break;
                         }
                     } else if (segmentType === "campaign" || segmentType === "group" || segmentType === "ad") {
@@ -6495,7 +6515,17 @@
                                 value = makeUrlsClickable(urlValue);
                                 break;
                             case 18: // Бюджет группы объявлений - сумма за день
-                                value = data.budget ? data.budget[i] : "";
+                                const segmentBudgetValue = data.budget ? data.budget[i] : "";
+                                if (segmentBudgetValue && segmentBudgetValue.trim() !== "") {
+                                    const segmentBudgetNum = parseFloat(segmentBudgetValue.replace(',', '.'));
+                                    if (!isNaN(segmentBudgetNum)) {
+                                        value = segmentBudgetNum.toFixed(2).replace(".", ",");
+                                    } else {
+                                        value = segmentBudgetValue;
+                                    }
+                                } else {
+                                    value = "";
+                                }
                                 break;
                         }
                     }
@@ -7694,6 +7724,45 @@
                 return value > 0 ? value.toFixed(2) : '—';
             }
 
+            // Рассчитываем общие итоги по всем байерам
+            function calculateTotals() {
+                const totals = {
+                    period: { leads: 0, spend: 0 },
+                    last7Days: { leads: 0, spend: 0 },
+                    daily: {}
+                };
+
+                // Инициализируем дневные итоги
+                dates.forEach(date => {
+                    totals.daily[date] = { leads: 0, spend: 0 };
+                });
+
+                // Суммируем по всем байерам и аккаунтам
+                Object.values(buyerAccountData).forEach(buyerData => {
+                    const buyerPeriodMetrics = calculateBuyerPeriodMetrics(buyerData, dates);
+                    const buyerLast7DaysMetrics = calculateBuyerLast7DaysMetrics(buyerData, dates);
+                    
+                    totals.period.leads += buyerPeriodMetrics.totalLeads;
+                    totals.period.spend += parseFloat(buyerPeriodMetrics.totalSpend);
+                    totals.last7Days.leads += buyerLast7DaysMetrics.totalLeads;
+                    totals.last7Days.spend += parseFloat(buyerLast7DaysMetrics.totalSpend);
+
+                    // Суммируем по дням
+                    dates.forEach(date => {
+                        Object.values(buyerData.accounts).forEach(accountData => {
+                            if (accountData[date]) {
+                                totals.daily[date].leads += accountData[date].leads;
+                                totals.daily[date].spend += accountData[date].cost;
+                            }
+                        });
+                    });
+                });
+
+                return totals;
+            }
+
+            const totals = calculateTotals();
+
             let html = `
                 <div class="calendar-container">
                     <table class="calendar-table">
@@ -7705,7 +7774,44 @@
                                 ${dates.map(date => `<th>${date}</th>`).join('')}
                             </tr>
                         </thead>
-                        <tbody>`;
+                        <tbody>
+                            <tr style="background: #0f172a; border-top: 3px solid #3b82f6; border-bottom: 3px solid #3b82f6;">
+                                <td style="background: #0f172a !important; color: white !important; font-weight: bold; font-size: 15px; border-left: 3px solid #3b82f6;">
+                                    <div class="calendar-row">
+                                        <div style="width:22px;height:22px; display: flex; align-items: center; justify-content: center; background: #3b82f6; border-radius: 4px; color: white;">📊</div>
+                                        <div class="calendar-info">
+                                            <div class="calendar-name" style="color: #60a5fa !important; font-size: 15px; font-weight: 700;">ИТОГО по всем байерам</div>
+                                            <div class="calendar-alias" style="color: #94a3b8 !important; font-size: 12px;">сводная статистика</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="padding: 0;">
+                                    <div class="calendar-cell" style="background: #1e293b !important; border: 1px solid #3b82f6 !important; color: white !important; margin: 2px;">
+                                        <div class="calendar-metric" style="color: #60a5fa !important; font-weight: 700; font-size: 12px;">Лиды: ${totals.period.leads}</div>
+                                        <div class="calendar-metric" style="color: #fbbf24 !important; font-weight: 700; font-size: 12px;">CPL: ${formatCPL(totals.period.leads, totals.period.spend)}</div>
+                                        <div class="calendar-metric" style="color: #34d399 !important; font-weight: 700; font-size: 12px;">Расх.: ${totals.period.spend.toFixed(2)}</div>
+                                    </div>
+                                </td>
+                                <td style="padding: 0;">
+                                    <div class="calendar-cell" style="background: #1e293b !important; border: 1px solid #3b82f6 !important; color: white !important; margin: 2px;">
+                                        <div class="calendar-metric" style="color: #60a5fa !important; font-weight: 700; font-size: 12px;">Лиды: ${totals.last7Days.leads}</div>
+                                        <div class="calendar-metric" style="color: #fbbf24 !important; font-weight: 700; font-size: 12px;">CPL: ${formatCPL(totals.last7Days.leads, totals.last7Days.spend)}</div>
+                                        <div class="calendar-metric" style="color: #34d399 !important; font-weight: 700; font-size: 12px;">Расх.: ${totals.last7Days.spend.toFixed(2)}</div>
+                                    </div>
+                                </td>
+                                ${dates.map(date => {
+                                    const dayTotals = totals.daily[date];
+                                    return `
+                                        <td>
+                                            <div class="calendar-cell" style="background: #1e293b !important; border: 1px solid #3b82f6 !important; color: white !important; margin: 2px;">
+                                                <div class="calendar-metric" style="color: #60a5fa !important; font-weight: 700; font-size: 11px;">Лиды: ${dayTotals.leads}</div>
+                                                <div class="calendar-metric" style="color: #fbbf24 !important; font-weight: 700; font-size: 11px;">CPL: ${formatCPL(dayTotals.leads, dayTotals.spend)}</div>
+                                                <div class="calendar-metric" style="color: #34d399 !important; font-weight: 700; font-size: 11px;">Расх.: ${formatValue(dayTotals.spend)}</div>
+                                            </div>
+                                        </td>
+                                    `;
+                                }).join('')}
+                            </tr>`;
 
             let rowIndex = 0;
             Object.keys(buyerAccountData).forEach((buyerName) => {
