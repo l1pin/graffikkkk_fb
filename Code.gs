@@ -2720,13 +2720,16 @@ function buildGeneralDataAnalysis(periodStart, periodEnd) {
             SELECT 
                 campaign_name_tracker,
                 source_tracker,
+                source_id_tracker,
                 adv_date,
                 cost,
                 valid
             FROM \`ads_collection\`
             WHERE \`source\` = 'facebook'
                 AND \`campaign_name_tracker\` IS NOT NULL 
-                AND \`campaign_name_tracker\` != ''${dateFilter}
+                AND \`campaign_name_tracker\` != ''
+                AND \`source_id_tracker\` IS NOT NULL 
+                AND \`source_id_tracker\` != ''${dateFilter}
             ORDER BY adv_date
         `;
 
@@ -2747,15 +2750,19 @@ function buildGeneralDataAnalysis(periodStart, periodEnd) {
         allRows.forEach(row => {
             const trackerName = String(row.campaign_name_tracker || "").trim();
             const sourceTracker = String(row.source_tracker || "").trim();
+            const sourceIdTracker = String(row.source_id_tracker || "").trim();
             const advDate = row.adv_date;
             const cost = Number(row.cost) || 0;
             const leads = Number(row.valid) || 0;
 
-            if (!trackerName || !advDate) return;
+            if (!trackerName || !advDate || !sourceIdTracker || !sourceTracker) return;
 
-            // Извлекаем байера из названия трекера
-            const buyerName = extractBuyerFromTrackerName(trackerName);
-            if (!buyerName) return;
+            // Определяем байера по айди аккаунта из source_id_tracker
+            const buyerName = BUYER_ID_MAPPING[sourceIdTracker];
+            if (!buyerName) {
+                console.log('❌ No buyer found for account ID:', sourceIdTracker, 'account:', sourceTracker);
+                return;
+            }
 
             const dateStr = Utilities.formatDate(new Date(advDate), "Europe/Kiev", "dd.MM.yyyy");
             allDates.add(dateStr);
@@ -2767,7 +2774,7 @@ function buildGeneralDataAnalysis(periodStart, periodEnd) {
                 };
             }
 
-            // Инициализируем структуру для аккаунта
+            // Инициализируем структуру для аккаунта (название из source_tracker)
             if (!buyerAccountData[buyerName].accounts[sourceTracker]) {
                 buyerAccountData[buyerName].accounts[sourceTracker] = {};
             }
@@ -2805,6 +2812,33 @@ function buildGeneralDataAnalysis(periodStart, periodEnd) {
         throw error;
     }
 }
+
+/**
+ * Маппинг айди аккаунтов к байерам
+ */
+const BUYER_ID_MAPPING = {
+    "65c4b3ad2ca1850001643c6d": "Денис Л.",
+    "652815f01be34300015cee47": "Денис Л.",
+    "663b533d9b4dbe0001afffe2": "Денис Л.",
+    "65c4bf452114d90001eabdea": "Андрей Г.",
+    "65c4bff72114d90001eabded": "Андрей Г.",
+    "65142e20b769fe0001a0d0df": "Вова Д.",
+    "6543e7f5ad231500011b981a": "Вова Д.",
+    "6550d76cd325720001ab317e": "Вова Д.",
+    "654cb3c2a193d70001b4c840": "Антон Д.",
+    "658ae441088fa70001af3635": "Антон Д.",
+    "654cb41d4120bf0001f2f3ba": "Тарас С.",
+    "654cb443baf00b0001ea91c8": "Тарас С.",
+    "661d512115b334000135999b": "Тарас С.",
+    "65ba6b6e5249110001d9a8c3": "Максим Л.",
+    "65ba6ac849a1d300015f84a8": "Максим Л.",
+    "65c4acf29d99dc0001ef20e4": "Максим Л.",
+    "6672c874fe6fc100019492e9": "Игорь П.",
+    "65c4abcf3e0e1b0001ae1c2d": "Тарас К.",
+    "65c4ad6b73a6ff00012b7835": "Тарас К.",
+    "65c4ac8e77bdd4000140991f": "Тарас К.",
+    "65c4b40b9d99dc0001ef20f3": "Вова Ш."
+};
 
 /**
  * Извлекает имя байера из названия трекера
