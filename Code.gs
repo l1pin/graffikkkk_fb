@@ -331,8 +331,8 @@ function buildChartForArticle(article, periodStart, periodEnd) {
     try {
         // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
         function formatValueByRow(value, rowIndex) {
-            // Для названий рекламы (индекс 18), URL (19) и бюджета (20) возвращаем как строку
-            if (rowIndex === 18 || rowIndex === 19 || rowIndex === 20) {
+            // Для названий рекламы (индекс 17), URL (18) и бюджета (19) возвращаем как строку
+            if (rowIndex === 17 || rowIndex === 18 || rowIndex === 19) {
                 return value ? String(value).trim() : "";
             }
 
@@ -349,8 +349,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 case 12:
                     return num.toFixed(2).replace(".", ",") + "%";
                 case 14:
-                case 15:
-                case 21:
+                case 20:
                     return String(Math.round(num));
                 default:
                     return num.toFixed(2).replace(".", ",");
@@ -384,12 +383,12 @@ function buildChartForArticle(article, periodStart, periodEnd) {
 
             // Фильтруем пустые значения и убираем дубликаты для строковых полей
             let valuesToConvert;
-            if (rowIndex === 19 || rowIndex === 20) {
+            if (rowIndex === 18 || rowIndex === 19) {
                 // URL и Групповой бюджет - убираем дубликаты
                 valuesToConvert = Array.from(
                     new Set(arr.filter((v) => v !== undefined && v !== null && v !== ""))
                 );
-            } else if (rowIndex === 18) {
+            } else if (rowIndex === 17) {
                 // Название рекламы - убираем дубликаты и фильтруем пустые
                 valuesToConvert = Array.from(
                     new Set(
@@ -402,7 +401,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                         )
                     )
                 );
-            } else if (rowIndex === 21) {
+            } else if (rowIndex === 20) {
                 // Показы - убираем пустые и округляем до целых
                 valuesToConvert = arr.filter(
                     (v) => v !== undefined && v !== null && v !== ""
@@ -435,16 +434,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             return formatValueByRow(Math.round(sumValue), rowIndex);
         }
         
-        if (rowIndex === 15) {
-            // Для Кликов facebook вычисляем сумму за день
-            if (valuesToConvert.length === 0) return "";
-            const numValues = valuesToConvert.filter(v => !isNaN(Number(v))).map(v => Number(v));
-            if (numValues.length === 0) return "";
-            const sumValue = numValues.reduce((sum, val) => sum + val, 0);
-            return formatValueByRow(Math.round(sumValue), rowIndex);
-        }
-        
-        if (rowIndex === 17) {
+        if (rowIndex === 16) {
             // Для Среднего времени воспроизведения видео вычисляем среднее значение исключая нули
             if (valuesToConvert.length === 0) return "";
             const numValues = valuesToConvert.filter(v => !isNaN(Number(v))).map(v => Number(v)).filter(v => v > 0);
@@ -453,7 +443,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             return formatValueByRow(avgValue, rowIndex);
         }
         
-        if (rowIndex === 20) {
+        if (rowIndex === 19) {
             // Для Бюджета группы объявлений вычисляем сумму за день
             if (valuesToConvert.length === 0) return "";
             const numValues = valuesToConvert.filter(v => !isNaN(Number(v))).map(v => Number(v));
@@ -462,7 +452,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             return formatValueByRow(sumValue, rowIndex);
         }
         
-        if (rowIndex === 21) {
+        if (rowIndex === 20) {
             // Для Показов вычисляем сумму за день
             if (valuesToConvert.length === 0) return "";
             const numValues = valuesToConvert.filter(v => !isNaN(Number(v))).map(v => Number(v));
@@ -1013,7 +1003,6 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 ctr: [],
                 cpm: [],
                 linkClicks: [],
-                linkClicksFacebook: [],
                 cpc: [],
                 avgWatchTime: [],
                 videoName: [],
@@ -1231,11 +1220,6 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     targetObject[dateKey].linkClicks.push(
                         row.clicks_on_link_tracker !== undefined && row.clicks_on_link_tracker !== null
                             ? String(row.clicks_on_link_tracker)
-                            : ""
-                    );
-                    targetObject[dateKey].linkClicksFacebook.push(
-                        row.clicks_on_link !== undefined && row.clicks_on_link !== null
-                            ? String(row.clicks_on_link)
                             : ""
                     );
                     targetObject[dateKey].cpc.push(
