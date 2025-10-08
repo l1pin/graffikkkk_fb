@@ -7775,38 +7775,39 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr style="background: #0f172a; border-top: 3px solid #3b82f6; border-bottom: 3px solid #3b82f6;">
-                                <td style="background: #0f172a !important; color: white !important; font-weight: bold; font-size: 15px; border-left: 3px solid #3b82f6;">
-                                    <div class="calendar-row">
-                                        <div style="width:22px;height:22px; display: flex; align-items: center; justify-content: center; background: #3b82f6; border-radius: 4px; color: white;">📊</div>
+                            <tr style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); position: relative; z-index: 10; box-shadow: 0 8px 32px rgba(59, 130, 246, 0.15);">
+                                <td style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important; color: white !important; font-weight: bold; font-size: 15px; position: sticky; left: 0; z-index: 15; min-width: 280px; text-align: left; box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3); overflow: hidden;">
+                                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, transparent 100%);"></div>
+                                    <div class="calendar-row" style="position: relative; z-index: 2;">
+                                        <div style="width:24px;height:24px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%); border-radius: 8px; color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);">📊</div>
                                         <div class="calendar-info">
-                                            <div class="calendar-name" style="color: #60a5fa !important; font-size: 15px; font-weight: 700;">ИТОГО по всем байерам</div>
-                                            <div class="calendar-alias" style="color: #94a3b8 !important; font-size: 12px;">сводная статистика</div>
+                                            <div class="calendar-name" style="color: #e2e8f0 !important; font-size: 16px; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">ИТОГО по всем байерам</div>
+                                            <div class="calendar-alias" style="color: #94a3b8 !important; font-size: 13px; font-weight: 500;">сводная статистика</div>
                                         </div>
                                     </div>
                                 </td>
-                                <td style="padding: 0;">
-                                    <div class="calendar-cell" style="background: #1e293b !important; border: 1px solid #3b82f6 !important; color: white !important; margin: 2px;">
-                                        <div class="calendar-metric" style="color: #60a5fa !important; font-weight: 700; font-size: 12px;">Лиды: ${totals.period.leads}</div>
-                                        <div class="calendar-metric" style="color: #fbbf24 !important; font-weight: 700; font-size: 12px;">CPL: ${formatCPL(totals.period.leads, totals.period.spend)}</div>
-                                        <div class="calendar-metric" style="color: #34d399 !important; font-weight: 700; font-size: 12px;">Расх.: ${totals.period.spend.toFixed(2)}</div>
+                                <td style="padding: 4px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;">
+                                    <div class="calendar-cell" style="background: linear-gradient(135deg, #1e40af 0%, #1e293b 100%) !important; color: white !important; margin: 0; border-radius: 12px; box-shadow: 0 4px 16px rgba(30, 64, 175, 0.3); backdrop-filter: blur(8px);">
+                                        <div class="calendar-metric" style="color: #ddd6fe !important; font-weight: 700; font-size: 13px; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">Лиды: ${totals.period.leads}</div>
+                                        <div class="calendar-metric" style="color: #fef3c7 !important; font-weight: 700; font-size: 13px; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">CPL: ${formatCPL(totals.period.leads, totals.period.spend)}</div>
+                                        <div class="calendar-metric" style="color: #d1fae5 !important; font-weight: 700; font-size: 13px; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">Расх.: ${totals.period.spend.toFixed(2)}</div>
                                     </div>
                                 </td>
-                                <td style="padding: 0;">
-                                    <div class="calendar-cell" style="background: #1e293b !important; border: 1px solid #3b82f6 !important; color: white !important; margin: 2px;">
-                                        <div class="calendar-metric" style="color: #60a5fa !important; font-weight: 700; font-size: 12px;">Лиды: ${totals.last7Days.leads}</div>
-                                        <div class="calendar-metric" style="color: #fbbf24 !important; font-weight: 700; font-size: 12px;">CPL: ${formatCPL(totals.last7Days.leads, totals.last7Days.spend)}</div>
-                                        <div class="calendar-metric" style="color: #34d399 !important; font-weight: 700; font-size: 12px;">Расх.: ${totals.last7Days.spend.toFixed(2)}</div>
+                                <td style="padding: 4px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;">
+                                    <div class="calendar-cell" style="background: linear-gradient(135deg, #7c2d12 0%, #1e293b 100%) !important; color: white !important; margin: 0; border-radius: 12px; box-shadow: 0 4px 16px rgba(124, 45, 18, 0.3); backdrop-filter: blur(8px);">
+                                        <div class="calendar-metric" style="color: #ddd6fe !important; font-weight: 700; font-size: 13px; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">Лиды: ${totals.last7Days.leads}</div>
+                                        <div class="calendar-metric" style="color: #fef3c7 !important; font-weight: 700; font-size: 13px; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">CPL: ${formatCPL(totals.last7Days.leads, totals.last7Days.spend)}</div>
+                                        <div class="calendar-metric" style="color: #d1fae5 !important; font-weight: 700; font-size: 13px; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">Расх.: ${totals.last7Days.spend.toFixed(2)}</div>
                                     </div>
                                 </td>
                                 ${dates.map(date => {
                                     const dayTotals = totals.daily[date];
                                     return `
-                                        <td>
-                                            <div class="calendar-cell" style="background: #1e293b !important; border: 1px solid #3b82f6 !important; color: white !important; margin: 2px;">
-                                                <div class="calendar-metric" style="color: #60a5fa !important; font-weight: 700; font-size: 11px;">Лиды: ${dayTotals.leads}</div>
-                                                <div class="calendar-metric" style="color: #fbbf24 !important; font-weight: 700; font-size: 11px;">CPL: ${formatCPL(dayTotals.leads, dayTotals.spend)}</div>
-                                                <div class="calendar-metric" style="color: #34d399 !important; font-weight: 700; font-size: 11px;">Расх.: ${formatValue(dayTotals.spend)}</div>
+                                        <td style="padding: 4px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;">
+                                            <div class="calendar-cell" style="background: linear-gradient(135deg, #374151 0%, #1f2937 100%) !important; color: white !important; margin: 0; border-radius: 10px; box-shadow: 0 2px 8px rgba(55, 65, 81, 0.3);">
+                                                <div class="calendar-metric" style="color: #e5e7eb !important; font-weight: 600; font-size: 11px;">Лиды: ${dayTotals.leads}</div>
+                                                <div class="calendar-metric" style="color: #fbbf24 !important; font-weight: 600; font-size: 11px;">CPL: ${formatCPL(dayTotals.leads, dayTotals.spend)}</div>
+                                                <div class="calendar-metric" style="color: #34d399 !important; font-weight: 600; font-size: 11px;">Расх.: ${formatValue(dayTotals.spend)}</div>
                                             </div>
                                         </td>
                                     `;
