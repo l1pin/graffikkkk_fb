@@ -2648,7 +2648,11 @@
             if (!text || text.trim() === "") return "";
 
             const groups = text.split("\n").filter((group) => group.trim() !== "");
-            return groups
+            
+            // Удаляем дубликаты групп
+            const uniqueGroups = Array.from(new Set(groups.map(g => g.trim())));
+            
+            return uniqueGroups
                 .map((group, index) => {
                     const trimmedGroup = group.trim();
                     const alternatingClass = index % 2 === 0 ? 'even-item' : 'odd-item';
@@ -2686,7 +2690,18 @@
             if (!text || text.trim() === "") return "";
 
             const ads = text.split("\n").filter((ad) => ad.trim() !== "");
-            return ads
+            
+            // Нормализуем названия видео и удаляем дубликаты
+            const normalizedAds = Array.from(new Set(ads.map(ad => {
+                const trimmedAd = ad.trim();
+                // Если это видео файл, нормализуем его название
+                if (trimmedAd.endsWith('.mp4') || trimmedAd.endsWith('.MP4')) {
+                    return normalizeVideoName(trimmedAd);
+                }
+                return trimmedAd;
+            })));
+            
+            return normalizedAds
                 .map((ad, index) => {
                     const trimmedAd = ad.trim();
                     const alternatingClass = index % 2 === 0 ? 'even-item' : 'odd-item';
@@ -5179,7 +5194,19 @@
                             value = data.avgWatchTime ? data.avgWatchTime[i] : "";
                             break;
                         case 20:
-                                const buyerAdValue = data.videoName ? data.videoName[i] : "";
+                                let buyerAdValue = data.videoName ? data.videoName[i] : "";
+                                // Дополнительная нормализация перед отображением
+                                if (buyerAdValue && buyerAdValue.trim() !== "") {
+                                    const adItems = buyerAdValue.split('\n').filter(item => item.trim() !== "");
+                                    const normalizedAdItems = adItems.map(item => {
+                                        const trimmed = item.trim();
+                                        if (trimmed.endsWith('.mp4') || trimmed.endsWith('.MP4')) {
+                                            return normalizeVideoName(trimmed);
+                                        }
+                                        return trimmed;
+                                    });
+                                    buyerAdValue = normalizedAdItems.join('\n');
+                                }
                                 value = makeAdsClickable(buyerAdValue, `general_ads_${i}`);
                                 break;
                         case 21:
@@ -6473,8 +6500,20 @@
                                 value = data.avgWatchTime ? data.avgWatchTime[i] : "";
                                 break;
                             case 18:
-                                const adValue = data.videoName ? data.videoName[i] : "";
-                                value = makeAdsClickable(adValue, `buyer_ads_${i}`);
+                                let buyerSegmentAdValue = data.videoName ? data.videoName[i] : "";
+                                // Дополнительная нормализация перед отображением
+                                if (buyerSegmentAdValue && buyerSegmentAdValue.trim() !== "") {
+                                    const adItems = buyerSegmentAdValue.split('\n').filter(item => item.trim() !== "");
+                                    const normalizedAdItems = adItems.map(item => {
+                                        const trimmed = item.trim();
+                                        if (trimmed.endsWith('.mp4') || trimmed.endsWith('.MP4')) {
+                                            return normalizeVideoName(trimmed);
+                                        }
+                                        return trimmed;
+                                    });
+                                    buyerSegmentAdValue = normalizedAdItems.join('\n');
+                                }
+                                value = makeAdsClickable(buyerSegmentAdValue, `buyer_ads_${i}`);
                                 break;
                             case 19:
                                 const urlValue = data.siteUrl ? data.siteUrl[i] : "";
@@ -6609,8 +6648,20 @@
                                 value = data.avgWatchTime ? data.avgWatchTime[i] : "";
                                 break;
                             case 17:
-                                const adValue = data.videoName ? data.videoName[i] : "";
-                                value = makeAdsClickable(adValue, `segment_ads_${i}`);
+                                let segmentAdValue = data.videoName ? data.videoName[i] : "";
+                                // Дополнительная нормализация перед отображением
+                                if (segmentAdValue && segmentAdValue.trim() !== "") {
+                                    const adItems = segmentAdValue.split('\n').filter(item => item.trim() !== "");
+                                    const normalizedAdItems = adItems.map(item => {
+                                        const trimmed = item.trim();
+                                        if (trimmed.endsWith('.mp4') || trimmed.endsWith('.MP4')) {
+                                            return normalizeVideoName(trimmed);
+                                        }
+                                        return trimmed;
+                                    });
+                                    segmentAdValue = normalizedAdItems.join('\n');
+                                }
+                                value = makeAdsClickable(segmentAdValue, `segment_ads_${i}`);
                                 break;
                             case 18:
                                 const urlValue = data.siteUrl ? data.siteUrl[i] : "";
