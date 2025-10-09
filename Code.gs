@@ -144,6 +144,29 @@ function parseCampaignName(fullName) {
 }
 
 /**
+ * Функция для нормализации URL
+ */
+function normalizeUrl(url) {
+    if (!url || typeof url !== "string") return url;
+
+    // Удаляем пробелы
+    let normalized = url.trim();
+
+    // Удаляем query параметры (все после ?)
+    const queryIndex = normalized.indexOf("?");
+    if (queryIndex !== -1) {
+        normalized = normalized.substring(0, queryIndex);
+    }
+
+    // Удаляем последний слеш если есть
+    if (normalized.endsWith("/")) {
+        normalized = normalized.slice(0, -1);
+    }
+
+    return normalized;
+}
+
+/**
  * Функция для веб-приложения
  */
 function doGet() {
@@ -1318,11 +1341,12 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     buyerVideosMap[buyerInfo.buyer].add(videoName.trim());
                 }
                 if (targetUrl && targetUrl.trim() !== "") {
-                    globalSites.add(targetUrl.trim());
+                    const normalizedUrl = normalizeUrl(targetUrl);
+                    globalSites.add(normalizedUrl);
                     // Привязываем сайт к байеру
                     if (!buyerSitesMap[buyerInfo.buyer])
                         buyerSitesMap[buyerInfo.buyer] = new Set();
-                    buyerSitesMap[buyerInfo.buyer].add(targetUrl.trim());
+                    buyerSitesMap[buyerInfo.buyer].add(normalizedUrl);
                 }
             }
 
@@ -1639,7 +1663,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 });
                 fbDataSegment.siteUrl?.forEach((site) => {
                     if (site && site.trim() !== "") {
-                        segmentSites.add(site.trim());
+                        segmentSites.add(normalizeUrl(site));
                     }
                 });
 
