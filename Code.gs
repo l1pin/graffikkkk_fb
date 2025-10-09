@@ -388,8 +388,8 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 valuesToConvert = Array.from(
                     new Set(arr.filter((v) => v !== undefined && v !== null && v !== ""))
                 );
-            } else if (rowIndex === 17) {
-                // Название рекламы - убираем дубликаты и фильтруем пустые
+            } else if (rowIndex === 17 || rowIndex === 21) {
+                // Название рекламы (21) и Клики facebook (17) - убираем дубликаты и фильтруем пустые
                 valuesToConvert = Array.from(
                     new Set(
                         arr.filter(
@@ -1613,7 +1613,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     processDayValues(fbDataSegment.avgWatchTime, 16)
                 );
                 segmentData.videoName.push(
-                    processDayValues(fbDataSegment.videoName, 17)
+                    processDayValues(fbDataSegment.videoName, 21)
                 );
                 segmentData.siteUrl.push(processDayValues(fbDataSegment.siteUrl, 18));
                 const budgetValue = processDayValues(fbDataSegment.budget || [], 19);
