@@ -2556,14 +2556,38 @@
                 .join("\n");
         }
 
+        // Функция для нормализации URL
+        function normalizeUrl(url) {
+            if (!url || typeof url !== 'string') return url;
+
+            // Удаляем пробелы
+            let normalized = url.trim();
+
+            // Удаляем query параметры (все после ?)
+            const queryIndex = normalized.indexOf('?');
+            if (queryIndex !== -1) {
+                normalized = normalized.substring(0, queryIndex);
+            }
+
+            // Удаляем последний слеш если есть
+            if (normalized.endsWith('/')) {
+                normalized = normalized.slice(0, -1);
+            }
+
+            return normalized;
+        }
+
         // Функция для создания кликабельных ссылок
         function makeUrlsClickable(text) {
             if (!text || text.trim() === "") return "";
 
             const urls = text.split("\n").filter((url) => url.trim() !== "");
-            return urls
-                .map((url, index) => {
-                    const cleanUrl = url.trim();
+            
+            // Нормализуем URL и удаляем дубликаты
+            const uniqueUrls = Array.from(new Set(urls.map(url => normalizeUrl(url))));
+            
+            return uniqueUrls
+                .map((cleanUrl, index) => {
                     const alternatingClass = index % 2 === 0 ? 'even-item' : 'odd-item';
                     if (
                         cleanUrl.startsWith("http://") ||
