@@ -1477,6 +1477,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 ctr: [],
                 cpm: [],
                 linkClicks: [],
+                clicksOnLinkFb: [],
                 cpc: [],
                 avgWatchTime: [],
                 videoName: [],
@@ -1604,6 +1605,9 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 segmentData.linkClicks.push(
                     processDayValues(fbDataSegment.linkClicks, 14)
                 );
+                segmentData.clicksOnLinkFb.push(
+                    processDayValues(fbDataSegment.clicksOnLinkFb || [], 17)
+                );
                 segmentData.cpc.push(processDayValues(fbDataSegment.cpc, 15));
                 segmentData.avgWatchTime.push(
                     processDayValues(fbDataSegment.avgWatchTime, 16)
@@ -1709,6 +1713,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 ctr: [],
                 cpm: [],
                 linkClicks: [],
+                clicksOnLinkFb: [],
                 cpc: [],
                 avgWatchTime: [],
                 videoName: [],
@@ -1743,6 +1748,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     newSegmentData.ctr.push("");
                     newSegmentData.cpm.push("");
                     newSegmentData.linkClicks.push("");
+                    newSegmentData.clicksOnLinkFb.push("");
                     newSegmentData.cpc.push("");
                     newSegmentData.avgWatchTime.push("");
                     newSegmentData.videoName.push("");
@@ -1778,6 +1784,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                         newSegmentData.ctr.push(segmentData.ctr[i]);
                         newSegmentData.cpm.push(segmentData.cpm[i]);
                         newSegmentData.linkClicks.push(segmentData.linkClicks[i]);
+                        newSegmentData.clicksOnLinkFb.push(segmentData.clicksOnLinkFb[i]);
                         newSegmentData.cpc.push(segmentData.cpc[i]);
                         newSegmentData.avgWatchTime.push(segmentData.avgWatchTime[i]);
                         newSegmentData.videoName.push(segmentData.videoName[i]);
