@@ -167,7 +167,46 @@ function normalizeUrl(url) {
 }
 
 /**
- * Функция для веб-приложения
+ * Функция для нормализации названий видео
+ */
+function normalizeVideoName(videoName) {
+    if (!videoName || typeof videoName !== "string") return videoName;
+
+    // Unicode нормализация (NFC - Canonical Decomposition, followed by Canonical Composition)
+    let normalized = videoName.normalize('NFC');
+
+    // Заменяем все типы дефисов/тире на обычный дефис
+    // en-dash (–), em-dash (—), минус (−), дефис (-) и другие
+    normalized = normalized.replace(/[\u2010-\u2015\u2212\uFE58\uFE63\uFF0D]/g, '-');
+
+    // Заменяем все типы пробелов на обычный пробел
+    // неразрывный пробел, узкий пробел и т.д.
+    normalized = normalized.replace(/[\u00A0\u1680\u2000-\u200B\u202F\u205F\u3000\uFEFF]/g, ' ');
+
+    // Удаляем технические префиксы (cropped_, trimmed_, original_ и т.д.)
+    // Паттерн: любые слова с подчеркиванием до первого артикула формата буквы+цифры
+    normalized = normalized.replace(/^(?:cropped_|trimmed_|original_|resized_|edited_|converted_|processed_|[a-z_]+\([^)]*\)_)+/gi, '');
+
+    // Удаляем сложные технические префиксы с параметрами
+    // Пример: "original_(x, y)_(0, 0)_width_1080px_height_1350px_trimmed_start_0.0s_end_30.0s_"
+    normalized = normalized.replace(/^[a-z_0-9(),\s.]+_(?=[A-Z]{2}\d)/gi, '');
+
+    // Удаляем суффиксы копий перед расширением файла
+    // Паттерны: " (1)", "(1)", " (2)", "(2)" и т.д. перед .mp4
+    normalized = normalized.replace(/\s*\(\d+\)\s*\.mp4$/i, '.mp4');
+    normalized = normalized.replace(/\(\d+\)\.mp4$/i, '.mp4');
+
+    // Trim пробелов в начале и конце
+    normalized = normalized.trim();
+
+    // Заменяем множественные пробелы на одинарный
+    normalized = normalized.replace(/\s+/g, ' ');
+
+    return normalized;
+}
+
+/**
+ * Функція для веб-приложения
  */
 function doGet() {
     return HtmlService.createTemplateFromFile("График HTML")
@@ -1334,11 +1373,12 @@ function buildChartForArticle(article, periodStart, periodEnd) {
 
                 // Собираем уникальные видео и сайты с привязкой к байерам
                 if (videoName && videoName.trim() !== "") {
-                    globalVideos.add(videoName.trim());
+                    const normalizedVideo = normalizeVideoName(videoName);
+                    globalVideos.add(normalizedVideo);
                     // Привязываем видео к байеру
                     if (!buyerVideosMap[buyerInfo.buyer])
                         buyerVideosMap[buyerInfo.buyer] = new Set();
-                    buyerVideosMap[buyerInfo.buyer].add(videoName.trim());
+                    buyerVideosMap[buyerInfo.buyer].add(normalizedVideo);
                 }
                 if (targetUrl && targetUrl.trim() !== "") {
                     const normalizedUrl = normalizeUrl(targetUrl);
@@ -1658,7 +1698,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
 
                 fbDataSegment.videoName?.forEach((video) => {
                     if (video && video.trim() !== "") {
-                        segmentVideos.add(video.trim());
+                        segmentVideos.add(normalizeVideoName(video));
                     }
                 });
                 fbDataSegment.siteUrl?.forEach((site) => {
