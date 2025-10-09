@@ -2128,7 +2128,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             generalData.videoName.push(
                 processDayValues(
                     fbDataMap[dateKey] ? fbDataMap[dateKey].videoName : [],
-                    17
+                    21
                 )
             );
             generalData.siteUrl.push(
