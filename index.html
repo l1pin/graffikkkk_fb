@@ -2535,7 +2535,12 @@
                 return '<span class="tooltip-item" style="color: #94a3b8; font-style: italic;">Нет данных</span>';
             }
 
-            const uniqueItems = [...new Set(items)].sort();
+            // Нормализуем элементы если это не URL
+            const normalizedItems = isUrls 
+                ? items.map(item => normalizeUrl(item))
+                : items.map(item => item.endsWith('.mp4') || item.endsWith('.MP4') ? normalizeVideoName(item) : item);
+
+            const uniqueItems = [...new Set(normalizedItems)].sort();
 
             return uniqueItems
                 .map((item, index) => {
@@ -2573,6 +2578,38 @@
             if (normalized.endsWith('/')) {
                 normalized = normalized.slice(0, -1);
             }
+
+            return normalized;
+        }
+
+        // Функция для нормализации названий видео
+        function normalizeVideoName(videoName) {
+            if (!videoName || typeof videoName !== 'string') return videoName;
+
+            // Unicode нормализация (NFC)
+            let normalized = videoName.normalize('NFC');
+
+            // Заменяем все типы дефисов/тире на обычный дефис
+            normalized = normalized.replace(/[\u2010-\u2015\u2212\uFE58\uFE63\uFF0D]/g, '-');
+
+            // Заменяем все типы пробелов на обычный пробел
+            normalized = normalized.replace(/[\u00A0\u1680\u2000-\u200B\u202F\u205F\u3000\uFEFF]/g, ' ');
+
+            // Удаляем технические префиксы
+            normalized = normalized.replace(/^(?:cropped_|trimmed_|original_|resized_|edited_|converted_|processed_|[a-z_]+\([^)]*\)_)+/gi, '');
+
+            // Удаляем сложные технические префиксы с параметрами
+            normalized = normalized.replace(/^[a-z_0-9(),\s.]+_(?=[A-Z]{2}\d)/gi, '');
+
+            // Удаляем суффиксы копий перед расширением файла
+            normalized = normalized.replace(/\s*\(\d+\)\s*\.mp4$/i, '.mp4');
+            normalized = normalized.replace(/\(\d+\)\.mp4$/i, '.mp4');
+
+            // Trim пробелов
+            normalized = normalized.trim();
+
+            // Множественные пробелы → одинарный
+            normalized = normalized.replace(/\s+/g, ' ');
 
             return normalized;
         }
