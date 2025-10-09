@@ -417,53 +417,62 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             }
 
             if (rowIndex === 11) {
-            // Для Frequency вычисляем среднее значение исключая нули
-            if (valuesToConvert.length === 0) return "";
-            const numValues = valuesToConvert.filter(v => !isNaN(Number(v))).map(v => Number(v)).filter(v => v > 0);
-            if (numValues.length === 0) return "";
-            const avgValue = numValues.reduce((sum, val) => sum + val, 0) / numValues.length;
-            return formatValueByRow(avgValue, rowIndex);
-        }
-        
-        if (rowIndex === 14) {
-            // Для Кликов (переход) вычисляем сумму за день
-            if (valuesToConvert.length === 0) return "";
-            const numValues = valuesToConvert.filter(v => !isNaN(Number(v))).map(v => Number(v));
-            if (numValues.length === 0) return "";
-            const sumValue = numValues.reduce((sum, val) => sum + val, 0);
-            return formatValueByRow(Math.round(sumValue), rowIndex);
-        }
-        
-        if (rowIndex === 16) {
-            // Для Среднего времени воспроизведения видео вычисляем среднее значение исключая нули
-            if (valuesToConvert.length === 0) return "";
-            const numValues = valuesToConvert.filter(v => !isNaN(Number(v))).map(v => Number(v)).filter(v => v > 0);
-            if (numValues.length === 0) return "";
-            const avgValue = numValues.reduce((sum, val) => sum + val, 0) / numValues.length;
-            return formatValueByRow(avgValue, rowIndex);
-        }
-        
-        if (rowIndex === 19) {
-            // Для Бюджета группы объявлений вычисляем сумму за день
-            if (valuesToConvert.length === 0) return "";
-            const numValues = valuesToConvert.filter(v => !isNaN(Number(v))).map(v => Number(v));
-            if (numValues.length === 0) return "";
-            const sumValue = numValues.reduce((sum, val) => sum + val, 0);
-            return formatValueByRow(sumValue, rowIndex);
-        }
-        
-        if (rowIndex === 20) {
-            // Для Показов вычисляем сумму за день
-            if (valuesToConvert.length === 0) return "";
-            const numValues = valuesToConvert.filter(v => !isNaN(Number(v))).map(v => Number(v));
-            if (numValues.length === 0) return "";
-            const sumValue = numValues.reduce((sum, val) => sum + val, 0);
-            return formatValueByRow(Math.round(sumValue), rowIndex);
-        }
-        
-        return valuesToConvert
-            .map((v) => formatValueByRow(v, rowIndex))
-            .join("\n");
+                // Для Frequency вычисляем среднее значение исключая нули
+                if (valuesToConvert.length === 0) return "";
+                const numValues = valuesToConvert.filter(v => !isNaN(Number(v))).map(v => Number(v)).filter(v => v > 0);
+                if (numValues.length === 0) return "";
+                const avgValue = numValues.reduce((sum, val) => sum + val, 0) / numValues.length;
+                return formatValueByRow(avgValue, rowIndex);
+            }
+
+            if (rowIndex === 14) {
+                // Для Кликов (переход) вычисляем сумму за день
+                if (valuesToConvert.length === 0) return "";
+                const numValues = valuesToConvert.filter(v => !isNaN(Number(v))).map(v => Number(v));
+                if (numValues.length === 0) return "";
+                const sumValue = numValues.reduce((sum, val) => sum + val, 0);
+                return formatValueByRow(Math.round(sumValue), rowIndex);
+            }
+
+            if (rowIndex === 17) {
+                // Для Кликов facebook вычисляем сумму за день
+                if (valuesToConvert.length === 0) return "";
+                const numValues = valuesToConvert.filter(v => !isNaN(Number(v))).map(v => Number(v));
+                if (numValues.length === 0) return "";
+                const sumValue = numValues.reduce((sum, val) => sum + val, 0);
+                return formatValueByRow(Math.round(sumValue), rowIndex);
+            }
+
+            if (rowIndex === 16) {
+                // Для Среднего времени воспроизведения видео вычисляем среднее значение исключая нули
+                if (valuesToConvert.length === 0) return "";
+                const numValues = valuesToConvert.filter(v => !isNaN(Number(v))).map(v => Number(v)).filter(v => v > 0);
+                if (numValues.length === 0) return "";
+                const avgValue = numValues.reduce((sum, val) => sum + val, 0) / numValues.length;
+                return formatValueByRow(avgValue, rowIndex);
+            }
+
+            if (rowIndex === 19) {
+                // Для Бюджета группы объявлений вычисляем сумму за день
+                if (valuesToConvert.length === 0) return "";
+                const numValues = valuesToConvert.filter(v => !isNaN(Number(v))).map(v => Number(v));
+                if (numValues.length === 0) return "";
+                const sumValue = numValues.reduce((sum, val) => sum + val, 0);
+                return formatValueByRow(sumValue, rowIndex);
+            }
+
+            if (rowIndex === 20) {
+                // Для Показов вычисляем сумму за день
+                if (valuesToConvert.length === 0) return "";
+                const numValues = valuesToConvert.filter(v => !isNaN(Number(v))).map(v => Number(v));
+                if (numValues.length === 0) return "";
+                const sumValue = numValues.reduce((sum, val) => sum + val, 0);
+                return formatValueByRow(Math.round(sumValue), rowIndex);
+            }
+
+            return valuesToConvert
+                .map((v) => formatValueByRow(v, rowIndex))
+                .join("\n");
         }
 
         function calculateRating(cpl, ratingThreshold) {
@@ -1003,6 +1012,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 ctr: [],
                 cpm: [],
                 linkClicks: [],
+                clicksOnLinkFb: [],
                 cpc: [],
                 avgWatchTime: [],
                 videoName: [],
@@ -1035,20 +1045,20 @@ function buildChartForArticle(article, periodStart, periodEnd) {
 
             // Определяем buyer info - СТРОГАЯ ПРОВЕРКА НА ПРИНАДЛЕЖНОСТЬ К АРТИКУЛУ
             let buyerInfo = null;
-            
+
             // ПРИОРИТЕТ 1: Tracker данные с артикулом
             if (trackerName && trackerName.includes(article)) {
                 buyerInfo = parseCampaignName(trackerName);
                 console.log(`🔍 Found buyer from tracker: ${trackerName} -> ${buyerInfo.buyer}`);
-            } 
+            }
             // ПРИОРИТЕТ 2: Campaign mapping, но только если кампания содержит артикул
             else if (campaignName && campaignName.includes(article) && campaignToBuyerMap[campaignName]) {
                 buyerInfo = campaignToBuyerMap[campaignName];
                 console.log(`🔍 Found buyer from campaign: ${campaignName} -> ${buyerInfo.buyer}`);
-            } 
+            }
             // ПРИОРИТЕТ 3: Group mapping, но только если группа связана с правильной кампанией
-            else if (groupId && adGroupToBuyerMap[groupId] && 
-                     (campaignName.includes(article) || trackerName.includes(article))) {
+            else if (groupId && adGroupToBuyerMap[groupId] &&
+                (campaignName.includes(article) || trackerName.includes(article))) {
                 buyerInfo = adGroupToBuyerMap[groupId];
                 console.log(`🔍 Found buyer from group: ${groupName} -> ${buyerInfo.buyer}`);
             }
@@ -1060,7 +1070,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 }
                 return;
             }
-            
+
             // ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: если есть tracker, он должен содержать артикул
             if (trackerName && !trackerName.includes(article)) {
                 console.log(`❌ REJECTED: tracker doesn't contain article: ${trackerName}`);
@@ -1137,7 +1147,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     // ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: кампания должна содержать артикул
                     const campaignContainsArticle = campaignName.includes(article);
                     const trackerContainsArticle = trackerName && trackerName.includes(article);
-                    
+
                     if (campaignContainsArticle || trackerContainsArticle) {
                         const buyerCampaignGroupKey = `${buyerInfo.buyer}:::${campaignName}:::${groupName}`;
                         if (!resultMapByBuyerCampaignGroup[buyerCampaignGroupKey])
@@ -1156,7 +1166,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                         if (!buyerGroupsMap[buyerInfo.buyer])
                             buyerGroupsMap[buyerInfo.buyer] = new Set();
                         buyerGroupsMap[buyerInfo.buyer].add(groupName);
-                        
+
                         console.log(`✅ Added group "${groupName}" to buyer "${buyerInfo.buyer}" for article "${article}"`);
                     } else {
                         console.log(`❌ REJECTED group "${groupName}" for buyer "${buyerInfo.buyer}" - campaign "${campaignName}" doesn't contain article "${article}"`);
@@ -1220,6 +1230,11 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     targetObject[dateKey].linkClicks.push(
                         row.clicks_on_link_tracker !== undefined && row.clicks_on_link_tracker !== null
                             ? String(row.clicks_on_link_tracker)
+                            : ""
+                    );
+                    targetObject[dateKey].clicksOnLinkFb.push(
+                        row.clicks_on_link !== undefined && row.clicks_on_link !== null
+                            ? String(row.clicks_on_link)
                             : ""
                     );
                     targetObject[dateKey].cpc.push(
@@ -1779,7 +1794,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             function trimSegmentPeriodBySpend(data) {
                 let firstActiveIndex = -1;
                 let lastActiveIndex = -1;
-                
+
                 // Ищем первый день с расходом > 0
                 for (let i = 0; i < data.spendDay.length; i++) {
                     if (data.spendDay[i] > 0) {
@@ -1787,7 +1802,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                         break;
                     }
                 }
-                
+
                 // Ищем последний день с расходом > 0
                 for (let i = data.spendDay.length - 1; i >= 0; i--) {
                     if (data.spendDay[i] > 0) {
@@ -1795,11 +1810,11 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                         break;
                     }
                 }
-                
+
                 if (firstActiveIndex === -1 || lastActiveIndex === -1) {
                     return data; // Нет активных дней
                 }
-                
+
                 // Обрезаем все массивы данных
                 const trimmedData = {};
                 Object.keys(data).forEach(key => {
@@ -1809,10 +1824,10 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                         trimmedData[key] = data[key];
                     }
                 });
-                
+
                 return trimmedData;
             }
-            
+
             // Применяем обрезку к данным сегмента
             Object.assign(segmentData, trimSegmentPeriodBySpend(segmentData));
 
@@ -1917,6 +1932,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
             ctr: [],
             cpm: [],
             linkClicks: [],
+            clicksOnLinkFb: [],
             cpc: [],
             avgWatchTime: [],
             videoName: [],
@@ -1977,6 +1993,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 generalData.ctr.push(processDayValues(fbData.ctr, 12));
                 generalData.cpm.push(processDayValues(fbData.cpm, 13));
                 generalData.linkClicks.push(processDayValues(fbData.linkClicks, 14));
+                generalData.clicksOnLinkFb.push(processDayValues(fbData.clicksOnLinkFb || [], 17));
                 generalData.cpc.push(processDayValues(fbData.cpc, 15));
                 generalData.avgWatchTime.push(processDayValues(fbData.avgWatchTime, 16));
                 generalData.videoName.push(processDayValues(fbData.videoName, 17));
@@ -2086,6 +2103,12 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     14
                 )
             );
+            generalData.clicksOnLinkFb.push(
+                processDayValues(
+                    fbDataMap[dateKey] ? fbDataMap[dateKey].clicksOnLinkFb : [],
+                    17
+                )
+            );
             generalData.cpc.push(
                 processDayValues(fbDataMap[dateKey] ? fbDataMap[dateKey].cpc : [], 15)
             );
@@ -2166,33 +2189,33 @@ function buildChartForArticle(article, periodStart, periodEnd) {
 
         // Создаем новые массивы с диапазонами
         const newGeneralData = {
-                dates: [],
-                ratings: [],
-                cplDay: [],
-                leadsDay: [],
-                spendDay: [],
-                costFromSourcesDay: [],
-                conversionDay: [],
-                maxCPL: [],
-                cplCumulative: [],
-                cplCumulativeColors: [],
-                cplCumulativeArrows: [],
-                groups: [],
-                buyers: [],
-                accounts: [],
-                freq: [],
-                ctr: [],
-                cpm: [],
-                linkClicks: [],
-                cpc: [],
-                avgWatchTime: [],
-                videoName: [],
-                siteUrl: [],
-                budget: [],
-                impressions: [],
-                columnSpans: [],
-                columnClasses: [],
-            };
+            dates: [],
+            ratings: [],
+            cplDay: [],
+            leadsDay: [],
+            spendDay: [],
+            costFromSourcesDay: [],
+            conversionDay: [],
+            maxCPL: [],
+            cplCumulative: [],
+            cplCumulativeColors: [],
+            cplCumulativeArrows: [],
+            groups: [],
+            buyers: [],
+            accounts: [],
+            freq: [],
+            ctr: [],
+            cpm: [],
+            linkClicks: [],
+            cpc: [],
+            avgWatchTime: [],
+            videoName: [],
+            siteUrl: [],
+            budget: [],
+            impressions: [],
+            columnSpans: [],
+            columnClasses: [],
+        };
 
         dateRanges.forEach((range) => {
             if (range.isZeroRange && range.startIndex !== range.endIndex) {
@@ -2413,7 +2436,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
         });
 
         console.log("🌲 Buyer-group hierarchy created with ACTIVE ELEMENTS ONLY:", Object.keys(buyerGroupsData).length, "buyers");
-        
+
         // Дополнительная очистка пустых кампаний после фильтрации
         Object.keys(buyerGroupsData).forEach((buyerName) => {
             const buyer = buyerGroupsData[buyerName];
@@ -2425,7 +2448,7 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     console.log(`🗑️ Removed empty campaign: ${campaignName} from buyer: ${buyerName}`);
                 }
             });
-            
+
             // Если у байера нет активных кампаний, удаляем байера
             if (Object.keys(buyer.campaigns).length === 0) {
                 delete buyerGroupsData[buyerName];
@@ -2523,10 +2546,10 @@ function buildChartForArticle(article, periodStart, periodEnd) {
         Object.keys(calendarData).forEach(trackerName => {
             const trackerData = calendarData[trackerName];
             trackerData.dates.sort((a, b) => {
-            const [dayA, monthA, yearA] = a.split('.').map(Number);
-            const [dayB, monthB, yearB] = b.split('.').map(Number);
-            return yearA - yearB || monthA - monthB || dayA - dayB;
-        });
+                const [dayA, monthA, yearA] = a.split('.').map(Number);
+                const [dayB, monthB, yearB] = b.split('.').map(Number);
+                return yearA - yearB || monthA - monthB || dayA - dayB;
+            });
 
             Object.keys(trackerData.campaigns).forEach(campaignName => {
                 const campaignData = trackerData.campaigns[campaignName];
@@ -2848,14 +2871,14 @@ function extractBuyerFromTrackerName(trackerName) {
     const parts = trackerName.split(' | ');
     if (parts.length >= 2) {
         let buyerName = parts[1].trim();
-        
+
         // Убираем все пробелы
         buyerName = buyerName.replace(/\s+/g, ' ');
-        
+
         // Ищем первую точку или запятую
         const dotIndex = buyerName.indexOf('.');
         const commaIndex = buyerName.indexOf(',');
-        
+
         let cutIndex = -1;
         if (dotIndex !== -1 && commaIndex !== -1) {
             // Если есть и точка и запятая, берем первую из них
@@ -2865,7 +2888,7 @@ function extractBuyerFromTrackerName(trackerName) {
         } else if (commaIndex !== -1) {
             cutIndex = commaIndex;
         }
-        
+
         if (cutIndex !== -1) {
             // Обрезаем до первой точки/запятой и добавляем точку
             buyerName = buyerName.substring(0, cutIndex) + '.';
@@ -2873,7 +2896,7 @@ function extractBuyerFromTrackerName(trackerName) {
             // Если нет ни точки ни запятой, добавляем точку в конец
             buyerName = buyerName + '.';
         }
-        
+
         return buyerName;
     }
     return null;
