@@ -5055,14 +5055,14 @@
                             value = data.freq ? data.freq[i] : "";
                             break;
                         case 13: // CTR (целевая страница) - расчет по формуле
-                            const clicksForCTR = data.linkClicks ? data.linkClicks[i] : "";
+                            const clicksFbForCTR = data.clicksOnLinkFb ? data.clicksOnLinkFb[i] : "";
                             const impressionsForCTR = data.impressions ? data.impressions[i] : "";
 
-                            if (clicksForCTR && impressionsForCTR && clicksForCTR !== "" && impressionsForCTR !== "") {
-                                const clicks = Number(clicksForCTR) || 0;
+                            if (clicksFbForCTR && impressionsForCTR && clicksFbForCTR !== "" && impressionsForCTR !== "") {
+                                const clicksFb = Number(clicksFbForCTR) || 0;
                                 const impressions = Number(impressionsForCTR) || 0;
                                 if (impressions > 0) {
-                                    const ctr = (clicks / impressions) * 100;
+                                    const ctr = (clicksFb / impressions) * 100;
                                     value = ctr.toFixed(2).replace(".", ",") + "%";
                                 } else {
                                     value = "";
@@ -5072,14 +5072,14 @@
                             }
                             break;
                         case 14: // CPM - расчет по формуле
-                            const spendForCPM = data.spendDay ? data.spendDay[i] : 0;
+                            const costFromSourcesForCPM = data.costFromSourcesDay ? data.costFromSourcesDay[i] : 0;
                             const impressionsForCPM = data.impressions ? data.impressions[i] : "";
 
-                            if (spendForCPM > 0 && impressionsForCPM && impressionsForCPM !== "") {
-                                const spend = Number(spendForCPM) || 0;
+                            if (costFromSourcesForCPM > 0 && impressionsForCPM && impressionsForCPM !== "") {
+                                const costFromSources = Number(costFromSourcesForCPM) || 0;
                                 const impressions = Number(impressionsForCPM) || 0;
                                 if (impressions > 0) {
-                                    const cpm = (spend / impressions) * 1000;
+                                    const cpm = (costFromSources / impressions) * 1000;
                                     value = cpm.toFixed(2).replace(".", ",");
                                 } else {
                                     value = "";
@@ -6349,14 +6349,14 @@
                                 value = data.freq ? data.freq[i] : "";
                                 break;
                             case 11: // CTR (целевая страница) - расчет по формуле
-                                const buyerClicksForCTR = data.linkClicks ? data.linkClicks[i] : "";
+                                const buyerClicksFbForCTR = data.clicksOnLinkFb ? data.clicksOnLinkFb[i] : "";
                                 const buyerImpressionsForCTR = data.impressions ? data.impressions[i] : "";
 
-                                if (buyerClicksForCTR && buyerImpressionsForCTR && buyerClicksForCTR !== "" && buyerImpressionsForCTR !== "") {
-                                    const clicks = Number(buyerClicksForCTR) || 0;
+                                if (buyerClicksFbForCTR && buyerImpressionsForCTR && buyerClicksFbForCTR !== "" && buyerImpressionsForCTR !== "") {
+                                    const clicksFb = Number(buyerClicksFbForCTR) || 0;
                                     const impressions = Number(buyerImpressionsForCTR) || 0;
                                     if (impressions > 0) {
-                                        const ctr = (clicks / impressions) * 100;
+                                        const ctr = (clicksFb / impressions) * 100;
                                         value = ctr.toFixed(2).replace(".", ",") + "%";
                                     } else {
                                         value = "";
@@ -6366,14 +6366,14 @@
                                 }
                                 break;
                             case 12: // CPM - расчет по формуле
-                                const buyerSpendForCPM = data.spendDay ? data.spendDay[i] : 0;
+                                const buyerCostFromSourcesForCPM = data.costFromSourcesDay ? data.costFromSourcesDay[i] : 0;
                                 const buyerImpressionsForCPM = data.impressions ? data.impressions[i] : "";
 
-                                if (buyerSpendForCPM > 0 && buyerImpressionsForCPM && buyerImpressionsForCPM !== "") {
-                                    const spend = Number(buyerSpendForCPM) || 0;
+                                if (buyerCostFromSourcesForCPM > 0 && buyerImpressionsForCPM && buyerImpressionsForCPM !== "") {
+                                    const costFromSources = Number(buyerCostFromSourcesForCPM) || 0;
                                     const impressions = Number(buyerImpressionsForCPM) || 0;
                                     if (impressions > 0) {
-                                        const cpm = (spend / impressions) * 1000;
+                                        const cpm = (costFromSources / impressions) * 1000;
                                         value = cpm.toFixed(2).replace(".", ",");
                                     } else {
                                         value = "";
@@ -6485,14 +6485,14 @@
                                 value = data.freq ? data.freq[i] : "";
                                 break;
                             case 10: // CTR (целевая страница) - расчет по формуле
-                                const segmentClicksForCTR = data.linkClicks ? data.linkClicks[i] : "";
+                                const segmentClicksFbForCTR = data.clicksOnLinkFb ? data.clicksOnLinkFb[i] : "";
                                 const segmentImpressionsForCTR = data.impressions ? data.impressions[i] : "";
 
-                                if (segmentClicksForCTR && segmentImpressionsForCTR && segmentClicksForCTR !== "" && segmentImpressionsForCTR !== "") {
-                                    const clicks = Number(segmentClicksForCTR) || 0;
+                                if (segmentClicksFbForCTR && segmentImpressionsForCTR && segmentClicksFbForCTR !== "" && segmentImpressionsForCTR !== "") {
+                                    const clicksFb = Number(segmentClicksFbForCTR) || 0;
                                     const impressions = Number(segmentImpressionsForCTR) || 0;
                                     if (impressions > 0) {
-                                        const ctr = (clicks / impressions) * 100;
+                                        const ctr = (clicksFb / impressions) * 100;
                                         value = ctr.toFixed(2).replace(".", ",") + "%";
                                     } else {
                                         value = "";
@@ -6502,14 +6502,14 @@
                                 }
                                 break;
                             case 11: // CPM - расчет по формуле
-                                const segmentSpendForCPM = data.spendDay ? data.spendDay[i] : 0;
+                                const segmentCostFromSourcesForCPM = data.costFromSourcesDay ? data.costFromSourcesDay[i] : 0;
                                 const segmentImpressionsForCPM = data.impressions ? data.impressions[i] : "";
 
-                                if (segmentSpendForCPM > 0 && segmentImpressionsForCPM && segmentImpressionsForCPM !== "") {
-                                    const spend = Number(segmentSpendForCPM) || 0;
+                                if (segmentCostFromSourcesForCPM > 0 && segmentImpressionsForCPM && segmentImpressionsForCPM !== "") {
+                                    const costFromSources = Number(segmentCostFromSourcesForCPM) || 0;
                                     const impressions = Number(segmentImpressionsForCPM) || 0;
                                     if (impressions > 0) {
-                                        const cpm = (spend / impressions) * 1000;
+                                        const cpm = (costFromSources / impressions) * 1000;
                                         value = cpm.toFixed(2).replace(".", ",");
                                     } else {
                                         value = "";
