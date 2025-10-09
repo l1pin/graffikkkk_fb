@@ -5118,9 +5118,9 @@
                             value = data.avgWatchTime ? data.avgWatchTime[i] : "";
                             break;
                         case 20:
-                            const adValue = data.videoName ? data.videoName[i] : "";
-                            value = makeAdsClickable(adValue, `general_ads_${i}`);
-                            break;
+                                const buyerAdValue = data.videoName ? data.videoName[i] : "";
+                                value = makeAdsClickable(buyerAdValue, `general_ads_${i}`);
+                                break;
                         case 21:
                             const urlValue = data.siteUrl ? data.siteUrl[i] : "";
                             value = makeUrlsClickable(urlValue);
@@ -6412,8 +6412,8 @@
                                 value = data.avgWatchTime ? data.avgWatchTime[i] : "";
                                 break;
                             case 18:
-                                const buyerAdValue = data.videoName ? data.videoName[i] : "";
-                                value = makeAdsClickable(buyerAdValue, `buyer_ads_${i}`);
+                                const adValue = data.videoName ? data.videoName[i] : "";
+                                value = makeAdsClickable(adValue, `buyer_ads_${i}`);
                                 break;
                             case 19:
                                 const urlValue = data.siteUrl ? data.siteUrl[i] : "";
@@ -6548,8 +6548,8 @@
                                 value = data.avgWatchTime ? data.avgWatchTime[i] : "";
                                 break;
                             case 17:
-                                const segmentAdValue = data.videoName ? data.videoName[i] : "";
-                                value = makeAdsClickable(segmentAdValue, `segment_ads_${i}`);
+                                const adValue = data.videoName ? data.videoName[i] : "";
+                                value = makeAdsClickable(adValue, `segment_ads_${i}`);
                                 break;
                             case 18:
                                 const urlValue = data.siteUrl ? data.siteUrl[i] : "";
