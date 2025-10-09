@@ -1608,9 +1608,10 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     segmentData.ctr.push(processDayValues(fbDataSegment.ctr, 12));
                     segmentData.cpm.push(processDayValues(fbDataSegment.cpm, 13));
                     segmentData.linkClicks.push(processDayValues(fbDataSegment.linkClicks, 14));
+                    segmentData.clicksOnLinkFb.push(processDayValues(fbDataSegment.clicksOnLinkFb || [], 17));
                     segmentData.cpc.push(processDayValues(fbDataSegment.cpc, 15));
                     segmentData.avgWatchTime.push(processDayValues(fbDataSegment.avgWatchTime, 16));
-                    segmentData.videoName.push(processDayValues(fbDataSegment.videoName, 17));
+                    segmentData.videoName.push(processDayValues(fbDataSegment.videoName, 21));
                     segmentData.siteUrl.push(processDayValues(fbDataSegment.siteUrl, 18));
                     const budgetValue = processDayValues(fbDataSegment.budget || [], 19);
                     segmentData.budget.push(budgetValue);
@@ -2260,33 +2261,34 @@ function buildChartForArticle(article, periodStart, periodEnd) {
 
         // Создаем новые массивы с диапазонами
         const newGeneralData = {
-            dates: [],
-            ratings: [],
-            cplDay: [],
-            leadsDay: [],
-            spendDay: [],
-            costFromSourcesDay: [],
-            conversionDay: [],
-            maxCPL: [],
-            cplCumulative: [],
-            cplCumulativeColors: [],
-            cplCumulativeArrows: [],
-            groups: [],
-            buyers: [],
-            accounts: [],
-            freq: [],
-            ctr: [],
-            cpm: [],
-            linkClicks: [],
-            cpc: [],
-            avgWatchTime: [],
-            videoName: [],
-            siteUrl: [],
-            budget: [],
-            impressions: [],
-            columnSpans: [],
-            columnClasses: [],
-        };
+                dates: [],
+                ratings: [],
+                cplDay: [],
+                leadsDay: [],
+                spendDay: [],
+                costFromSourcesDay: [],
+                conversionDay: [],
+                maxCPL: [],
+                cplCumulative: [],
+                cplCumulativeColors: [],
+                cplCumulativeArrows: [],
+                groups: [],
+                buyers: [],
+                accounts: [],
+                freq: [],
+                ctr: [],
+                cpm: [],
+                linkClicks: [],
+                clicksOnLinkFb: [],
+                cpc: [],
+                avgWatchTime: [],
+                videoName: [],
+                siteUrl: [],
+                budget: [],
+                impressions: [],
+                columnSpans: [],
+                columnClasses: [],
+            };
 
         dateRanges.forEach((range) => {
             if (range.isZeroRange && range.startIndex !== range.endIndex) {
@@ -2309,15 +2311,16 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                 newGeneralData.buyers.push("");
                 newGeneralData.accounts.push("");
                 newGeneralData.freq.push("");
-                newGeneralData.ctr.push("");
-                newGeneralData.cpm.push("");
-                newGeneralData.linkClicks.push("");
-                newGeneralData.cpc.push("");
-                newGeneralData.avgWatchTime.push("");
-                newGeneralData.videoName.push("");
-                newGeneralData.siteUrl.push("");
-                newGeneralData.budget.push("");
-                newGeneralData.impressions.push("");
+                    newGeneralData.ctr.push("");
+                    newGeneralData.cpm.push("");
+                    newGeneralData.linkClicks.push("");
+                    newGeneralData.clicksOnLinkFb.push("");
+                    newGeneralData.cpc.push("");
+                    newGeneralData.avgWatchTime.push("");
+                    newGeneralData.videoName.push("");
+                    newGeneralData.siteUrl.push("");
+                    newGeneralData.budget.push("");
+                    newGeneralData.impressions.push("");
             } else {
                 for (let i = range.startIndex; i <= range.endIndex; i++) {
                     newGeneralData.dates.push(generalData.dates[i]);
@@ -2344,15 +2347,16 @@ function buildChartForArticle(article, periodStart, periodEnd) {
                     newGeneralData.buyers.push(generalData.buyers[i]);
                     newGeneralData.accounts.push(generalData.accounts[i]);
                     newGeneralData.freq.push(generalData.freq[i]);
-                    newGeneralData.ctr.push(generalData.ctr[i]);
-                    newGeneralData.cpm.push(generalData.cpm[i]);
-                    newGeneralData.linkClicks.push(generalData.linkClicks[i]);
-                    newGeneralData.cpc.push(generalData.cpc[i]);
-                    newGeneralData.avgWatchTime.push(generalData.avgWatchTime[i]);
-                    newGeneralData.videoName.push(generalData.videoName[i]);
-                    newGeneralData.siteUrl.push(generalData.siteUrl[i]);
-                    newGeneralData.budget.push(generalData.budget[i]);
-                    newGeneralData.impressions.push(generalData.impressions[i]);
+                        newGeneralData.ctr.push(generalData.ctr[i]);
+                        newGeneralData.cpm.push(generalData.cpm[i]);
+                        newGeneralData.linkClicks.push(generalData.linkClicks[i]);
+                        newGeneralData.clicksOnLinkFb.push(generalData.clicksOnLinkFb[i]);
+                        newGeneralData.cpc.push(generalData.cpc[i]);
+                        newGeneralData.avgWatchTime.push(generalData.avgWatchTime[i]);
+                        newGeneralData.videoName.push(generalData.videoName[i]);
+                        newGeneralData.siteUrl.push(generalData.siteUrl[i]);
+                        newGeneralData.budget.push(generalData.budget[i]);
+                        newGeneralData.impressions.push(generalData.impressions[i]);
                 }
             }
         });
