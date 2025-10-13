@@ -2523,6 +2523,26 @@
     <script>
         let currentCharts = [];
 
+        // Функция для нахождения первой активной даты (где Расх. > 0)
+        function findFirstActiveDate(spendArray, dates) {
+            for (let i = 0; i < dates.length; i++) {
+                if (spendArray && spendArray[i] > 0) {
+                    console.log('🔍 Found first active date:', dates[i], 'spend:', spendArray[i]);
+                    return dates[i];
+                }
+            }
+            console.log('⚠️ No active dates found');
+            return '99.99.9999';
+        }
+
+        function dateToSortNumber(dateStr) {
+            if (dateStr === '99.99.9999') return 99999999;
+            const [day, month, year] = dateStr.split('.').map(Number);
+            const result = year * 10000 + month * 100 + day;
+            console.log('🔍 Date', dateStr, 'converted to', result);
+            return result;
+        }
+
         // Функция для форматирования содержимого подсказок
         function formatTooltipContent(content, isUrls = false) {
             if (!content || content === "Нет данных" || content.trim() === "") {
@@ -3003,6 +3023,23 @@
         window.navigateFromCalendarToGroup = navigateFromCalendarToGroup;
         window.navigateFromCalendarToAd = navigateFromCalendarToAd;
 
+        // Функция для нахождения первой активной даты (где Расх. > 0)
+        function findFirstActiveDate(spendArray, dates) {
+            for (let i = 0; i < dates.length; i++) {
+                if (spendArray && spendArray[i] > 0) {
+                    return dates[i];
+                }
+            }
+            return '99.99.9999'; // Если нет активных дней, поместить в конец
+        }
+
+        // Функция для преобразования даты dd.MM.yyyy в число для сортировки
+        function dateToSortNumber(dateStr) {
+            if (dateStr === '99.99.9999') return 99999999;
+            const [day, month, year] = dateStr.split('.').map(Number);
+            return year * 10000 + month * 100 + day;
+        }
+
         function displayCalendarMetrics(calendarData) {
             const container = document.getElementById('calendarMetricsContainer');
 
@@ -3162,8 +3199,20 @@
                 }).join('')}
             </tr>`;
 
-                Object.keys(trackerData.campaigns || {}).forEach((campaignName) => {
-                    const campaignData = trackerData.campaigns[campaignName];
+                // Сортируем кампании по дате первого активного дня
+                const sortedCampaigns = Object.keys(trackerData.campaigns || {})
+                    .map(campaignName => ({
+                        name: campaignName,
+                        data: trackerData.campaigns[campaignName],
+                        firstActiveDate: findFirstActiveDate(trackerData.campaigns[campaignName].spend, trackerData.dates)
+                    }))
+                    .sort((a, b) => dateToSortNumber(a.firstActiveDate) - dateToSortNumber(b.firstActiveDate));
+
+                console.log('📊 SORTED CAMPAIGNS:', sortedCampaigns.map(c => ({ name: c.name, firstActive: c.firstActiveDate })));
+
+                sortedCampaigns.forEach((campaignObj) => {
+                    const campaignName = campaignObj.name;
+                    const campaignData = campaignObj.data;
                     const campaignId = `campaign_${rowIndex++}`;
 
                     // Расчет агрегированных метрик для кампании
@@ -3222,8 +3271,20 @@
                     }).join('')}
               </tr>`;
 
-                    Object.keys(campaignData.groups || {}).forEach((groupName) => {
-                        const groupData = campaignData.groups[groupName];
+                    // Сортируем группы по дате первого активного дня
+                    const sortedGroups = Object.keys(campaignData.groups || {})
+                        .map(groupName => ({
+                            name: groupName,
+                            data: campaignData.groups[groupName],
+                            firstActiveDate: findFirstActiveDate(campaignData.groups[groupName].spend, trackerData.dates)
+                        }))
+                        .sort((a, b) => dateToSortNumber(a.firstActiveDate) - dateToSortNumber(b.firstActiveDate));
+
+                    console.log('📊 SORTED GROUPS:', sortedGroups.map(g => ({ name: g.name, firstActive: g.firstActiveDate })));
+
+                    sortedGroups.forEach((groupObj) => {
+                        const groupName = groupObj.name;
+                        const groupData = groupObj.data;
                         const groupId = `group_${rowIndex++}`;
 
                         // Расчет агрегированных метрик для группы
@@ -3282,8 +3343,20 @@
                         }).join('')}
                 </tr>`;
 
-                        Object.keys(groupData.ads || {}).forEach((adName) => {
-                            const adData = groupData.ads[adName];
+                        // Сортируем объявления по дате первого активного дня
+                        const sortedAds = Object.keys(groupData.ads || {})
+                            .map(adName => ({
+                                name: adName,
+                                data: groupData.ads[adName],
+                                firstActiveDate: findFirstActiveDate(groupData.ads[adName].spend, trackerData.dates)
+                            }))
+                            .sort((a, b) => dateToSortNumber(a.firstActiveDate) - dateToSortNumber(b.firstActiveDate));
+
+                        console.log('📊 SORTED ADS:', sortedAds.map(a => ({ name: a.name, firstActive: a.firstActiveDate })));
+
+                        sortedAds.forEach((adObj) => {
+                            const adName = adObj.name;
+                            const adData = adObj.data;
 
                             // Расчет агрегированных метрик для объявления
                             const adDatesData = {
@@ -3814,8 +3887,20 @@
                     <div class="nav-tree-children collapsed" id="calendar_tracker_${trackerIndex}_children">
                 `;
 
-                    Object.keys(trackerData.campaigns || {}).forEach((campaignName, campaignIndex) => {
-                        const campaignData = trackerData.campaigns[campaignName];
+                    // Сортируем кампании по дате первого активного дня
+                    const sortedCampaigns = Object.keys(trackerData.campaigns || {})
+                        .map(campaignName => ({
+                            name: campaignName,
+                            data: trackerData.campaigns[campaignName],
+                            firstActiveDate: findFirstActiveDate(trackerData.campaigns[campaignName].spend, trackerData.dates)
+                        }))
+                        .sort((a, b) => dateToSortNumber(a.firstActiveDate) - dateToSortNumber(b.firstActiveDate));
+
+                    console.log('📊 SORTED CAMPAIGNS:', sortedCampaigns.map(c => ({ name: c.name, firstActive: c.firstActiveDate })));
+
+                    sortedCampaigns.forEach((campaignObj, campaignIndex) => {
+                        const campaignName = campaignObj.name;
+                        const campaignData = campaignObj.data;
 
                         console.log(`🔍 CALENDAR NAV: Creating campaign:`, campaignName);
 
@@ -3846,8 +3931,18 @@
                         <div class="nav-tree-children collapsed" id="calendar_campaign_${trackerIndex}_${campaignIndex}_children">
                     `;
 
-                        Object.keys(campaignData.groups || {}).forEach((groupName, groupIndex) => {
-                            const groupData = campaignData.groups[groupName];
+                        // Сортируем группы по дате первого активного дня
+                        const sortedGroups = Object.keys(campaignData.groups || {})
+                            .map(groupName => ({
+                                name: groupName,
+                                data: campaignData.groups[groupName],
+                                firstActiveDate: findFirstActiveDate(campaignData.groups[groupName].spend, trackerData.dates)
+                            }))
+                            .sort((a, b) => dateToSortNumber(a.firstActiveDate) - dateToSortNumber(b.firstActiveDate));
+
+                        sortedGroups.forEach((groupObj, groupIndex) => {
+                            const groupName = groupObj.name;
+                            const groupData = groupObj.data;
 
                             console.log(`🔍 CALENDAR NAV: Creating group:`, groupName);
 
@@ -3878,15 +3973,25 @@
                             <div class="nav-tree-children collapsed" id="calendar_group_${trackerIndex}_${campaignIndex}_${groupIndex}_children">
                         `;
 
-                            Object.keys(groupData.ads || {}).forEach((adName, adIndex) => {
-                                console.log(`🔍 CALENDAR NAV: Creating ad:`, adName);
+                            // на
+                        // Сортируем объявления по дате первого активного дня
+                        const sortedAds = Object.keys(groupData.ads || {})
+                            .map(adName => ({
+                                name: adName,
+                                data: groupData.ads[adName],
+                                firstActiveDate: findFirstActiveDate(groupData.ads[adName].spend, trackerData.dates)
+                            }))
+                            .sort((a, b) => dateToSortNumber(a.firstActiveDate) - dateToSortNumber(b.firstActiveDate));
 
-                                // Расчет метрик для объявления
-                                const adDatesData = {
-                                    dates: groupData.ads[adName].dates,
-                                    leadsDay: groupData.ads[adName].leads,
-                                    spendDay: groupData.ads[adName].spend
-                                };
+                        sortedAds.forEach((adObj, adIndex) => {
+                            const adName = adObj.name;
+                            console.log(`🔍 CALENDAR NAV: Creating ad:`, adName);
+                            // Расчет метрик для объявления
+                            const adDatesData = {
+                                dates: adObj.data.dates,
+                                leadsDay: adObj.data.leads,
+                                spendDay: adObj.data.spend
+                            };
 
                                 const adPeriodMetrics = calculateAggregatedMetrics(adDatesData, 0, adDatesData.dates.length - 1, userStartDate, userEndDate);
 
