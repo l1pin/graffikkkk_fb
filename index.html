@@ -3790,41 +3790,53 @@
             }, 50);
         }
 
-        function setupCalendarToggles() {
-            const toggles = document.querySelectorAll('.calendar-toggle');
+        // Глобальная функция для видимости строк календаря
+        function setCalendarRowVisibility(parentId, visible) {
+            document.querySelectorAll(`.child-of-${parentId}`).forEach(row => {
+                if (visible) {
+                    row.classList.add('visible');
+                } else {
+                    row.classList.remove('visible');
+                    const nestedId = row.dataset.id;
+                    if (nestedId) {
+                        // Каскадное сворачивание всех подуровней
+                        setCalendarRowVisibility(nestedId, false);
+                        const nestedToggle = document.querySelector(`.calendar-toggle[data-target="${nestedId}"]`);
+                        if (nestedToggle) nestedToggle.textContent = '▸';
+                    }
+                }
+            });
+        }
 
-            function setRowVisibility(parentId, visible) {
-                document.querySelectorAll(`.child-of-${parentId}`).forEach(row => {
-                    if (visible) {
-                        row.classList.add('visible');
-                    } else {
-                        row.classList.remove('visible');
-                        const nestedId = row.dataset.id;
-                        if (nestedId) {
-                            // Каскадное сворачивание всех подуровней
-                            setRowVisibility(nestedId, false);
-                            const nestedToggle = document.querySelector(`.calendar-toggle[data-target="${nestedId}"]`);
-                            if (nestedToggle) nestedToggle.textContent = '▸';
-                        }
+        // Глобальный обработчик для всех calendar-toggle (используем делегирование)
+        let calendarToggleHandlerAttached = false;
+        
+        function setupCalendarToggles() {
+            console.log('🔧 Setting up calendar toggles');
+            
+            // Добавляем глобальный обработчик только один раз
+            if (!calendarToggleHandlerAttached) {
+                document.addEventListener('click', function(e) {
+                    const toggle = e.target.closest('.calendar-toggle');
+                    if (toggle) {
+                        e.stopPropagation();
+                        const targetId = toggle.dataset.target;
+                        const firstChild = document.querySelector(`.child-of-${targetId}`);
+                        const willOpen = firstChild && !firstChild.classList.contains('visible');
+
+                        console.log('🔄 Toggle clicked:', targetId, 'willOpen:', willOpen);
+                        setCalendarRowVisibility(targetId, willOpen);
+                        toggle.textContent = willOpen ? '▾' : '▸';
                     }
                 });
+                calendarToggleHandlerAttached = true;
+                console.log('✅ Calendar toggle handler attached globally');
             }
-
-            toggles.forEach(toggle => {
-                toggle.addEventListener('click', () => {
-                    const targetId = toggle.dataset.target;
-                    const firstChild = document.querySelector(`.child-of-${targetId}`);
-                    const willOpen = firstChild && !firstChild.classList.contains('visible');
-
-                    setRowVisibility(targetId, willOpen);
-                    toggle.textContent = willOpen ? '▾' : '▸';
-                });
-            });
 
             // По умолчанию сворачиваем глубокие уровни
             document.querySelectorAll('.lvl1 .calendar-toggle, .lvl2 .calendar-toggle').forEach(toggle => {
                 const targetId = toggle.dataset.target;
-                setRowVisibility(targetId, false);
+                setCalendarRowVisibility(targetId, false);
                 toggle.textContent = '▸';
             });
         }
@@ -4466,7 +4478,7 @@
                         <span class="nav-metric">Расх.: ${videoPeriodMetrics.totalSpend}</span>
                     </div>
                 </div>
-                <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('creative_video_${videoIndex}')">▸</span>
+                <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('creative_video_${videoIndex}', event)">▸</span>
             </div>
             <div class="nav-tree-children collapsed" id="creative_video_${videoIndex}_children">
         `;
@@ -4772,31 +4784,17 @@
 
     <!-- Блок По байерам -->
     <div class="nav-block">
-                    <div class="nav-block-header" onclick="toggleNavBlock('calendar')" id="calendarBlockHeader">
-                        <div class="nav-block-title">
-                            <i class="fas fa-calendar-alt"></i>
-                            <span>Календарь</span>
-                        </div>
-                        <span class="nav-block-toggle">▾</span>
-                    </div>
-                    <div class="nav-block-content" id="calendarBlockContent">
-                        ${createCalendarNavigationStructure(window.currentCalendarData || {})}
-                    </div>
-                </div>
-
-                <!-- Блок По байерам -->
-                <div class="nav-block">
-                    <div class="nav-block-header" onclick="toggleNavBlock('buyers')" id="buyersBlockHeader">
-                        <div class="nav-block-title">
-                            <i class="fas fa-users"></i>
-                            <span>По байерам</span>
-                        </div>
-                        <span class="nav-block-toggle">▾</span>
-                    </div>
-                    <div class="nav-block-content" id="buyersBlockContent">
-                        ${createBuyersNavigationStructure(buyerGroupsData, 'enhanced')}
-                    </div>
-                </div>
+        <div class="nav-block-header" onclick="toggleNavBlock('buyers')" id="buyersBlockHeader">
+            <div class="nav-block-title">
+                <i class="fas fa-users"></i>
+                <span>По байерам</span>
+            </div>
+            <span class="nav-block-toggle">▾</span>
+        </div>
+        <div class="nav-block-content" id="buyersBlockContent">
+            ${createBuyersNavigationStructure(buyerGroupsData, 'enhanced')}
+        </div>
+    </div>
             `;
 
             container.innerHTML = html;
@@ -4942,9 +4940,15 @@
             });
         }
 
-        function toggleNavTree(itemId) {
+        function toggleNavTree(itemId, e) {
+            e = e || window.event;
             const children = document.getElementById(itemId + '_children');
-            const toggle = event.currentTarget;
+            const toggle = e ? e.currentTarget : null;
+
+            if (!toggle) {
+                console.log('❌ Toggle element not found for:', itemId);
+                return;
+            }
 
             if (children && children.classList.contains('collapsed')) {
                 children.classList.remove('collapsed');
