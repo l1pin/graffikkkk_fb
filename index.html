@@ -3116,11 +3116,35 @@
               </thead>
               <tbody>`;
 
+            // на
             let rowIndex = 0;
-            Object.keys(calendarData).forEach((trackerName) => {
-                const trackerData = calendarData[trackerName];
-                const trackerId = `tracker_${rowIndex++}`;
+            
+            // Сортируем трекеры по дате первого активного дня
+            const sortedTrackers = Object.keys(calendarData)
+                .map(trackerName => {
+                    const trackerData = calendarData[trackerName];
+                    // Собираем все даты активности из всех кампаний трекера
+                    let firstActiveDate = '99.99.9999';
+                    Object.values(trackerData.campaigns || {}).forEach(campaignData => {
+                        const campaignFirstActive = findFirstActiveDate(campaignData.spend, trackerData.dates);
+                        if (dateToSortNumber(campaignFirstActive) < dateToSortNumber(firstActiveDate)) {
+                            firstActiveDate = campaignFirstActive;
+                        }
+                    });
+                    return {
+                        name: trackerName,
+                        data: trackerData,
+                        firstActiveDate: firstActiveDate
+                    };
+                })
+                .sort((a, b) => dateToSortNumber(a.firstActiveDate) - dateToSortNumber(b.firstActiveDate));
 
+            console.log('📊 SORTED TRACKERS:', sortedTrackers.map(t => ({ name: t.name, firstActive: t.firstActiveDate })));
+
+            sortedTrackers.forEach((trackerObj) => {
+                const trackerName = trackerObj.name;
+                const trackerData = trackerObj.data;
+                const trackerId = `tracker_${rowIndex++}`;
                 // Расчет агрегированных метрик для трекера
                 const trackerDatesData = {
                     dates: trackerData.dates,
