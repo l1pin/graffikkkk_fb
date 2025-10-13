@@ -3051,7 +3051,7 @@
             return year * 10000 + month * 100 + day;
         }
 
-        function groupDataByCreatives(generalData) {
+        function groupDataByCreatives(generalData, calendarData) {
             const creativesData = {};
 
             if (!generalData || !generalData.dates || generalData.dates.length === 0) {
@@ -3059,17 +3059,22 @@
                 return creativesData;
             }
 
-            console.log('🎬 Starting to group data by creatives from generalData');
+            if (!calendarData || Object.keys(calendarData).length === 0) {
+                console.log('❌ No calendar data for creatives');
+                return creativesData;
+            }
 
-            // Проходим по всем датам и собираем информацию о видео
+            console.log('🎬 Starting to group data by creatives from generalData and calendarData');
+
+            // Проходим по всем датам и собираем информацию о видео из generalData
             for (let dateIndex = 0; dateIndex < generalData.dates.length; dateIndex++) {
                 const date = generalData.dates[dateIndex];
 
-                // Получаем видео за этот день
+                // Получаем видео за этот день из generalData
                 const videosStr = generalData.videoName ? generalData.videoName[dateIndex] : '';
                 if (!videosStr || videosStr.trim() === '') continue;
 
-                // Получаем группы за этот день
+                // Получаем группы за этот день из generalData
                 const groupsStr = generalData.groups ? generalData.groups[dateIndex] : '';
 
                 // Нормализуем и разбиваем видео
@@ -3093,12 +3098,11 @@
                             leads: new Array(generalData.dates.length).fill(0),
                             spend: new Array(generalData.dates.length).fill(0),
                             cpl: new Array(generalData.dates.length).fill(0),
-                            groups: {},
-                            allGroups: new Set() // для отслеживания всех групп, где используется это видео
+                            campaigns: {}
                         };
                     }
 
-                    // Добавляем метрики (делим поровну между всеми видео этого дня)
+                    // Добавляем метрики на уровне видео
                     const videoCount = uniqueVideos.length;
                     creativesData[videoName].leads[dateIndex] += leads / videoCount;
                     creativesData[videoName].spend[dateIndex] += spend / videoCount;
@@ -3109,41 +3113,115 @@
                             creativesData[videoName].spend[dateIndex] / creativesData[videoName].leads[dateIndex];
                     }
 
-                    // Связываем с группами
-                    groups.forEach(groupName => {
-                        const trimmedGroup = groupName.trim();
-                        if (!trimmedGroup) return;
-
-                        creativesData[videoName].allGroups.add(trimmedGroup);
-
-                        if (!creativesData[videoName].groups[trimmedGroup]) {
-                            creativesData[videoName].groups[trimmedGroup] = {
-                                dates: generalData.dates,
-                                leads: new Array(generalData.dates.length).fill(0),
-                                spend: new Array(generalData.dates.length).fill(0),
-                                cpl: new Array(generalData.dates.length).fill(0)
-                            };
-                        }
-
-                        // Добавляем метрики группы
-                        const groupCount = groups.length;
-                        creativesData[videoName].groups[trimmedGroup].leads[dateIndex] += leads / (videoCount * groupCount);
-                        creativesData[videoName].groups[trimmedGroup].spend[dateIndex] += spend / (videoCount * groupCount);
-
-                        // Пересчитываем CPL группы
-                        if (creativesData[videoName].groups[trimmedGroup].leads[dateIndex] > 0) {
-                            creativesData[videoName].groups[trimmedGroup].cpl[dateIndex] =
-                                creativesData[videoName].groups[trimmedGroup].spend[dateIndex] /
-                                creativesData[videoName].groups[trimmedGroup].leads[dateIndex];
-                        }
+                    // Теперь ищем кампании в calendarData для этих групп
+                    Object.keys(calendarData).forEach(trackerName => {
+                        const trackerData = calendarData[trackerName];
+                        
+                        Object.keys(trackerData.campaigns || {}).forEach(campaignName => {
+                            const campaignData = trackerData.campaigns[campaignName];
+                            
+                            // Проверяем, есть ли в этой кампании группы из нашего списка
+                            const campaignHasGroups = groups.some(groupName => 
+                                Object.keys(campaignData.groups || {}).includes(groupName.trim())
+                            );
+                            
+                            if (!campaignHasGroups) return;
+                            
+                            // Инициализируем кампанию
+                            if (!creativesData[videoName].campaigns[campaignName]) {
+                                creativesData[videoName].campaigns[campaignName] = {
+                                    dates: generalData.dates,
+                                    leads: new Array(generalData.dates.length).fill(0),
+                                    spend: new Array(generalData.dates.length).fill(0),
+                                    cpl: new Array(generalData.dates.length).fill(0),
+                                    groups: {}
+                                };
+                            }
+                            
+                            // Добавляем метрики на уровне кампании
+                            const campaignCount = Object.keys(creativesData[videoName].campaigns).length;
+                            creativesData[videoName].campaigns[campaignName].leads[dateIndex] += leads / (videoCount * campaignCount);
+                            creativesData[videoName].campaigns[campaignName].spend[dateIndex] += spend / (videoCount * campaignCount);
+                            
+                            if (creativesData[videoName].campaigns[campaignName].leads[dateIndex] > 0) {
+                                creativesData[videoName].campaigns[campaignName].cpl[dateIndex] =
+                                    creativesData[videoName].campaigns[campaignName].spend[dateIndex] /
+                                    creativesData[videoName].campaigns[campaignName].leads[dateIndex];
+                            }
+                            
+                            // Связываем с группами
+                            groups.forEach(groupName => {
+                                const trimmedGroup = groupName.trim();
+                                if (!trimmedGroup) return;
+                                
+                                // Проверяем что эта группа есть в этой кампании
+                                if (!campaignData.groups[trimmedGroup]) return;
+                                
+                                // Инициализируем группу
+                                if (!creativesData[videoName].campaigns[campaignName].groups[trimmedGroup]) {
+                                    creativesData[videoName].campaigns[campaignName].groups[trimmedGroup] = {
+                                        dates: generalData.dates,
+                                        leads: new Array(generalData.dates.length).fill(0),
+                                        spend: new Array(generalData.dates.length).fill(0),
+                                        cpl: new Array(generalData.dates.length).fill(0),
+                                        ads: {}
+                                    };
+                                }
+                                
+                                // Добавляем метрики группы
+                                const groupCount = groups.length;
+                                creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].leads[dateIndex] += 
+                                    leads / (videoCount * campaignCount * groupCount);
+                                creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].spend[dateIndex] += 
+                                    spend / (videoCount * campaignCount * groupCount);
+                                
+                                if (creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].leads[dateIndex] > 0) {
+                                    creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].cpl[dateIndex] =
+                                        creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].spend[dateIndex] /
+                                        creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].leads[dateIndex];
+                                }
+                                
+                                // Добавляем объявления из calendarData
+                                const groupDataFromCalendar = campaignData.groups[trimmedGroup];
+                                if (groupDataFromCalendar && groupDataFromCalendar.ads) {
+                                    Object.keys(groupDataFromCalendar.ads).forEach(adName => {
+                                        const adDataFromCalendar = groupDataFromCalendar.ads[adName];
+                                        
+                                        // Инициализируем объявление
+                                        if (!creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].ads[adName]) {
+                                            creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].ads[adName] = {
+                                                dates: generalData.dates,
+                                                leads: new Array(generalData.dates.length).fill(0),
+                                                spend: new Array(generalData.dates.length).fill(0),
+                                                cpl: new Array(generalData.dates.length).fill(0)
+                                            };
+                                        }
+                                        
+                                        // Находим индекс даты в calendarData
+                                        const calendarDateIndex = adDataFromCalendar.dates.indexOf(date);
+                                        if (calendarDateIndex >= 0) {
+                                            const adLeads = adDataFromCalendar.leads[calendarDateIndex] || 0;
+                                            const adSpend = adDataFromCalendar.spend[calendarDateIndex] || 0;
+                                            
+                                            const adCount = Object.keys(groupDataFromCalendar.ads).length;
+                                            creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].ads[adName].leads[dateIndex] += 
+                                                adLeads / (videoCount * adCount);
+                                            creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].ads[adName].spend[dateIndex] += 
+                                                adSpend / (videoCount * adCount);
+                                            
+                                            if (creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].ads[adName].leads[dateIndex] > 0) {
+                                                creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].ads[adName].cpl[dateIndex] =
+                                                    creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].ads[adName].spend[dateIndex] /
+                                                    creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].ads[adName].leads[dateIndex];
+                                            }
+                                        }
+                                    });
+                                }
+                            });
+                        });
                     });
                 });
             }
-
-            // Конвертируем Set в массив
-            Object.keys(creativesData).forEach(videoName => {
-                creativesData[videoName].allGroups = Array.from(creativesData[videoName].allGroups);
-            });
 
             console.log('✅ Grouped data by creatives:', creativesData);
             console.log('📊 Total creatives found:', Object.keys(creativesData).length);
@@ -3566,11 +3644,19 @@
             }, 50);
         }
 
-        function displayCreativesCalendar(generalData) {
+        function displayCreativesCalendar(calendarData) {
             const container = document.getElementById('creativesCalendarContainer');
 
+            // Получаем generalData из глобального контекста
+            const generalData = window.currentChartData ? window.currentChartData.generalData : null;
+            
+            if (!generalData) {
+                container.innerHTML = '<div style="text-align: center; color: #64748b; padding: 40px;">Нет данных generalData</div>';
+                return;
+            }
+
             // Группируем данные по креативам
-            const creativesData = groupDataByCreatives(generalData);
+            const creativesData = groupDataByCreatives(generalData, calendarData);
 
             if (!creativesData || Object.keys(creativesData).length === 0) {
                 container.innerHTML = '<div style="text-align: center; color: #64748b; padding: 40px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;"><i class="fas fa-video" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><p style="font-size: 16px; font-weight: 500; margin: 0;">Нет данных о креативах</p></div>';
@@ -3580,8 +3666,9 @@
             // Получаем правильный порог CPL
             const maxCPLThreshold = window.currentMaxCPL || 3.5;
 
-            // Собираем все даты
-            const allDates = generalData.dates || [];
+            // Собираем все даты из первого видео
+            const firstVideoData = Object.values(creativesData)[0];
+            const allDates = firstVideoData ? firstVideoData.dates : [];
 
             function getCPLStatus(leads, spend, maxCPLThreshold = 3.5) {
                 if (spend === 0 && leads === 0) return 'calendar-muted';
@@ -3639,7 +3726,7 @@
 
             // Сортируем видео по дате первого активного дня
             const sortedVideos = Object.keys(creativesData)
-                .map(videoName => {
+                .map((videoName) => {
                     const videoData = creativesData[videoName];
                     const firstActiveDate = findFirstActiveDate(videoData.spend, videoData.dates);
                     return {
@@ -3650,7 +3737,7 @@
                 })
                 .sort((a, b) => dateToSortNumber(a.firstActiveDate) - dateToSortNumber(b.firstActiveDate));
 
-            sortedVideos.forEach((videoObj) => {
+            sortedVideos.forEach((videoObj, videoIndex) => {
                 const videoName = videoObj.name;
                 const videoData = videoObj.data;
                 const videoId = `creative_${rowIndex++}`;
@@ -3709,63 +3796,64 @@
                 }).join('')}
             </tr>`;
 
-                // Сортируем группы по дате первого активного дня
-                const sortedGroups = Object.keys(videoData.groups || {})
-                    .map(groupName => {
-                        const groupData = videoData.groups[groupName];
-                        const firstActiveDate = findFirstActiveDate(groupData.spend, groupData.dates);
+                // Сортируем кампании по дате первого активного дня
+                const sortedCampaigns = Object.keys(videoData.campaigns || {})
+                    .map(campaignName => {
+                        const campaignData = videoData.campaigns[campaignName];
+                        const firstActiveDate = findFirstActiveDate(campaignData.spend, campaignData.dates);
                         return {
-                            name: groupName,
-                            data: groupData,
+                            name: campaignName,
+                            data: campaignData,
                             firstActiveDate: firstActiveDate
                         };
                     })
                     .sort((a, b) => dateToSortNumber(a.firstActiveDate) - dateToSortNumber(b.firstActiveDate));
 
-                sortedGroups.forEach((groupObj) => {
-                    const groupName = groupObj.name;
-                    const groupData = groupObj.data;
+                sortedCampaigns.forEach((campaignObj, campaignIndex) => {
+                    const campaignName = campaignObj.name;
+                    const campaignData = campaignObj.data;
+                    const campaignId = `creative_campaign_${videoIndex}_${campaignIndex}`;
 
-                    const groupDatesData = {
-                        dates: groupData.dates,
-                        leadsDay: groupData.leads,
-                        spendDay: groupData.spend
+                    const campaignDatesData = {
+                        dates: campaignData.dates,
+                        leadsDay: campaignData.leads,
+                        spendDay: campaignData.spend
                     };
 
-                    const groupLast7DaysIndices = getLast7ActiveDaysIndices(groupDatesData);
-                    const groupPeriodMetrics = calculateAggregatedMetrics(groupDatesData, 0, groupDatesData.dates.length - 1, userStartDate, userEndDate);
-                    const groupLast7DaysMetrics = groupLast7DaysIndices.length > 0 ?
-                        calculateAggregatedMetrics(groupDatesData, Math.min(...groupLast7DaysIndices), Math.max(...groupLast7DaysIndices)) :
+                    const campaignLast7DaysIndices = getLast7ActiveDaysIndices(campaignDatesData);
+                    const campaignPeriodMetrics = calculateAggregatedMetrics(campaignDatesData, 0, campaignDatesData.dates.length - 1, userStartDate, userEndDate);
+                    const campaignLast7DaysMetrics = campaignLast7DaysIndices.length > 0 ?
+                        calculateAggregatedMetrics(campaignDatesData, Math.min(...campaignLast7DaysIndices), Math.max(...campaignLast7DaysIndices)) :
                         { avgCPL: "0,00", totalLeads: 0, totalSpend: "0,00" };
 
                     html += `
-                <tr class="lvl1 calendar-child child-of-${videoId}">
+                <tr class="lvl1 calendar-child child-of-${videoId}" data-id="${campaignId}">
                     <td>
                         <div class="calendar-row">
-                            <div style="width:22px;height:22px;"></div>
+                            <div class="calendar-toggle" data-target="${campaignId}">▾</div>
                             <div class="calendar-info">
-                                <div class="calendar-name">📁 ${escapeHtml(groupName)}</div>
-                                <div class="calendar-alias">группа объявлений</div>
+                                <div class="calendar-name">📱 ${escapeHtml(campaignName)}</div>
+                                <div class="calendar-alias">${Object.keys(campaignData.groups || {}).length} ${Object.keys(campaignData.groups || {}).length === 1 ? 'группа' : 'групп'}</div>
                             </div>
                         </div>
                     </td>
                     <td style="padding: 0;">
                         <div class="calendar-cell" style="background-color: #1b2335 !important; border-color: #334155 !important; color: white !important; margin: 2px;">
-                            <div class="calendar-metric" style="color: white !important;">Лиды: ${groupPeriodMetrics.totalLeads}</div>
-                            <div class="calendar-metric" style="color: white !important;">CPL: ${groupPeriodMetrics.avgCPL}</div>
-                            <div class="calendar-metric" style="color: white !important;">Расх.: ${groupPeriodMetrics.totalSpend}</div>
+                            <div class="calendar-metric" style="color: white !important;">Лиды: ${campaignPeriodMetrics.totalLeads}</div>
+                            <div class="calendar-metric" style="color: white !important;">CPL: ${campaignPeriodMetrics.avgCPL}</div>
+                            <div class="calendar-metric" style="color: white !important;">Расх.: ${campaignPeriodMetrics.totalSpend}</div>
                         </div>
                     </td>
                     <td style="padding: 0;">
                         <div class="calendar-cell" style="background-color: #232a3b !important; border-color: #334155 !important; color: white !important; margin: 2px;">
-                            <div class="calendar-metric" style="color: white !important;">Лиды: ${groupLast7DaysMetrics.totalLeads}</div>
-                            <div class="calendar-metric" style="color: white !important;">CPL: ${groupLast7DaysMetrics.avgCPL}</div>
-                            <div class="calendar-metric" style="color: white !important;">Расх.: ${groupLast7DaysMetrics.totalSpend}</div>
+                            <div class="calendar-metric" style="color: white !important;">Лиды: ${campaignLast7DaysMetrics.totalLeads}</div>
+                            <div class="calendar-metric" style="color: white !important;">CPL: ${campaignLast7DaysMetrics.avgCPL}</div>
+                            <div class="calendar-metric" style="color: white !important;">Расх.: ${campaignLast7DaysMetrics.totalSpend}</div>
                         </div>
                     </td>
                     ${allDates.map((date, dateIndex) => {
-                        const leads = groupData.leads[dateIndex] || 0;
-                        const spend = groupData.spend[dateIndex] || 0;
+                        const leads = campaignData.leads[dateIndex] || 0;
+                        const spend = campaignData.spend[dateIndex] || 0;
 
                         return `
                             <td>
@@ -3778,6 +3866,149 @@
                         `;
                     }).join('')}
                 </tr>`;
+
+                    // Сортируем группы по дате первого активного дня
+                    const sortedGroups = Object.keys(campaignData.groups || {})
+                        .map(groupName => {
+                            const groupData = campaignData.groups[groupName];
+                            const firstActiveDate = findFirstActiveDate(groupData.spend, groupData.dates);
+                            return {
+                                name: groupName,
+                                data: groupData,
+                                firstActiveDate: firstActiveDate
+                            };
+                        })
+                        .sort((a, b) => dateToSortNumber(a.firstActiveDate) - dateToSortNumber(b.firstActiveDate));
+
+                    sortedGroups.forEach((groupObj, groupIndex) => {
+                        const groupName = groupObj.name;
+                        const groupData = groupObj.data;
+                        const groupId = `creative_group_${videoIndex}_${campaignIndex}_${groupIndex}`;
+
+                        const groupDatesData = {
+                            dates: groupData.dates,
+                            leadsDay: groupData.leads,
+                            spendDay: groupData.spend
+                        };
+
+                        const groupLast7DaysIndices = getLast7ActiveDaysIndices(groupDatesData);
+                        const groupPeriodMetrics = calculateAggregatedMetrics(groupDatesData, 0, groupDatesData.dates.length - 1, userStartDate, userEndDate);
+                        const groupLast7DaysMetrics = groupLast7DaysIndices.length > 0 ?
+                            calculateAggregatedMetrics(groupDatesData, Math.min(...groupLast7DaysIndices), Math.max(...groupLast7DaysIndices)) :
+                            { avgCPL: "0,00", totalLeads: 0, totalSpend: "0,00" };
+
+                        html += `
+                    <tr class="lvl2 calendar-child child-of-${campaignId}" data-id="${groupId}">
+                        <td>
+                            <div class="calendar-row">
+                                <div class="calendar-toggle" data-target="${groupId}">▾</div>
+                                <div class="calendar-info">
+                                    <div class="calendar-name">📁 ${escapeHtml(groupName)}</div>
+                                    <div class="calendar-alias">${Object.keys(groupData.ads || {}).length} ${Object.keys(groupData.ads || {}).length === 1 ? 'объявление' : 'объявлений'}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding: 0;">
+                            <div class="calendar-cell" style="background-color: #1b2335 !important; border-color: #334155 !important; color: white !important; margin: 2px;">
+                                <div class="calendar-metric" style="color: white !important;">Лиды: ${groupPeriodMetrics.totalLeads}</div>
+                                <div class="calendar-metric" style="color: white !important;">CPL: ${groupPeriodMetrics.avgCPL}</div>
+                                <div class="calendar-metric" style="color: white !important;">Расх.: ${groupPeriodMetrics.totalSpend}</div>
+                            </div>
+                        </td>
+                        <td style="padding: 0;">
+                            <div class="calendar-cell" style="background-color: #232a3b !important; border-color: #334155 !important; color: white !important; margin: 2px;">
+                                <div class="calendar-metric" style="color: white !important;">Лиды: ${groupLast7DaysMetrics.totalLeads}</div>
+                                <div class="calendar-metric" style="color: white !important;">CPL: ${groupLast7DaysMetrics.avgCPL}</div>
+                                <div class="calendar-metric" style="color: white !important;">Расх.: ${groupLast7DaysMetrics.totalSpend}</div>
+                            </div>
+                        </td>
+                        ${allDates.map((date, dateIndex) => {
+                            const leads = groupData.leads[dateIndex] || 0;
+                            const spend = groupData.spend[dateIndex] || 0;
+
+                            return `
+                                <td>
+                                    <div class="calendar-cell ${getCPLStatus(leads, spend, maxCPLThreshold)}">
+                                        <div class="calendar-metric">Лиды: ${Math.round(leads)}</div>
+                                        <div class="calendar-metric">CPL: ${formatCPL(leads, spend)}</div>
+                                        <div class="calendar-metric">Расх.: ${formatValue(spend)}</div>
+                                    </div>
+                                </td>
+                            `;
+                        }).join('')}
+                    </tr>`;
+
+                        // Сортируем объявления по дате первого активного дня
+                        const sortedAds = Object.keys(groupData.ads || {})
+                            .map(adName => {
+                                const adData = groupData.ads[adName];
+                                const firstActiveDate = findFirstActiveDate(adData.spend, adData.dates);
+                                return {
+                                    name: adName,
+                                    data: adData,
+                                    firstActiveDate: firstActiveDate
+                                };
+                            })
+                            .sort((a, b) => dateToSortNumber(a.firstActiveDate) - dateToSortNumber(b.firstActiveDate));
+
+                        sortedAds.forEach((adObj) => {
+                            const adName = adObj.name;
+                            const adData = adObj.data;
+
+                            const adDatesData = {
+                                dates: adData.dates,
+                                leadsDay: adData.leads,
+                                spendDay: adData.spend
+                            };
+
+                            const adLast7DaysIndices = getLast7ActiveDaysIndices(adDatesData);
+                            const adPeriodMetrics = calculateAggregatedMetrics(adDatesData, 0, adDatesData.dates.length - 1, userStartDate, userEndDate);
+                            const adLast7DaysMetrics = adLast7DaysIndices.length > 0 ?
+                                calculateAggregatedMetrics(adDatesData, Math.min(...adLast7DaysIndices), Math.max(...adLast7DaysIndices)) :
+                                { avgCPL: "0,00", totalLeads: 0, totalSpend: "0,00" };
+
+                            html += `
+                        <tr class="lvl3 calendar-child child-of-${groupId}">
+                            <td>
+                                <div class="calendar-row">
+                                    <div style="width:22px;height:22px;"></div>
+                                    <div class="calendar-info">
+                                        <div class="calendar-name">📄 ${escapeHtml(adName)}</div>
+                                        <div class="calendar-alias">объявление</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="padding: 0;">
+                                <div class="calendar-cell" style="background-color: #1b2335 !important; border-color: #334155 !important; color: white !important; margin: 2px;">
+                                    <div class="calendar-metric" style="color: white !important;">Лиды: ${adPeriodMetrics.totalLeads}</div>
+                                    <div class="calendar-metric" style="color: white !important;">CPL: ${adPeriodMetrics.avgCPL}</div>
+                                    <div class="calendar-metric" style="color: white !important;">Расх.: ${adPeriodMetrics.totalSpend}</div>
+                                </div>
+                            </td>
+                            <td style="padding: 0;">
+                                <div class="calendar-cell" style="background-color: #232a3b !important; border-color: #334155 !important; color: white !important; margin: 2px;">
+                                    <div class="calendar-metric" style="color: white !important;">Лиды: ${adLast7DaysMetrics.totalLeads}</div>
+                                    <div class="calendar-metric" style="color: white !important;">CPL: ${adLast7DaysMetrics.avgCPL}</div>
+                                    <div class="calendar-metric" style="color: white !important;">Расх.: ${adLast7DaysMetrics.totalSpend}</div>
+                                </div>
+                            </td>
+                            ${allDates.map((date, dateIndex) => {
+                                const leads = adData.leads[dateIndex] || 0;
+                                const spend = adData.spend[dateIndex] || 0;
+
+                                return `
+                                    <td>
+                                        <div class="calendar-cell ${getCPLStatus(leads, spend, maxCPLThreshold)}">
+                                            <div class="calendar-metric">Лиды: ${Math.round(leads)}</div>
+                                            <div class="calendar-metric">CPL: ${formatCPL(leads, spend)}</div>
+                                            <div class="calendar-metric">Расх.: ${formatValue(spend)}</div>
+                                        </div>
+                                    </td>
+                                `;
+                            }).join('')}
+                        </tr>`;
+                        });
+                    });
                 });
             });
 
@@ -3858,8 +4089,8 @@
             // Сохраняем порог CPL для календаря
             window.currentMaxCPL = parseFloat((data.generalMetrics.displayMaxCPL || "3.5").replace(',', '.'));
             displayCalendarMetrics(data.calendarData || {});
-            // Отображаем раздел креативов (передаем generalData для получения названий видео)
-            displayCreativesCalendar(data.generalData || {});
+            // Отображаем раздел креативов (передаем calendarData для полной иерархии)
+                displayCreativesCalendar(data.calendarData || {});
             displayGeneralChart(data.article, data.generalData);
             displayGeneralTable(data.generalData, periodStart, periodEnd);
             displayBuyerGroups(data.article, data.buyerGroupsData || {}, periodStart, periodEnd);
@@ -4429,7 +4660,7 @@
                 }
 
                 // Группируем данные по креативам
-                const creativesData = groupDataByCreatives(generalData);
+                const creativesData = groupDataByCreatives(generalData, calendarData);
 
                 if (!creativesData || Object.keys(creativesData).length === 0) {
                     return '<div class="nav-placeholder"><i class="fas fa-video"></i><span>Нет данных о креативах</span></div>';
@@ -4483,49 +4714,141 @@
             <div class="nav-tree-children collapsed" id="creative_video_${videoIndex}_children">
         `;
 
-                    // Сортируем группы
-                    const sortedGroups = Object.keys(videoData.groups || {})
-                        .map(groupName => {
-                            const groupData = videoData.groups[groupName];
-                            const firstActiveDate = findFirstActiveDate(groupData.spend, groupData.dates);
+                    // Сортируем кампании
+                    const sortedCampaigns = Object.keys(videoData.campaigns || {})
+                        .map(campaignName => {
+                            const campaignData = videoData.campaigns[campaignName];
+                            const firstActiveDate = findFirstActiveDate(campaignData.spend, campaignData.dates);
                             return {
-                                name: groupName,
-                                data: groupData,
+                                name: campaignName,
+                                data: campaignData,
                                 firstActiveDate: firstActiveDate
                             };
                         })
                         .sort((a, b) => dateToSortNumber(a.firstActiveDate) - dateToSortNumber(b.firstActiveDate));
 
-                    sortedGroups.forEach((groupObj, groupIndex) => {
-                        const groupName = groupObj.name;
-                        const groupData = groupObj.data;
+                    sortedCampaigns.forEach((campaignObj, campaignIndex) => {
+                        const campaignName = campaignObj.name;
+                        const campaignData = campaignObj.data;
 
-                        const groupDatesData = {
-                            dates: groupData.dates,
-                            leadsDay: groupData.leads,
-                            spendDay: groupData.spend
+                        const campaignDatesData = {
+                            dates: campaignData.dates,
+                            leadsDay: campaignData.leads,
+                            spendDay: campaignData.spend
                         };
 
-                        const groupPeriodMetrics = calculateAggregatedMetrics(groupDatesData, 0, groupDatesData.dates.length - 1, userStartDate, userEndDate);
+                        const campaignPeriodMetrics = calculateAggregatedMetrics(campaignDatesData, 0, campaignDatesData.dates.length - 1, userStartDate, userEndDate);
 
                         html += `
-                <div class="nav-tree-item level-1" onclick="navigateToCreativeElement('${escapeHtml(groupName)}', 'group', '${escapeHtml(videoName)}')">
+                <div class="nav-tree-item level-1" onclick="navigateToCreativeElement('${escapeHtml(campaignName)}', 'campaign', '${escapeHtml(videoName)}')">
                     <div class="nav-item-content">
                         <div class="nav-item-header">
-                            <i class="fas fa-folder nav-icon"></i>
-                            <span class="nav-item-name">${escapeHtml(groupName)}</span>
+                            <i class="fas fa-tv nav-icon"></i>
+                            <span class="nav-item-name">${escapeHtml(campaignName)}</span>
                         </div>
                         <div class="nav-item-metrics">
-                            <span class="nav-metric">Лиды: ${groupPeriodMetrics.totalLeads}</span>
-                            <span class="nav-metric">CPL: ${groupPeriodMetrics.avgCPL}</span>
-                            <span class="nav-metric">Расх.: ${groupPeriodMetrics.totalSpend}</span>
+                            <span class="nav-metric">Лиды: ${campaignPeriodMetrics.totalLeads}</span>
+                            <span class="nav-metric">CPL: ${campaignPeriodMetrics.avgCPL}</span>
+                            <span class="nav-metric">Расх.: ${campaignPeriodMetrics.totalSpend}</span>
                         </div>
                     </div>
+                    <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('creative_campaign_${videoIndex}_${campaignIndex}', event)">▸</span>
                 </div>
+                <div class="nav-tree-children collapsed" id="creative_campaign_${videoIndex}_${campaignIndex}_children">
             `;
+
+                        // Сортируем группы
+                        const sortedGroups = Object.keys(campaignData.groups || {})
+                            .map(groupName => {
+                                const groupData = campaignData.groups[groupName];
+                                const firstActiveDate = findFirstActiveDate(groupData.spend, groupData.dates);
+                                return {
+                                    name: groupName,
+                                    data: groupData,
+                                    firstActiveDate: firstActiveDate
+                                };
+                            })
+                            .sort((a, b) => dateToSortNumber(a.firstActiveDate) - dateToSortNumber(b.firstActiveDate));
+
+                        sortedGroups.forEach((groupObj, groupIndex) => {
+                            const groupName = groupObj.name;
+                            const groupData = groupObj.data;
+
+                            const groupDatesData = {
+                                dates: groupData.dates,
+                                leadsDay: groupData.leads,
+                                spendDay: groupData.spend
+                            };
+
+                            const groupPeriodMetrics = calculateAggregatedMetrics(groupDatesData, 0, groupDatesData.dates.length - 1, userStartDate, userEndDate);
+
+                            html += `
+                    <div class="nav-tree-item level-2" onclick="navigateToCreativeElement('${escapeHtml(groupName)}', 'group', '${escapeHtml(videoName)}', '${escapeHtml(campaignName)}')">
+                        <div class="nav-item-content">
+                            <div class="nav-item-header">
+                                <i class="fas fa-folder nav-icon"></i>
+                                <span class="nav-item-name">${escapeHtml(groupName)}</span>
+                            </div>
+                            <div class="nav-item-metrics">
+                                <span class="nav-metric">Лиды: ${groupPeriodMetrics.totalLeads}</span>
+                                <span class="nav-metric">CPL: ${groupPeriodMetrics.avgCPL}</span>
+                                <span class="nav-metric">Расх.: ${groupPeriodMetrics.totalSpend}</span>
+                            </div>
+                        </div>
+                        <span class="nav-tree-toggle" onclick="event.stopPropagation(); toggleNavTree('creative_group_${videoIndex}_${campaignIndex}_${groupIndex}', event)">▸</span>
+                    </div>
+                    <div class="nav-tree-children collapsed" id="creative_group_${videoIndex}_${campaignIndex}_${groupIndex}_children">
+                `;
+
+                            // Сортируем объявления
+                            const sortedAds = Object.keys(groupData.ads || {})
+                                .map(adName => {
+                                    const adData = groupData.ads[adName];
+                                    const firstActiveDate = findFirstActiveDate(adData.spend, adData.dates);
+                                    return {
+                                        name: adName,
+                                        data: adData,
+                                        firstActiveDate: firstActiveDate
+                                    };
+                                })
+                                .sort((a, b) => dateToSortNumber(a.firstActiveDate) - dateToSortNumber(b.firstActiveDate));
+
+                            sortedAds.forEach((adObj) => {
+                                const adName = adObj.name;
+                                const adData = adObj.data;
+
+                                const adDatesData = {
+                                    dates: adData.dates,
+                                    leadsDay: adData.leads,
+                                    spendDay: adData.spend
+                                };
+
+                                const adPeriodMetrics = calculateAggregatedMetrics(adDatesData, 0, adDatesData.dates.length - 1, userStartDate, userEndDate);
+
+                                html += `
+                        <div class="nav-tree-item level-3" onclick="navigateToCreativeElement('${escapeHtml(adName)}', 'ad', '${escapeHtml(videoName)}', '${escapeHtml(campaignName)}', '${escapeHtml(groupName)}')">
+                            <div class="nav-item-content">
+                                <div class="nav-item-header">
+                                    <i class="fas fa-rectangle-ad nav-icon"></i>
+                                    <span class="nav-item-name">${escapeHtml(adName)}</span>
+                                </div>
+                                <div class="nav-item-metrics">
+                                    <span class="nav-metric">Лиды: ${adPeriodMetrics.totalLeads}</span>
+                                    <span class="nav-metric">CPL: ${adPeriodMetrics.avgCPL}</span>
+                                    <span class="nav-metric">Расх.: ${adPeriodMetrics.totalSpend}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                            });
+
+                            html += '</div>'; // закрываем группу
+                        });
+
+                        html += '</div>'; // закрываем кампанию
                     });
 
-                    html += '</div>';
+                    html += '</div>'; // закрываем видео
                 });
 
                 return html;
