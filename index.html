@@ -3867,9 +3867,31 @@
                 const userStartDate = document.getElementById("periodStart").value;
                 const userEndDate = document.getElementById("periodEnd").value;
 
-                Object.keys(calendarData).forEach((trackerName, trackerIndex) => {
+                // на
+            // Сортируем трекеры по дате первого активного дня
+            const sortedTrackers = Object.keys(calendarData)
+                .map((trackerName, trackerIndex) => {
                     const trackerData = calendarData[trackerName];
-                    const cleanTrackerName = cleanName(trackerName, trackerIndex, 'tracker');
+                    let firstActiveDate = '99.99.9999';
+                    Object.values(trackerData.campaigns || {}).forEach(campaignData => {
+                        const campaignFirstActive = findFirstActiveDate(campaignData.spend, trackerData.dates);
+                        if (dateToSortNumber(campaignFirstActive) < dateToSortNumber(firstActiveDate)) {
+                            firstActiveDate = campaignFirstActive;
+                        }
+                    });
+                    return {
+                        name: trackerName,
+                        data: trackerData,
+                        firstActiveDate: firstActiveDate,
+                        originalIndex: trackerIndex
+                    };
+                })
+                .sort((a, b) => dateToSortNumber(a.firstActiveDate) - dateToSortNumber(b.firstActiveDate));
+
+            sortedTrackers.forEach((trackerObj, trackerIndex) => {
+                const trackerName = trackerObj.name;
+                const trackerData = trackerObj.data;
+                const cleanTrackerName = cleanName(trackerName, trackerIndex, 'tracker');
 
                     console.log(`🔍 CALENDAR NAV: Creating tracker:`, trackerName);
 
@@ -3997,7 +4019,6 @@
                             <div class="nav-tree-children collapsed" id="calendar_group_${trackerIndex}_${campaignIndex}_${groupIndex}_children">
                         `;
 
-                            // на
                         // Сортируем объявления по дате первого активного дня
                         const sortedAds = Object.keys(groupData.ads || {})
                             .map(adName => ({
