@@ -2536,7 +2536,7 @@
             }
 
             // Нормализуем элементы если это не URL
-            const normalizedItems = isUrls 
+            const normalizedItems = isUrls
                 ? items.map(item => normalizeUrl(item))
                 : items.map(item => item.endsWith('.mp4') || item.endsWith('.MP4') ? normalizeVideoName(item) : item);
 
@@ -2619,10 +2619,10 @@
             if (!text || text.trim() === "") return "";
 
             const urls = text.split("\n").filter((url) => url.trim() !== "");
-            
+
             // Нормализуем URL и удаляем дубликаты
             const uniqueUrls = Array.from(new Set(urls.map(url => normalizeUrl(url))));
-            
+
             return uniqueUrls
                 .map((cleanUrl, index) => {
                     const alternatingClass = index % 2 === 0 ? 'even-item' : 'odd-item';
@@ -2648,10 +2648,10 @@
             if (!text || text.trim() === "") return "";
 
             const groups = text.split("\n").filter((group) => group.trim() !== "");
-            
+
             // Удаляем дубликаты групп
             const uniqueGroups = Array.from(new Set(groups.map(g => g.trim())));
-            
+
             return uniqueGroups
                 .map((group, index) => {
                     const trimmedGroup = group.trim();
@@ -2690,7 +2690,7 @@
             if (!text || text.trim() === "") return "";
 
             const ads = text.split("\n").filter((ad) => ad.trim() !== "");
-            
+
             // Нормализуем названия видео и удаляем дубликаты
             const normalizedAds = Array.from(new Set(ads.map(ad => {
                 const trimmedAd = ad.trim();
@@ -2700,7 +2700,7 @@
                 }
                 return trimmedAd;
             })));
-            
+
             return normalizedAds
                 .map((ad, index) => {
                     const trimmedAd = ad.trim();
@@ -5194,21 +5194,21 @@
                             value = data.avgWatchTime ? data.avgWatchTime[i] : "";
                             break;
                         case 20:
-                                let buyerAdValue = data.videoName ? data.videoName[i] : "";
-                                // Дополнительная нормализация перед отображением
-                                if (buyerAdValue && buyerAdValue.trim() !== "") {
-                                    const adItems = buyerAdValue.split('\n').filter(item => item.trim() !== "");
-                                    const normalizedAdItems = adItems.map(item => {
-                                        const trimmed = item.trim();
-                                        if (trimmed.endsWith('.mp4') || trimmed.endsWith('.MP4')) {
-                                            return normalizeVideoName(trimmed);
-                                        }
-                                        return trimmed;
-                                    });
-                                    buyerAdValue = normalizedAdItems.join('\n');
-                                }
-                                value = makeAdsClickable(buyerAdValue, `general_ads_${i}`);
-                                break;
+                            let buyerAdValue = data.videoName ? data.videoName[i] : "";
+                            // Дополнительная нормализация перед отображением
+                            if (buyerAdValue && buyerAdValue.trim() !== "") {
+                                const adItems = buyerAdValue.split('\n').filter(item => item.trim() !== "");
+                                const normalizedAdItems = adItems.map(item => {
+                                    const trimmed = item.trim();
+                                    if (trimmed.endsWith('.mp4') || trimmed.endsWith('.MP4')) {
+                                        return normalizeVideoName(trimmed);
+                                    }
+                                    return trimmed;
+                                });
+                                buyerAdValue = normalizedAdItems.join('\n');
+                            }
+                            value = makeAdsClickable(buyerAdValue, `general_ads_${i}`);
+                            break;
                         case 21:
                             const urlValue = data.siteUrl ? data.siteUrl[i] : "";
                             value = makeUrlsClickable(urlValue);
