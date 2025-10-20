@@ -2532,6 +2532,7 @@
     </div>
 
     <script>
+
         let currentCharts = [];
 
         // Функция для нахождения первой активной даты (где Расх. > 0)
@@ -3187,37 +3188,19 @@
 
             function getCPLStatus(leads, spend, maxCPLThreshold = 3.5) {
                 if (spend === 0 && leads === 0) return 'calendar-muted';
+                if (leads === 0 && spend > 0) return 'calendar-danger';
 
                 const cpl = leads > 0 ? spend / leads : 0;
+                if (cpl === 0 || isNaN(cpl) || maxCPLThreshold === 0) return 'calendar-muted';
 
-                // Точно такая же логика как в серверном коде
-                let rating = "";
-                if (leads === 0 && spend > 0) {
-                    rating = "D";
-                } else if (cpl === 0 || isNaN(cpl) || maxCPLThreshold === 0) {
-                    rating = "";
-                } else {
-                    const percentage = (cpl / maxCPLThreshold) * 100;
-
-                    if (percentage <= 35) rating = "A";
-                    else if (percentage <= 65) rating = "B";
-                    else if (percentage <= 90) rating = "C";
-                    else rating = "D";
-                }
-
-                // Возвращаем соответствующий класс
-                if (rating === 'A') return 'calendar-excellent';
-                else if (rating === 'B') return 'calendar-good';
-                else if (rating === 'C') return 'calendar-warning';
-                else if (rating === 'D') return 'calendar-danger';
-                else return 'calendar-muted';
+                const pct = (cpl / maxCPLThreshold) * 100;
+                return pct <= 35 ? 'calendar-excellent' :
+                    pct <= 65 ? 'calendar-good' :
+                        pct <= 90 ? 'calendar-warning' : 'calendar-danger';
             }
 
             function formatCPL(leads, spend) {
-                if (spend === 0 && leads === 0) return '—';
-                if (spend > 0 && leads === 0) return '—';
-                const cpl = leads > 0 ? spend / leads : 0;
-                return cpl > 0 ? cpl.toFixed(2) : '—';
+                return (leads > 0 && spend > 0) ? (spend / leads).toFixed(2) : '—';
             }
 
             function formatValue(value) {
@@ -3629,10 +3612,7 @@
             }
 
             function formatCPL(leads, spend) {
-                if (spend === 0 && leads === 0) return '—';
-                if (spend > 0 && leads === 0) return '—';
-                const cpl = leads > 0 ? spend / leads : 0;
-                return cpl > 0 ? cpl.toFixed(2) : '—';
+                return (leads > 0 && spend > 0) ? (spend / leads).toFixed(2) : '—';
             }
 
             function formatValue(value) {
@@ -4152,16 +4132,11 @@
 
         // Функция для очистки имен (глобальная)
         function cleanName(name, index, prefix) {
-            let cleanedName = String(name || `${prefix}_${index}`)
+            const cleaned = String(name || `${prefix}_${index}`)
                 .replace(/[^a-zA-Z0-9]/g, "_")
                 .replace(/_+/g, "_")
                 .replace(/^_|_$/g, "");
-
-            if (!cleanedName) {
-                cleanedName = `${prefix}_${index}`;
-            }
-
-            return cleanedName;
+            return cleaned || `${prefix}_${index}`;
         }
 
         function buildNavigationTree(buyerGroupsData) {
@@ -7846,25 +7821,17 @@
             currentCharts.push(chart);
         }
 
-        function formatNumber(value) {
-            if (
-                value === 0 ||
-                value === "" ||
-                value === null ||
-                value === undefined
-            )
-                return "";
+        function formatNumber(value, withZero = false) {
+            if (value === null || value === undefined || value === "")
+                return withZero ? "0,00" : "";
             const num = Number(value);
             if (isNaN(num)) return value;
+            if (num === 0 && !withZero) return "";
             return num.toFixed(2).replace(".", ",");
         }
 
         function formatNumberWithZero(value) {
-            if (value === null || value === undefined || value === "")
-                return "0,00";
-            const num = Number(value);
-            if (isNaN(num)) return value;
-            return num.toFixed(2).replace(".", ",");
+            return formatNumber(value, true);
         }
 
         function escapeHtml(text) {
@@ -8729,10 +8696,7 @@
             }
 
             function formatCPL(leads, spend) {
-                if (spend === 0 && leads === 0) return '—';
-                if (spend > 0 && leads === 0) return '—';
-                const cpl = leads > 0 ? spend / leads : 0;
-                return cpl > 0 ? cpl.toFixed(2) : '—';
+                return (leads > 0 && spend > 0) ? (spend / leads).toFixed(2) : '—';
             }
 
             function formatValue(value) {
