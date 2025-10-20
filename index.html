@@ -2532,21 +2532,26 @@
     </div>
 
     <script>
-
         let currentCharts = [];
 
         // Функция для нахождения первой активной даты (где Расх. > 0)
         function findFirstActiveDate(spendArray, dates) {
             for (let i = 0; i < dates.length; i++) {
-                if (spendArray && spendArray[i] > 0) return dates[i];
+                if (spendArray && spendArray[i] > 0) {
+                    console.log('🔍 Found first active date:', dates[i], 'spend:', spendArray[i]);
+                    return dates[i];
+                }
             }
+            console.log('⚠️ No active dates found');
             return '99.99.9999';
         }
 
         function dateToSortNumber(dateStr) {
             if (dateStr === '99.99.9999') return 99999999;
             const [day, month, year] = dateStr.split('.').map(Number);
-            return year * 10000 + month * 100 + day;
+            const result = year * 10000 + month * 100 + day;
+            console.log('🔍 Date', dateStr, 'converted to', result);
+            return result;
         }
 
         // Функция для форматирования содержимого подсказок
@@ -2822,7 +2827,22 @@
             const periodStart = document.getElementById("periodStart").value;
             const periodEnd = document.getElementById("periodEnd").value;
 
-            console.log("🔍 Building chart:", article, periodStart, periodEnd);
+            console.log(
+                "🔍 Input values - Article:",
+                article,
+                "Start:",
+                periodStart,
+                "End:",
+                periodEnd
+            );
+            console.log(
+                "🔍 Period start element value:",
+                document.getElementById("periodStart").value
+            );
+            console.log(
+                "🔍 Period end element value:",
+                document.getElementById("periodEnd").value
+            );
 
             if (!article) {
                 showError(
@@ -2836,38 +2856,67 @@
             hideResults();
 
             // Уничтожаем существующие графики
-            currentCharts.forEach(chart => {
+            console.log(
+                "🗑️ Уничтожаем старые графики, количество:",
+                currentCharts.length
+            );
+            currentCharts.forEach((chart, index) => {
                 try {
-                    if (chart && typeof chart.destroy === "function") chart.destroy();
-                } catch (e) { }
+                    console.log(`🗑️ Уничтожаем график ${index}:`, chart);
+                    if (chart && typeof chart.destroy === "function") {
+                        chart.destroy();
+                    }
+                } catch (e) {
+                    console.log("❌ Ошибка при уничтожении графика:", e);
+                }
             });
             currentCharts = [];
 
             // Дополнительная очистка всех canvas элементов
-            document.querySelectorAll("canvas").forEach(canvas => {
+            const allCanvases = document.querySelectorAll("canvas");
+            console.log("🗑️ Найдено canvas элементов:", allCanvases.length);
+            allCanvases.forEach((canvas, index) => {
                 try {
                     const chartInstance = Chart.getChart(canvas);
-                    if (chartInstance) chartInstance.destroy();
-                } catch (e) { }
+                    if (chartInstance) {
+                        console.log(
+                            `🗑️ Уничтожаем Chart instance ${index}:`,
+                            chartInstance.id
+                        );
+                        chartInstance.destroy();
+                    }
+                } catch (e) {
+                    console.log("❌ Ошибка при очистке canvas:", e);
+                }
             });
 
             // Вызываем Google Apps Script функцию
             try {
+                console.log("🚀 Запуск анализа для артикула:", article);
+                console.log("📅 Период:", periodStart, "до", periodEnd);
+
+                // Добавляем тайм-аут
                 let timeoutId = setTimeout(() => {
-                    handleError("⏰ Превышено время ожидания!\n\nОбработка данных заняла слишком много времени.\nПопробуйте:\n• Уменьшить период анализа\n• Повторить запрос позже\n• Обратиться к администратору");
-                }, 120000);
+                    console.error("⏰ Тайм-аут выполнения функции");
+                    handleError(
+                        "⏰ Превышено время ожидания!\n\nОбработка данных заняла слишком много времени.\nПопробуйте:\n• Уменьшить период анализа\n• Повторить запрос позже\n• Обратиться к администратору"
+                    );
+                }, 120000); // 2 минуты
 
                 google.script.run
                     .withSuccessHandler((result) => {
                         clearTimeout(timeoutId);
+                        console.log("✅ Функция выполнена успешно, результат:", result);
                         handleSuccess(result);
                     })
                     .withFailureHandler((error) => {
                         clearTimeout(timeoutId);
+                        console.error("❌ Ошибка выполнения функции:", error);
                         handleError(error);
                     })
                     .buildChartForArticle(article, periodStart, periodEnd);
             } catch (e) {
+                console.error("❌ Ошибка при вызове Google Apps Script:", e);
                 handleError(
                     "🔌 Google Apps Script недоступен!\n\nПроверьте подключение к интернету и обновите страницу."
                 );
@@ -2875,11 +2924,13 @@
         }
 
         function handleSuccess(data) {
+            console.log("✅ Получены данные от Google Apps Script:", data);
             showLoading(false);
             displayResults(data);
         }
 
         function handleError(error) {
+            console.error("❌ Ошибка Google Apps Script:", error);
             showLoading(false);
 
             // Извлекаем чистое сообщение для пользователя
@@ -2983,7 +3034,22 @@
         window.navigateFromCalendarToGroup = navigateFromCalendarToGroup;
         window.navigateFromCalendarToAd = navigateFromCalendarToAd;
 
+        // Функция для нахождения первой активной даты (где Расх. > 0)
+        function findFirstActiveDate(spendArray, dates) {
+            for (let i = 0; i < dates.length; i++) {
+                if (spendArray && spendArray[i] > 0) {
+                    return dates[i];
+                }
+            }
+            return '99.99.9999'; // Если нет активных дней, поместить в конец
+        }
 
+        // Функция для преобразования даты dd.MM.yyyy в число для сортировки
+        function dateToSortNumber(dateStr) {
+            if (dateStr === '99.99.9999') return 99999999;
+            const [day, month, year] = dateStr.split('.').map(Number);
+            return year * 10000 + month * 100 + day;
+        }
 
         function groupDataByCreatives(generalData, calendarData) {
             const creativesData = {};
@@ -2998,7 +3064,7 @@
                 return creativesData;
             }
 
-
+            console.log('🎬 Starting to group data by creatives from generalData and calendarData');
 
             // Проходим по всем датам и собираем информацию о видео из generalData
             for (let dateIndex = 0; dateIndex < generalData.dates.length; dateIndex++) {
@@ -3050,17 +3116,17 @@
                     // Теперь ищем кампании в calendarData для этих групп
                     Object.keys(calendarData).forEach(trackerName => {
                         const trackerData = calendarData[trackerName];
-
+                        
                         Object.keys(trackerData.campaigns || {}).forEach(campaignName => {
                             const campaignData = trackerData.campaigns[campaignName];
-
+                            
                             // Проверяем, есть ли в этой кампании группы из нашего списка
-                            const campaignHasGroups = groups.some(groupName =>
+                            const campaignHasGroups = groups.some(groupName => 
                                 Object.keys(campaignData.groups || {}).includes(groupName.trim())
                             );
-
+                            
                             if (!campaignHasGroups) return;
-
+                            
                             // Инициализируем кампанию
                             if (!creativesData[videoName].campaigns[campaignName]) {
                                 creativesData[videoName].campaigns[campaignName] = {
@@ -3071,26 +3137,26 @@
                                     groups: {}
                                 };
                             }
-
+                            
                             // Добавляем метрики на уровне кампании
                             const campaignCount = Object.keys(creativesData[videoName].campaigns).length;
                             creativesData[videoName].campaigns[campaignName].leads[dateIndex] += leads / (videoCount * campaignCount);
                             creativesData[videoName].campaigns[campaignName].spend[dateIndex] += spend / (videoCount * campaignCount);
-
+                            
                             if (creativesData[videoName].campaigns[campaignName].leads[dateIndex] > 0) {
                                 creativesData[videoName].campaigns[campaignName].cpl[dateIndex] =
                                     creativesData[videoName].campaigns[campaignName].spend[dateIndex] /
                                     creativesData[videoName].campaigns[campaignName].leads[dateIndex];
                             }
-
+                            
                             // Связываем с группами
                             groups.forEach(groupName => {
                                 const trimmedGroup = groupName.trim();
                                 if (!trimmedGroup) return;
-
+                                
                                 // Проверяем что эта группа есть в этой кампании
                                 if (!campaignData.groups[trimmedGroup]) return;
-
+                                
                                 // Инициализируем группу
                                 if (!creativesData[videoName].campaigns[campaignName].groups[trimmedGroup]) {
                                     creativesData[videoName].campaigns[campaignName].groups[trimmedGroup] = {
@@ -3101,26 +3167,26 @@
                                         ads: {}
                                     };
                                 }
-
+                                
                                 // Добавляем метрики группы
                                 const groupCount = groups.length;
-                                creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].leads[dateIndex] +=
+                                creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].leads[dateIndex] += 
                                     leads / (videoCount * campaignCount * groupCount);
-                                creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].spend[dateIndex] +=
+                                creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].spend[dateIndex] += 
                                     spend / (videoCount * campaignCount * groupCount);
-
+                                
                                 if (creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].leads[dateIndex] > 0) {
                                     creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].cpl[dateIndex] =
                                         creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].spend[dateIndex] /
                                         creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].leads[dateIndex];
                                 }
-
+                                
                                 // Добавляем объявления из calendarData
                                 const groupDataFromCalendar = campaignData.groups[trimmedGroup];
                                 if (groupDataFromCalendar && groupDataFromCalendar.ads) {
                                     Object.keys(groupDataFromCalendar.ads).forEach(adName => {
                                         const adDataFromCalendar = groupDataFromCalendar.ads[adName];
-
+                                        
                                         // Инициализируем объявление
                                         if (!creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].ads[adName]) {
                                             creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].ads[adName] = {
@@ -3130,19 +3196,19 @@
                                                 cpl: new Array(generalData.dates.length).fill(0)
                                             };
                                         }
-
+                                        
                                         // Находим индекс даты в calendarData
                                         const calendarDateIndex = adDataFromCalendar.dates.indexOf(date);
                                         if (calendarDateIndex >= 0) {
                                             const adLeads = adDataFromCalendar.leads[calendarDateIndex] || 0;
                                             const adSpend = adDataFromCalendar.spend[calendarDateIndex] || 0;
-
+                                            
                                             const adCount = Object.keys(groupDataFromCalendar.ads).length;
-                                            creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].ads[adName].leads[dateIndex] +=
+                                            creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].ads[adName].leads[dateIndex] += 
                                                 adLeads / (videoCount * adCount);
-                                            creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].ads[adName].spend[dateIndex] +=
+                                            creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].ads[adName].spend[dateIndex] += 
                                                 adSpend / (videoCount * adCount);
-
+                                            
                                             if (creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].ads[adName].leads[dateIndex] > 0) {
                                                 creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].ads[adName].cpl[dateIndex] =
                                                     creativesData[videoName].campaigns[campaignName].groups[trimmedGroup].ads[adName].spend[dateIndex] /
@@ -3157,7 +3223,8 @@
                 });
             }
 
-
+            console.log('✅ Grouped data by creatives:', creativesData);
+            console.log('📊 Total creatives found:', Object.keys(creativesData).length);
 
             return creativesData;
         }
@@ -3188,19 +3255,37 @@
 
             function getCPLStatus(leads, spend, maxCPLThreshold = 3.5) {
                 if (spend === 0 && leads === 0) return 'calendar-muted';
-                if (leads === 0 && spend > 0) return 'calendar-danger';
 
                 const cpl = leads > 0 ? spend / leads : 0;
-                if (cpl === 0 || isNaN(cpl) || maxCPLThreshold === 0) return 'calendar-muted';
 
-                const pct = (cpl / maxCPLThreshold) * 100;
-                return pct <= 35 ? 'calendar-excellent' :
-                    pct <= 65 ? 'calendar-good' :
-                        pct <= 90 ? 'calendar-warning' : 'calendar-danger';
+                // Точно такая же логика как в серверном коде
+                let rating = "";
+                if (leads === 0 && spend > 0) {
+                    rating = "D";
+                } else if (cpl === 0 || isNaN(cpl) || maxCPLThreshold === 0) {
+                    rating = "";
+                } else {
+                    const percentage = (cpl / maxCPLThreshold) * 100;
+
+                    if (percentage <= 35) rating = "A";
+                    else if (percentage <= 65) rating = "B";
+                    else if (percentage <= 90) rating = "C";
+                    else rating = "D";
+                }
+
+                // Возвращаем соответствующий класс
+                if (rating === 'A') return 'calendar-excellent';
+                else if (rating === 'B') return 'calendar-good';
+                else if (rating === 'C') return 'calendar-warning';
+                else if (rating === 'D') return 'calendar-danger';
+                else return 'calendar-muted';
             }
 
             function formatCPL(leads, spend) {
-                return (leads > 0 && spend > 0) ? (spend / leads).toFixed(2) : '—';
+                if (spend === 0 && leads === 0) return '—';
+                if (spend > 0 && leads === 0) return '—';
+                const cpl = leads > 0 ? spend / leads : 0;
+                return cpl > 0 ? cpl.toFixed(2) : '—';
             }
 
             function formatValue(value) {
@@ -3243,7 +3328,7 @@
                 })
                 .sort((a, b) => dateToSortNumber(a.firstActiveDate) - dateToSortNumber(b.firstActiveDate));
 
-
+            console.log('📊 SORTED TRACKERS:', sortedTrackers.map(t => ({ name: t.name, firstActive: t.firstActiveDate })));
 
             sortedTrackers.forEach((trackerObj) => {
                 const trackerName = trackerObj.name;
@@ -3336,7 +3421,7 @@
                     }))
                     .sort((a, b) => dateToSortNumber(a.firstActiveDate) - dateToSortNumber(b.firstActiveDate));
 
-
+                console.log('📊 SORTED CAMPAIGNS:', sortedCampaigns.map(c => ({ name: c.name, firstActive: c.firstActiveDate })));
 
                 sortedCampaigns.forEach((campaignObj) => {
                     const campaignName = campaignObj.name;
@@ -3408,7 +3493,7 @@
                         }))
                         .sort((a, b) => dateToSortNumber(a.firstActiveDate) - dateToSortNumber(b.firstActiveDate));
 
-
+                    console.log('📊 SORTED GROUPS:', sortedGroups.map(g => ({ name: g.name, firstActive: g.firstActiveDate })));
 
                     sortedGroups.forEach((groupObj) => {
                         const groupName = groupObj.name;
@@ -3480,7 +3565,7 @@
                             }))
                             .sort((a, b) => dateToSortNumber(a.firstActiveDate) - dateToSortNumber(b.firstActiveDate));
 
-
+                        console.log('📊 SORTED ADS:', sortedAds.map(a => ({ name: a.name, firstActive: a.firstActiveDate })));
 
                         sortedAds.forEach((adObj) => {
                             const adName = adObj.name;
@@ -3564,7 +3649,7 @@
 
             // Получаем generalData из глобального контекста
             const generalData = window.currentChartData ? window.currentChartData.generalData : null;
-
+            
             if (!generalData) {
                 container.innerHTML = '<div style="text-align: center; color: #64748b; padding: 40px;">Нет данных generalData</div>';
                 return;
@@ -3612,7 +3697,10 @@
             }
 
             function formatCPL(leads, spend) {
-                return (leads > 0 && spend > 0) ? (spend / leads).toFixed(2) : '—';
+                if (spend === 0 && leads === 0) return '—';
+                if (spend > 0 && leads === 0) return '—';
+                const cpl = leads > 0 ? spend / leads : 0;
+                return cpl > 0 ? cpl.toFixed(2) : '—';
             }
 
             function formatValue(value) {
@@ -3953,23 +4041,30 @@
 
         // Глобальный обработчик для всех calendar-toggle (используем делегирование)
         let calendarToggleHandlerAttached = false;
-
+        
         function setupCalendarToggles() {
+            console.log('🔧 Setting up calendar toggles');
+            
+            // Добавляем глобальный обработчик только один раз
             if (!calendarToggleHandlerAttached) {
-                document.addEventListener('click', function (e) {
+                document.addEventListener('click', function(e) {
                     const toggle = e.target.closest('.calendar-toggle');
                     if (toggle) {
                         e.stopPropagation();
                         const targetId = toggle.dataset.target;
                         const firstChild = document.querySelector(`.child-of-${targetId}`);
                         const willOpen = firstChild && !firstChild.classList.contains('visible');
+
+                        console.log('🔄 Toggle clicked:', targetId, 'willOpen:', willOpen);
                         setCalendarRowVisibility(targetId, willOpen);
                         toggle.textContent = willOpen ? '▾' : '▸';
                     }
                 });
                 calendarToggleHandlerAttached = true;
+                console.log('✅ Calendar toggle handler attached globally');
             }
 
+            // По умолчанию сворачиваем глубокие уровни
             document.querySelectorAll('.lvl1 .calendar-toggle, .lvl2 .calendar-toggle').forEach(toggle => {
                 const targetId = toggle.dataset.target;
                 setCalendarRowVisibility(targetId, false);
@@ -3978,6 +4073,9 @@
         }
 
         function displayResults(data) {
+            console.log("📊 Отображаем результаты:", data);
+
+            // Сохраняем данные глобально для переключения навигации
             window.currentChartData = data;
 
             // Получаем выбранные пользователем даты
@@ -3992,7 +4090,7 @@
             window.currentMaxCPL = parseFloat((data.generalMetrics.displayMaxCPL || "3.5").replace(',', '.'));
             displayCalendarMetrics(data.calendarData || {});
             // Отображаем раздел креативов (передаем calendarData для полной иерархии)
-            displayCreativesCalendar(data.calendarData || {});
+                displayCreativesCalendar(data.calendarData || {});
             displayGeneralChart(data.article, data.generalData);
             displayGeneralTable(data.generalData, periodStart, periodEnd);
             displayBuyerGroups(data.article, data.buyerGroupsData || {}, periodStart, periodEnd);
@@ -4010,7 +4108,11 @@
             try {
                 const container = document.getElementById('navigationTree');
 
+                console.log('🔍 Building general data navigation:', window.currentGeneralData);
+
+                // Проверяем наличие данных общих данных
                 if (!window.currentGeneralData || !window.currentGeneralData.buyerAccountData) {
+                    console.log('❌ No general data available for navigation');
                     container.innerHTML = `
                         <div class="nav-placeholder">
                             <i class="fas fa-info-circle"></i>
@@ -4075,6 +4177,8 @@
                 Object.keys(buyerAccountData).forEach((buyerName, buyerIndex) => {
                     const buyerData = buyerAccountData[buyerName];
 
+                    console.log(`🔍 GENERAL NAV: Creating buyer:`, buyerName, buyerData);
+
                     // Расчет метрик для байера
                     const buyerPeriodMetrics = calculateBuyerPeriodMetrics(buyerData, dates);
 
@@ -4100,6 +4204,8 @@
                         Object.keys(buyerData.accounts).forEach((accountName, accountIndex) => {
                             const accountData = buyerData.accounts[accountName];
 
+                            console.log(`🔍 GENERAL NAV: Creating account:`, accountName, accountData);
+
                             // Расчет метрик для аккаунта
                             const accountPeriodMetrics = calculateAccountPeriodMetrics(accountData, dates);
 
@@ -4124,19 +4230,26 @@
                     html += '</div>';
                 });
 
+                console.log('✅ Generated general navigation HTML:', html.length > 0);
                 return html;
             } catch (error) {
+                console.error('❌ Error in createGeneralDataNavigationStructure:', error);
                 return '<div class="nav-placeholder"><i class="fas fa-exclamation-triangle"></i><span>Ошибка создания навигации</span></div>';
             }
         }
 
         // Функция для очистки имен (глобальная)
         function cleanName(name, index, prefix) {
-            const cleaned = String(name || `${prefix}_${index}`)
+            let cleanedName = String(name || `${prefix}_${index}`)
                 .replace(/[^a-zA-Z0-9]/g, "_")
                 .replace(/_+/g, "_")
                 .replace(/^_|_$/g, "");
-            return cleaned || `${prefix}_${index}`;
+
+            if (!cleanedName) {
+                cleanedName = `${prefix}_${index}`;
+            }
+
+            return cleanedName;
         }
 
         function buildNavigationTree(buyerGroupsData) {
@@ -4193,6 +4306,8 @@
                     const cleanBuyerName = cleanName(buyerName, buyerIndex, 'buyer');
                     const buyerId = `${targetPrefix}_buyer_${cleanBuyerName}`;
 
+                    console.log(`🔍 NAV: Creating buyer link for ${targetPrefix}:`, buyerName, '→', buyerId);
+
                     // Расчет метрик для байера
                     let buyerPeriodMetrics = { avgCPL: "0,00", totalLeads: 0, totalSpend: "0,00" };
                     if (buyerData.buyerData && buyerData.buyerData.data) {
@@ -4221,6 +4336,8 @@
                         const campaignData = buyerData.campaigns[campaignName];
                         const cleanCampaignName = cleanName(campaignName, campaignIndex, 'campaign');
                         const campaignId = `${targetPrefix}_campaign_${cleanBuyerName}_${cleanCampaignName}_${campaignIndex}`;
+
+                        console.log(`🔍 NAV: Creating campaign link for ${targetPrefix}:`, campaignName, '→', campaignId);
 
                         // Расчет метрик для кампании
                         let campaignPeriodMetrics = { avgCPL: "0,00", totalLeads: 0, totalSpend: "0,00" };
@@ -4251,6 +4368,8 @@
                             const cleanGroupName = cleanName(groupName, groupIndex, 'group');
                             const groupId = `${targetPrefix}_group_${cleanBuyerName}_${cleanCampaignName}_${cleanGroupName}_${groupIndex}`;
 
+                            console.log(`🔍 NAV: Creating group link for ${targetPrefix}:`, groupName, '→', groupId);
+
                             // Расчет метрик для группы
                             let groupPeriodMetrics = { avgCPL: "0,00", totalLeads: 0, totalSpend: "0,00" };
                             if (groupData.groupData && groupData.groupData.data) {
@@ -4278,6 +4397,8 @@
                             Object.keys(groupData.ads || {}).forEach((adName, adIndex) => {
                                 const cleanAdName = cleanName(adName, adIndex, 'ad');
                                 const adId = `${targetPrefix}_ad_${cleanBuyerName}_${cleanCampaignName}_${cleanGroupName}_${cleanAdName}_${adIndex}`;
+
+                                console.log(`🔍 NAV: Creating ad link for ${targetPrefix}:`, adName, '→', adId);
 
                                 // Расчет метрик для объявления
                                 let adPeriodMetrics = { avgCPL: "0,00", totalLeads: 0, totalSpend: "0,00" };
@@ -4401,7 +4522,7 @@
                         }))
                         .sort((a, b) => dateToSortNumber(a.firstActiveDate) - dateToSortNumber(b.firstActiveDate));
 
-
+                    console.log('📊 SORTED CAMPAIGNS:', sortedCampaigns.map(c => ({ name: c.name, firstActive: c.firstActiveDate })));
 
                     sortedCampaigns.forEach((campaignObj, campaignIndex) => {
                         const campaignName = campaignObj.name;
@@ -4489,6 +4610,7 @@
 
                             sortedAds.forEach((adObj, adIndex) => {
                                 const adName = adObj.name;
+                                console.log(`🔍 CALENDAR NAV: Creating ad:`, adName);
                                 // Расчет метрик для объявления
                                 const adDatesData = {
                                     dates: adObj.data.dates,
@@ -5002,8 +5124,14 @@
         }
 
         function navigateToGeneralElement(elementName, elementType, buyerName = null) {
+            console.log('🚀 GENERAL NAVIGATION for:', elementName, 'type:', elementType, 'buyer:', buyerName);
+
+            // Ищем элемент в календаре общих данных
             const generalCalendarTable = document.querySelector('#buyerAccountCalendarContainer .calendar-table');
-            if (!generalCalendarTable) return;
+            if (!generalCalendarTable) {
+                console.log('❌ General calendar table not found');
+                return;
+            }
 
             // Ищем строку с учетом иерархии
             const rows = generalCalendarTable.querySelectorAll('tbody tr');
@@ -5016,16 +5144,22 @@
 
                     if (elementType === 'buyer' && cellText === elementName && row.classList.contains('lvl0')) {
                         targetRow = row;
+                        console.log('✅ Found target buyer:', targetRow);
                     } else if (elementType === 'account' && cellText === elementName && row.classList.contains('lvl1')) {
+                        // Проверяем, что это аккаунт нужного байера
                         const buyerRow = findBuyerRowInGeneral(buyerName, rows);
                         if (buyerRow && isChildOfBuyerInGeneral(row, buyerRow)) {
                             targetRow = row;
+                            console.log('✅ Found target account in correct buyer:', targetRow);
                         }
                     }
                 }
             });
 
             if (targetRow) {
+                console.log('✅ Found general calendar element:', elementName);
+
+                // СНАЧАЛА раскрываем всю цепочку до этого элемента
                 expandGeneralCalendarToTarget(targetRow);
 
                 // Ждем завершения раскрытия и делаем элемент видимым, затем скроллимся
@@ -5047,6 +5181,8 @@
                         highlightCalendarElement(targetRow);
                     }, 200);
                 }, 600);
+            } else {
+                console.log('❌ General calendar element not found:', elementName);
             }
         }
 
@@ -5070,31 +5206,58 @@
         }
 
         function expandGeneralCalendarToTarget(targetRow) {
+            console.log('🔓 EXPANDING GENERAL CALENDAR PATH to target:', targetRow);
+
+            // Собираем всех родителей которых нужно раскрыть
             const togglesToExpand = [];
             let currentElement = targetRow;
 
+            // Поднимаемся по иерархии
             while (currentElement) {
                 const classes = Array.from(currentElement.classList);
+                console.log('🔍 Checking element classes:', classes);
+
+                // Ищем класс child-of-*
                 const childOfClass = classes.find(cls => cls.startsWith('child-of-'));
 
                 if (childOfClass) {
                     const parentId = childOfClass.replace('child-of-', '');
-                    const parentToggle = document.querySelector(`.calendar-toggle[data-target="${parentId}"]`);
+                    console.log('🔍 Found parent ID:', parentId);
 
-                    if (parentToggle && parentToggle.textContent === '▸') {
-                        togglesToExpand.unshift(parentToggle);
+                    // Находим toggle родителя
+                    const parentToggle = document.querySelector(`.calendar-toggle[data-target="${parentId}"]`);
+                    console.log('🔍 Parent toggle:', parentToggle);
+
+                    if (parentToggle) {
+                        console.log('🔍 Toggle text:', parentToggle.textContent);
+                        // Добавляем в начало списка (чтобы раскрывать от корня к листьям)
+                        if (parentToggle.textContent === '▸') {
+                            togglesToExpand.unshift(parentToggle);
+                            console.log('➕ Added toggle to expand list');
+                        }
                     }
 
+                    // Ищем родительскую строку по data-id
                     currentElement = document.querySelector(`[data-id="${parentId}"]`);
+                    console.log('🔍 Found parent element:', currentElement);
                 } else {
+                    console.log('🔍 No more parents found, breaking');
                     break;
                 }
 
-                if (togglesToExpand.length > 10) break;
+                // Защита от бесконечного цикла
+                if (togglesToExpand.length > 10) {
+                    console.log('⚠️ Too many levels, breaking');
+                    break;
+                }
             }
 
+            console.log('🔓 Found', togglesToExpand.length, 'toggles to expand');
+
+            // Раскрываем элементы последовательно (от корня к листьям)
             togglesToExpand.forEach((toggle, index) => {
                 setTimeout(() => {
+                    console.log('⚡ Expanding general calendar level', index, 'toggle:', toggle);
                     toggle.click();
                 }, index * 150);
             });
@@ -5120,17 +5283,28 @@
         }
 
         function navigateToElement(elementId) {
+            console.log('🚀 SMART NAVIGATION for:', elementId);
+
+            // Определяем реальный ID элемента (убираем префиксы навигационных блоков)
             let realElementId = elementId;
             if (elementId.startsWith('calendar_')) {
                 realElementId = elementId.replace('calendar_', 'enhanced_');
+                console.log('🔄 Converting calendar navigation to real element:', elementId, '→', realElementId);
             }
 
+            // Найдем целевой элемент сразу
             const targetElement = findTargetElement(realElementId);
-            if (!targetElement) return;
+            if (!targetElement) {
+                console.log('❌ Target element not found:', realElementId);
+                return;
+            }
 
+            // Раскрываем всю цепочку до этого элемента
             expandToTarget(targetElement, realElementId);
 
+            // Прокручиваем к элементу
             setTimeout(() => {
+                console.log('📍 SCROLLING to target');
                 targetElement.scrollIntoView({
                     behavior: 'smooth',
                     block: 'start',
@@ -5153,12 +5327,17 @@
         }
 
         function expandToTarget(targetElement, elementId) {
+            console.log('🔓 EXPANDING PATH to:', elementId);
+
+            // Находим всех родителей, которые нужно раскрыть
             let currentElement = targetElement;
             const elementsToExpand = [];
 
             while (currentElement) {
+                // Ищем родительский content элемент
                 const parentContent = currentElement.closest('.buyer-content-area, .nested-group-content-enhanced');
                 if (parentContent && parentContent.classList.contains('collapsed')) {
+                    // Находим соответствующий header
                     const parentHeader = parentContent.previousElementSibling;
                     if (parentHeader) {
                         elementsToExpand.unshift({
@@ -5168,25 +5347,37 @@
                         });
                     }
                 }
+
+                // Переходим к следующему родителю
                 currentElement = parentContent ? parentContent.parentElement : null;
+
+                // Защита от бесконечного цикла
                 if (elementsToExpand.length > 10) break;
             }
 
+            console.log('🔓 Found', elementsToExpand.length, 'elements to expand');
+
+            // Раскрываем элементы последовательно
             elementsToExpand.forEach((item, index) => {
                 setTimeout(() => {
+                    console.log('⚡ Expanding level', index, item.type);
                     item.header.click();
                 }, index * 200);
             });
 
+            // Если целевой элемент тоже свернут - раскрываем его
             const targetContent = document.getElementById(elementId + '_content');
             if (targetContent && targetContent.classList.contains('collapsed')) {
                 setTimeout(() => {
+                    console.log('⚡ Expanding target itself');
                     targetElement.click();
                 }, elementsToExpand.length * 200 + 100);
             }
         }
 
         function highlightElement(element) {
+            console.log('✨ HIGHLIGHTING ELEMENT');
+            // Добавляем подсветку
             element.style.boxShadow = '0 0 20px rgba(96, 165, 250, 0.8)';
             element.style.transition = 'box-shadow 0.3s ease';
             element.style.border = '2px solid #60a5fa';
@@ -5640,7 +5831,8 @@
                 const userEndForComparison = new Date(userEndDate);
                 userEndForComparison.setHours(23, 59, 59, 999);
 
-
+                console.log('🔍 User period:', userStartDate, 'to', userEndDate);
+                console.log('🔍 Normalized period:', userStartForComparison, 'to', userEndForComparison);
 
                 actualStartIndex = -1;
                 actualEndIndex = -1;
@@ -5653,7 +5845,7 @@
                     const currentDateForComparison = new Date(year, month - 1, day);
                     currentDateForComparison.setHours(12, 0, 0, 0); // Ставим на середину дня для избежания проблем с часовыми поясами
 
-
+                    console.log('🔍 Checking date:', currentDateStr, '(', currentDateForComparison, ') vs period:', userStartForComparison, '-', userEndForComparison);
 
                     // Сравниваем даты
                     if (currentDateForComparison >= userStartForComparison && currentDateForComparison <= userEndForComparison) {
@@ -5661,13 +5853,17 @@
                             actualStartIndex = i;
                         }
                         actualEndIndex = i;
-
+                        console.log('✅ Date', currentDateStr, 'is in period, index:', i);
                     } else {
-
+                        console.log('❌ Date', currentDateStr, 'is NOT in period');
                     }
                 }
 
+                console.log('🔍 Period indices:', actualStartIndex, 'to', actualEndIndex);
+
+                // Если не найдены даты в диапазоне, возвращаем пустые метрики
                 if (actualStartIndex === -1) {
+                    console.log('❌ No dates found in user period');
                     return {
                         avgCPL: "0,00",
                         totalLeads: 0,
@@ -5693,13 +5889,18 @@
                 const daySpend = data.spendDay ? (data.spendDay[i] || 0) : 0;
                 const dayCostFromSources = data.costFromSourcesDay ? (data.costFromSourcesDay[i] || 0) : 0;
 
+                console.log('🔍 Processing day:', data.dates[i], 'leads:', dayLeads, 'spend:', daySpend, 'costFromSources:', dayCostFromSources, 'active:', (dayLeads > 0 || daySpend > 0 || dayCostFromSources > 0));
+
+                // Если используется пользовательский период, учитываем только активные дни
                 if (useUserPeriod && dayLeads === 0 && daySpend === 0) {
-                    continue;
+                    console.log('⏩ Skipping inactive day:', data.dates[i]);
+                    continue; // Пропускаем неактивные дни в пользовательском периоде
                 }
 
                 totalLeads += dayLeads;
                 totalSpend += daySpend;
                 totalCostFromSources += dayCostFromSources;
+                console.log('✅ Added to totals - day:', data.dates[i], 'total leads:', totalLeads, 'total spend:', totalSpend, 'total costFromSources:', totalCostFromSources);
 
                 // CPL
                 if (dayLeads > 0 && daySpend > 0) {
@@ -5874,6 +6075,8 @@
         }
 
         function displayGeneralTable(data, userStartDate = null, userEndDate = null) {
+            console.log("📋 Отображаем общую таблицу с данными:", data);
+
             const table = document.getElementById("generalTable");
             // Показы берем из базы данных (поле showed)
             if (!data.impressions) {
@@ -6231,6 +6434,14 @@
         }
 
         function displayBuyerGroups(article, buyerGroupsData, userStartDate = null, userEndDate = null) {
+            console.log("🌲 Отображаем деревовидную структуру:", buyerGroupsData);
+            console.log("🔍 Список байеров:", Object.keys(buyerGroupsData));
+            Object.keys(buyerGroupsData).forEach((buyerName, index) => {
+                console.log(
+                    `🔍 Байер ${index}: "${buyerName}" (тип: ${typeof buyerName}, длина: ${buyerName.length
+                    })`
+                );
+            });
 
             const container = document.getElementById("buyerGroupsContainer");
 
@@ -6283,6 +6494,15 @@
                     const buyerId = `enhanced_buyer_${cleanBuyerName}`;
                     const groupsCount = Object.keys(buyerData.campaigns || {}).length;
                     const buyerChartId = `buyer_chart_${buyerId}`;
+
+                    console.log(
+                        "🔍 Buyer name:",
+                        buyerName,
+                        "-> Clean name:",
+                        cleanBuyerName,
+                        "-> ID:",
+                        buyerId
+                    );
 
                     html += `
             <div class="buyer-group-section">
@@ -6641,7 +6861,20 @@
 
                 container.innerHTML = html;
 
+                // Проверяем созданные элементы
+                console.log("🔍 Проверяем созданные элементы:");
+                const allCanvases = container.querySelectorAll("canvas");
+                const allTables = container.querySelectorAll("table");
+                console.log("🔍 Canvas элементов:", allCanvases.length);
+                console.log("🔍 Table элементов:", allTables.length);
+                allCanvases.forEach((canvas) =>
+                    console.log("🔍 Canvas ID:", canvas.id)
+                );
+                allTables.forEach((table) => console.log("🔍 Table ID:", table.id));
+
+                // Создаем графики и таблицы с задержкой
                 setTimeout(() => {
+                    console.log("📊 Начинаем создание графиков через 100мс");
 
                     // Создаем функции с замыканиями для каждого байера
                     Object.keys(buyerGroupsData).forEach((buyerName, buyerIndex) => {
@@ -6661,8 +6894,19 @@
                         const buyerChartId = `buyer_chart_${buyerId}`;
                         const buyerTableId = `buyer_table_${buyerId}`;
 
+                        console.log(
+                            "📊 Создаем элементы для байера:",
+                            buyerName,
+                            "ChartID:",
+                            buyerChartId,
+                            "TableID:",
+                            buyerTableId
+                        );
+
+                        // Создаем функцию с замыканием для байера
                         (function (bName, bData, bChartId, bTableId) {
                             if (bData.buyerData) {
+                                console.log("📊 Создаем график и таблицу для байера:", bName);
                                 displaySegmentChart(
                                     bChartId,
                                     article,
@@ -6978,8 +7222,28 @@
         }
 
         function displaySegmentTable(tableId, data, segmentType = "group", userStartDate = null, userEndDate = null) {
+            console.log(`📋 Отображаем таблицу ${tableId} с данными:`, data);
+            console.log(
+                `📋 Проверяем наличие budget в данных:`,
+                data.budget ? "ЕСТЬ" : "НЕТ"
+            );
+            console.log(
+                `📋 Первые несколько значений budget:`,
+                data.budget ? data.budget.slice(0, 3) : "undefined"
+            );
+            console.log(`📋 Ищем элемент с ID: "${tableId}"`);
+
             const table = document.getElementById(tableId);
-            if (!table) return;
+            if (!table) {
+                console.error(`❌ Таблица с ID ${tableId} не найдена`);
+                console.log(
+                    "📋 Доступные элементы с table:",
+                    document.querySelectorAll('table[id*="table"]')
+                );
+                return;
+            }
+
+            console.log("✅ Таблица найдена:", table);
 
             // Показы берем из базы данных (поле showed)
             if (!data.impressions) {
@@ -7631,11 +7895,27 @@
         }
 
         function displaySegmentChart(chartId, article, segmentName, data) {
-            const canvas = document.getElementById(chartId);
-            if (!canvas) return;
+            console.log("📊 Создаем график для:", chartId, segmentName);
+            console.log("📊 Ищем canvas с ID:", chartId);
 
+            const canvas = document.getElementById(chartId);
+            if (!canvas) {
+                console.error("❌ Canvas не найден:", chartId);
+                console.log(
+                    "📊 Доступные canvas:",
+                    document.querySelectorAll('canvas[id*="chart"]')
+                );
+                return;
+            }
+
+            console.log("✅ Canvas найден:", canvas);
+
+            // Уничтожаем существующий график если есть
             const existingChart = Chart.getChart(canvas);
-            if (existingChart) existingChart.destroy();
+            if (existingChart) {
+                console.log("🗑️ Уничтожаем существующий график:", existingChart.id);
+                existingChart.destroy();
+            }
 
             const ctx = canvas.getContext("2d");
 
@@ -7821,17 +8101,25 @@
             currentCharts.push(chart);
         }
 
-        function formatNumber(value, withZero = false) {
-            if (value === null || value === undefined || value === "")
-                return withZero ? "0,00" : "";
+        function formatNumber(value) {
+            if (
+                value === 0 ||
+                value === "" ||
+                value === null ||
+                value === undefined
+            )
+                return "";
             const num = Number(value);
             if (isNaN(num)) return value;
-            if (num === 0 && !withZero) return "";
             return num.toFixed(2).replace(".", ",");
         }
 
         function formatNumberWithZero(value) {
-            return formatNumber(value, true);
+            if (value === null || value === undefined || value === "")
+                return "0,00";
+            const num = Number(value);
+            if (isNaN(num)) return value;
+            return num.toFixed(2).replace(".", ",");
         }
 
         function escapeHtml(text) {
@@ -8076,8 +8364,14 @@
         window.toggleNavBlock = toggleNavBlock;
         // Calendar navigation function
         function navigateToCalendarElement(elementName, elementType, trackerName = null, campaignName = null, groupName = null) {
+            console.log('🚀 CALENDAR NAVIGATION for:', elementName, 'type:', elementType, 'tracker:', trackerName);
+
+            // Сразу ищем элемент без предварительного скролла
             const calendarTable = document.querySelector('.calendar-table');
-            if (!calendarTable) return;
+            if (!calendarTable) {
+                console.log('❌ Calendar table not found');
+                return;
+            }
 
             // Ищем строку с учетом иерархии
             const rows = calendarTable.querySelectorAll('tbody tr');
@@ -8096,6 +8390,7 @@
                             const trackerRow = findTrackerRow(trackerName, rows);
                             if (trackerRow && isChildOfTracker(row, trackerRow)) {
                                 targetRow = row;
+                                console.log('✅ Found target campaign in correct tracker:', targetRow);
                             }
                         }
                     } else if (trackerName && campaignName && elementType === 'group') {
@@ -8104,6 +8399,7 @@
                             const campaignRow = findCampaignInTracker(campaignName, trackerName, rows);
                             if (campaignRow && isChildOfCampaign(row, campaignRow)) {
                                 targetRow = row;
+                                console.log('✅ Found target group in correct campaign:', targetRow);
                             }
                         }
                     } else if (trackerName && campaignName && groupName && elementType === 'ad') {
@@ -8112,18 +8408,23 @@
                             const groupRow = findGroupInCampaign(groupName, campaignName, trackerName, rows);
                             if (groupRow && isChildOfGroup(row, groupRow)) {
                                 targetRow = row;
+                                console.log('✅ Found target ad in correct group:', targetRow);
                             }
                         }
                     } else {
                         // Обычный поиск для трекеров
                         if (cellText === elementName) {
                             targetRow = row;
+                            console.log('✅ Found target row:', targetRow);
                         }
                     }
                 }
             });
 
             if (targetRow) {
+                console.log('✅ Found calendar element:', elementName);
+
+                // СНАЧАЛА раскрываем всю цепочку до этого элемента
                 expandCalendarToTarget(targetRow);
 
                 // Ждем завершения раскрытия и делаем элемент видимым, затем скроллимся
@@ -8145,6 +8446,8 @@
                         highlightCalendarElement(targetRow);
                     }, 200);
                 }, 600);
+            } else {
+                console.log('❌ Calendar element not found:', elementName);
             }
         }
 
@@ -8270,6 +8573,8 @@
 
         // Highlight calendar element
         function highlightCalendarElement(element) {
+            console.log('✨ HIGHLIGHTING CALENDAR ELEMENT');
+            // Добавляем подсветку
             element.style.boxShadow = '0 0 20px rgba(96, 165, 250, 0.8)';
             element.style.transition = 'box-shadow 0.3s ease';
             element.style.border = '2px solid #60a5fa';
@@ -8331,8 +8636,14 @@
 
         // Navigate to buyer analytics element
         function navigateToBuyerAnalytics(buyerName, elementType, elementName) {
+            console.log('🚀 NAVIGATE TO BUYER ANALYTICS:', buyerName, elementType, elementName);
+
+            // Ищем соответствующий элемент в детальной аналитике
             const buyerSection = findBuyerSection(buyerName);
-            if (!buyerSection) return;
+            if (!buyerSection) {
+                console.log('❌ Buyer section not found:', buyerName);
+                return;
+            }
 
             // Определяем целевой элемент в зависимости от типа
             let targetElement = null;
@@ -8343,9 +8654,15 @@
             }
 
             if (targetElement) {
+                console.log('✅ Found target element in buyer analytics');
+
+                // Раскрываем путь к элементу
                 expandPathToBuyerElement(targetElement);
 
+                // Прокручиваем к элементу и раскрываем его тоже
                 setTimeout(() => {
+                    // Сначала раскрываем сам целевой элемент
+                    console.log('⚡ Expanding target element itself');
                     targetElement.click();
 
                     // Затем прокручиваем к началу элемента
@@ -8362,6 +8679,8 @@
                         }, 300);
                     }, 200);
                 }, 800);
+            } else {
+                console.log('❌ Target element not found in buyer analytics');
             }
         }
 
@@ -8408,23 +8727,36 @@
         }
 
         function expandPathToBuyerElement(targetElement) {
+            console.log('🔓 EXPANDING PATH TO BUYER ELEMENT');
+
+            // Находим всех родителей которых нужно раскрыть
             let currentElement = targetElement;
             const elementsToExpand = [];
 
             while (currentElement) {
+                // Ищем родительский content элемент
                 const parentContent = currentElement.closest('.buyer-content-area, .nested-group-content-enhanced');
                 if (parentContent && parentContent.classList.contains('collapsed')) {
+                    // Находим соответствующий header
                     const parentHeader = parentContent.previousElementSibling;
                     if (parentHeader) {
                         elementsToExpand.unshift(parentHeader);
                     }
                 }
+
+                // Переходим к следующему родителю
                 currentElement = parentContent ? parentContent.parentElement : null;
+
+                // Защита от бесконечного цикла
                 if (elementsToExpand.length > 10) break;
             }
 
+            console.log('🔓 Found', elementsToExpand.length, 'elements to expand');
+
+            // Раскрываем элементы последовательно
             elementsToExpand.forEach((header, index) => {
                 setTimeout(() => {
+                    console.log('⚡ Expanding buyer level', index);
                     header.click();
                 }, index * 200);
             });
@@ -8556,8 +8888,12 @@
 
         function displayGeneralResults(data) {
             try {
+                console.log("📊 Displaying general results:", data);
+
+                // Сохраняем данные глобально для навигации
                 window.currentGeneralData = data;
 
+                // Показываем баннер статуса
                 const container = document.getElementById("generalStatusBanner");
                 container.innerHTML = `
                     <div class="status-content">
@@ -8575,13 +8911,24 @@
                 `;
                 container.classList.add("show");
 
+                console.log("✅ Status banner set");
+
+                // Отображаем календарь байеров и аккаунтов
                 if (data.buyerAccountData && data.dates) {
+                    console.log("✅ Displaying buyer account calendar");
                     displayBuyerAccountCalendar(data.buyerAccountData, data.dates);
+                } else {
+                    console.log("❌ No buyer account data to display");
                 }
 
+                // Строим навигационное дерево для общих данных
+                console.log("✅ Building general data navigation");
                 buildGeneralDataNavigation();
+
+                console.log("✅ Showing general results");
                 showGeneralResults();
             } catch (error) {
+                console.error("❌ Error in displayGeneralResults:", error);
                 showGeneralError("Ошибка отображения результатов: " + error.message);
             }
         }
@@ -8696,7 +9043,10 @@
             }
 
             function formatCPL(leads, spend) {
-                return (leads > 0 && spend > 0) ? (spend / leads).toFixed(2) : '—';
+                if (spend === 0 && leads === 0) return '—';
+                if (spend > 0 && leads === 0) return '—';
+                const cpl = leads > 0 ? spend / leads : 0;
+                return cpl > 0 ? cpl.toFixed(2) : '—';
             }
 
             function formatValue(value) {
